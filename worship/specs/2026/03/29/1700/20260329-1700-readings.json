@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 124"
+                },
+                {
+                    "passage": "Salmos 124"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "",
+            "título": ""
+        }
+    }
+}

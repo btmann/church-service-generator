@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 34:11-22"
+                },
+                {
+                    "passage": "Salmos 34:11-22"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "Talking About the Birth of Jesus",
+            "título": "Hablando del nacimiento de Jesús"
+        }
+    }
+}

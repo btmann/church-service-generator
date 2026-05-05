@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "John 20:19-31",
+                    "pew": "731"
+                },
+                {
+                    "passage": "Juan 20:19-31"
+                }
+            ]
+        },
+        "sermon-1": {
+            "title": "Seven Last Words",
+            "título": "Siete últimas palabras"
+        },
+        "ls-1": {
+            "reading": 11
+        }
+    }
+}

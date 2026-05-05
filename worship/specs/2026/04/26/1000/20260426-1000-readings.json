@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Daniel 1:1-14"
+                },
+                {
+                    "passage": "Daniel 1:1-14"
+                }
+            ],
+            "tag": "am"
+        },
+        "ls-1": {
+            "reading": 102
+        },
+        "sermon-1": {
+            "title": "The Gospel and Our Doubts",
+            "título": "El Evangelio y nuestras dudas"
+        }
+    }
+}

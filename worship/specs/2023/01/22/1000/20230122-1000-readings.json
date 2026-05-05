@@ -1,0 +1,25 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 97"
+                },
+                {
+                    "passage": "Salmos 97"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 123,
+			"background": "bible-table"
+        },
+        "sermon-1": {
+            "title": "Endeavoring To Keep The Unity of the Spirit",
+            "título": "Solícitos en guardar la unidad del Espíritu"
+        },
+        "prayer-1": {
+			"background": "rain-window"
+        }
+    }
+}

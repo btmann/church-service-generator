@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 26"
+                },
+                {
+                    "passage": "Salmos 26"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "Women and Church Leadership",
+            "título": "Mujeres y liderazgo eclesiástico"
+        }
+    }
+}

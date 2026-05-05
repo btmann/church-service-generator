@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Exodus 1:8-21"
+                },
+                {
+                    "passage": "Éxodo 1:8-21"
+                }
+            ],
+            "tag": "am"
+        },
+        "ls-1": {
+            "reading": 91
+        },
+        "sermon-1": {
+            "title": "The Gospel & Baptism into Christ",
+            "título": "El Evangelio y el bautismo en Cristo"
+        }
+    }
+}

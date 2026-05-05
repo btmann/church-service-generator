@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 127"
+                },
+                {
+                    "passage": "Salmos 127"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "Owe Nothing to the Lost",
+            "título": "No le debes nada a los perdidos"
+        }
+    }
+}

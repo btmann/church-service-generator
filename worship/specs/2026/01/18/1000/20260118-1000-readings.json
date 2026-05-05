@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Numbers 14:1-9"
+                },
+                {
+                    "passage": "Números 14:1-9"
+                }
+            ],
+            "tag": "am"
+        },
+        "ls-1": {
+            "reading": 94
+        },
+        "sermon-1": {
+            "title": "The Gospel and our Struggles",
+            "título": "El Evangelio y nuestras luchas"
+        }
+    }
+}

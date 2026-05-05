@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 52"
+                },
+                {
+                    "passage": "Salmos 52"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "Fasting",
+            "título": "Ayuno"
+        }
+    }
+}

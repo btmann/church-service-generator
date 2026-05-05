@@ -1,0 +1,11 @@
+{
+	"isodate": "2021-06-09T19:30:00",
+	"language": "bil",
+	"items": [
+		{ "type": "welcome", "desc": "Announcements" },
+		{ "type": "song", "book": "pftl", "song": "12", "verses": [1,3] },
+		{ "type": "song", "book": "phss", "song": "448" }
+	]
+}
+
+

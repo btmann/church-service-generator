@@ -1,0 +1,17 @@
+{
+    "songs": {
+        "song-1": {
+            "book": "pftl",
+            "song": "500",
+            "verses": [],
+            "chorus": [],
+            "coda": 0
+        },
+        "song-2": {
+            "book": "eh",
+            "song": "650",
+            "verses": [1,2,3,6],
+            "coda": 0
+        }
+    }
+}

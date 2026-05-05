@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "1 Samuel 7:3-14"
+                },
+                {
+                    "passage": "1 Samuel 7:3-14"
+                }
+            ],
+            "tag": "am"
+        },
+        "ls-1": {
+            "reading": 98,
+            "background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "The Love of God",
+            "título": "El amor de Dios"
+        }
+    }
+}

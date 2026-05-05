@@ -1,0 +1,7 @@
+{ "order": [
+	{ "type": "welcome", "esp": "Bienvenida" },
+	{ "type": "song", "id": "song-1", "position": "Song Leader"  },
+	{ "type": "song", "id": "song-2" },
+	{ "type": "prayer", "id": "prayer-1",  "position": "Closing Prayer" },
+	{ "type": "song", "id": "song-3" }
+]}

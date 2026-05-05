@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 100"
+                },
+                {
+                    "passage": "Salmos 100"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 163,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "No Turning Back: Galatians 3",
+            "título": "Sin vuelta atrás: Gálatas 3"
+        }
+    }
+}

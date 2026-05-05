@@ -1,0 +1,21 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "1 Thessalonians 1:1-10"
+                },
+                {
+                    "passage": "1 Tesalonicenses 1:1-10"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 138
+        },
+        "sermon-1": {
+            "title": "John the Apostle",
+            "título": "Juan el apóstol"
+        }
+    }
+}

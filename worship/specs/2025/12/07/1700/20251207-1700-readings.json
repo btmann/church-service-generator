@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 42:1-9"
+                },
+                {
+                    "passage": "Salmos 42:1-9"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "The Last Shall Be First",
+            "título": "Los últimos serán los primeros"
+        }
+    }
+}

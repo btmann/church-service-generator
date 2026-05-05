@@ -1,0 +1,6 @@
+{ "schedule": [
+	{ "time": "10:00:00", "language": "bil", "template": "fifth-sunday-am-2", "service": "Sun - AM" },
+	{ "time": "17:00:00", "language": "bil", "template": "sunday-pm", "service": "Sun - PM" }
+]}
+
+

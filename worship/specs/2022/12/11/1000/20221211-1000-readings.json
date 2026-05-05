@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Titus 2:9-15"
+                },
+                {
+                    "passage": "Tito 2:9-15"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 24,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "Maintaining the Unity of the Spirit",
+            "título": "Mantener la unidad del Espíritu"
+        }
+    }
+}

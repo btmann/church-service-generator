@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Genesis 9:12-19",
+                    "pew": "6"
+                },
+                {
+                    "passage": "Génesis 9:12-19"
+                }
+            ]
+        },
+        "sermon-1": {
+            "title": "Erik’s Farewell",
+            "título": "Despedida de Erik"
+        }
+    }
+}

@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "1 Timothy 1:12-20",
+                    "pew": "798"
+                },
+                {
+                    "passage": "1 Timoteo 1:12-20"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 145,
+			"background": "bible-table"
+        },
+        "sermon-1": {
+            "title": "The Storms that Tempt Our Faith",
+            "título": "Las tormentas que tientan nuestra fe"
+        }
+    }
+}

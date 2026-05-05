@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "1 Thessalonians 2:1-12",
+                    "pew": "794"
+                },
+                {
+                    "passage": "1 Tesalonicenses 2:1-12"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 139,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "Our Reward in God",
+            "título": "Nuestra recompensa en Dios"
+        }
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "John 19:31-42",
+                    "pew": "731"
+                },
+                {
+                    "passage": "John 19:31-42"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 43
+        },
+        "sermon-1": {
+            "title": "Filling Nets and Changing Hearts",
+            "título": "Llenando redes y cambiando corazones"
+        }
+    }
+}

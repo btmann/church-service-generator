@@ -1,0 +1,21 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 95"
+                },
+                {
+                    "passage": "Salmo 95"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 4
+        },
+        "sermon-1": {
+            "title": "Life in Christ",
+            "título": "La vida en Cristo"
+        }
+    }
+}

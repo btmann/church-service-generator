@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Genesis 32:24-32"
+                },
+                {
+                    "passage": "Génesis 32:24-32"
+                }
+            ],
+            "tag": "am"
+        },
+        "ls-1": {
+            "reading": 89
+        },
+        "sermon-1": {
+            "title": "Naboth's Vineyard",
+            "título": "La viña de Nabot"
+        }
+    }
+}

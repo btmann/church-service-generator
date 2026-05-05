@@ -1,0 +1,21 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 113"
+                },
+                {
+                    "passage": "Salmos 113"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 168
+        },
+        "sermon-1": {
+            "title": "Refining My Speech",
+            "título": "Refinando mi discurso"
+        }
+    }
+}

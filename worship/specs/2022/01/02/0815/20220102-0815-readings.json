@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Ephesians 1:1-12",
+                    "pew": "786"
+                },
+                {
+                    "passage": "Efesios 1:1-12"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 130,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "The Acts of the Saints of 2022",
+            "título": "Los hechos de los santos de 2022"
+        }
+    }
+}

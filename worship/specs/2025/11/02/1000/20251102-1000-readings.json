@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Genesis 15:1-11, 17-18"
+                },
+                {
+                    "passage": "Génesis 15:1-11, 17-18"
+                }
+            ],
+            "tag": "am"
+        },
+        "ls-1": {
+            "reading": 86,
+            "background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "The Church in Corinth",
+            "título": "La Iglesia en Corinto"
+        }
+    }
+}

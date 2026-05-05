@@ -1,0 +1,21 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "John 11:17-31"
+                },
+                {
+                    "passage": "Juan 11:17-31"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 105
+        },
+        "sermon-1": {
+            "title": "A Courageous Heart",
+            "título": "Un corazón valiente"
+        }
+    }
+}

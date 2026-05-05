@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 34:1-10"
+                },
+                {
+                    "passage": "Salmos 34:1-10"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "The Easy Yoke",
+            "título": "El yugo fácil"
+        }
+    }
+}

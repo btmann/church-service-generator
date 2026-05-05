@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 15"
+                },
+                {
+                    "passage": "Salmos 15"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "Apollos: Mighty in the Scriptures",
+            "título": "Apolos: Poderoso en las Escrituras"
+        }
+    }
+}

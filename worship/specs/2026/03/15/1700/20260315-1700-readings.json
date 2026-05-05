@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 121"
+                },
+                {
+                    "passage": "Salmos 121"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "The Wilderness",
+            "título": "El desierto"
+        }
+    }
+}

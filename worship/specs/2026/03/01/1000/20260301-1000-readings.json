@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Ruth 4:9-17"
+                },
+                {
+                    "passage": "Rut 4:9-17"
+                }
+            ],
+            "tag": "am"
+        },
+        "ls-1": {
+            "reading": 4,
+            "background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "A Faith that Pleases God",
+            "título": "Una fe que agrada a Dios"
+        }
+    }
+}

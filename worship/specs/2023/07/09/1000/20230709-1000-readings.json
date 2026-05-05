@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 144"
+                },
+                {
+                    "passage": "Salmos 144"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 179,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "What's Next? (John 14)",
+            "título": "¿Que sigue? (Juan 14)"
+        }
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "readings": {
+        "reading-1": {
+			"background": "fall-bible-table",
+            "lang": [
+                {
+                    "passage": "Genesis 4:9-16",
+                    "pew": "3"
+                },
+                {
+                    "passage": "Génesis 4:9-16"
+                }
+            ]
+        },
+        "sermon-1": {
+            "title": "Tongues that Glorify God",
+            "título": "Lenguas que glorifican a Dios"
+        }
+    }
+}

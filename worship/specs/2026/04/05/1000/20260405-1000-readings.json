@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "1 Kings 18:20-35"
+                },
+                {
+                    "passage": "1 Reyes 18:20-35"
+                }
+            ],
+            "tag": "am"
+        },
+        "ls-1": {
+            "reading": 100,
+            "background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "The King and the Thief",
+            "título": "El rey y el ladrón"
+        }
+    }
+}

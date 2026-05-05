@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Genesis 6:5-14"
+                },
+                {
+                    "passage": "Génesis 6:5-14"
+                }
+            ],
+            "tag": "am"
+        },
+        "ls-1": {
+            "reading": 64
+        },
+        "sermon-1": {
+            "title": "In Defense of the Deity of Jesus",
+            "título": "En defensa de la deidad de Jesús"
+        }
+    }
+}

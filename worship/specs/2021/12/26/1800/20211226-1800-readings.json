@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Genesis 12:4-9",
+                    "pew": "7"
+                },
+                {
+                    "passage": "Génesis 12:4-9"
+                }
+            ]
+        },
+        "sermon-1": {
+            "title": "To the Church at Philadelphia",
+            "título": "A la Iglesia de Filadelfia"
+        }
+    }
+}

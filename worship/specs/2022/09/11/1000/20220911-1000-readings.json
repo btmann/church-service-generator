@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "1 Timothy 6:1-10"
+                },
+                {
+                    "passage": "1 Timoteo 6:1-10"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 55,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "To Those Who Believe In His Name",
+            "título": "A los que creen en su nombre"
+        }
+    }
+}

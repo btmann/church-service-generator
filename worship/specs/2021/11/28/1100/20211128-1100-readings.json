@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 84:1-12",
+                    "pew": "402"
+                },
+                {
+                    "passage": "Salmo 84:1-12"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 125
+        },
+        "sermon-1": {
+            "title": "Loving Our Enemies",
+            "título": "Amar a nuestros enemigos"
+        }
+    }
+}

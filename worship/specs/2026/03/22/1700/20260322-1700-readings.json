@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 122"
+                },
+                {
+                    "passage": "Salmos 122"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "The Soverignty of God",
+            "título": "La soberanía de Dios"
+        }
+    }
+}

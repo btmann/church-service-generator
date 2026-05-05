@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+			"background": "fall-bible-table",
+            "lang": [
+                {
+                    "passage": "John 19:1-16",
+                    "pew": "730"
+                },
+                {
+                    "passage": "Juan 19:1-16"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 4
+        },
+        "sermon-1": {
+            "title": "How the Father Draws Us",
+            "título": "Cómo nos atrae el padre"
+        }
+    }
+}

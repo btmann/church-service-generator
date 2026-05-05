@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "1 Timothy 2:1-6"
+                },
+                {
+                    "passage": "1 Timoteo 2:1-6"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 237,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "A Good Conscience",
+            "título": "Una buena conciencia"
+        }
+    }
+}

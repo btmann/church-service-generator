@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 99"
+                },
+                {
+                    "passage": "Salmos 99"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "Three in Perfect Unity",
+            "título": "Tres en perfecta unidad"
+        }
+    }
+}

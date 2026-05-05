@@ -1,0 +1,21 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 96"
+                },
+                {
+                    "passage": "Salmos 96"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 4
+        },
+        "sermon-1": {
+            "title": "This is Eternal Life",
+            "título": "Esta es la vida eterna"
+        }
+    }
+}

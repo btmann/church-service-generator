@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "John 18:28-40",
+                    "pew": "729"
+                },
+                {
+                    "passage": "Juan 18:28-40"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 116, "background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "The Unbelieving Brothers of Jesus",
+            "título": "Los hermanos incrédulos de Jesús"
+        }
+    }
+}

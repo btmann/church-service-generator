@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "1 Timothy 1:1-11",
+                    "pew": "797"
+                },
+                {
+                    "passage": "1 Timoteo 1:1-11"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 5,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "Choices That Break Jesus’ Heart – Part 1",
+            "título": "Decisiones que rompen el corazón de Jesús – Parte 1"
+        }
+    }
+}

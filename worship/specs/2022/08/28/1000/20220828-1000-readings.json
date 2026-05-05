@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "1 Timothy 5:1-16"
+                },
+                {
+                    "passage": "1 Timoteo 5:1-16"
+                }
+            ],
+			"background": "bible-green"
+        },
+        "ls-1": {
+            "reading": 95,
+			"background": "bible-table"
+        },
+        "sermon-1": {
+            "title": "Our God is a Consuming Fire",
+            "título": "Nuestro Dios es fuego consumidor"
+        }
+    }
+}

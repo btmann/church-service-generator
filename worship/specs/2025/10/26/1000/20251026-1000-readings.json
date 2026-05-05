@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Genesis 13:5-18"
+                },
+                {
+                    "passage": "Génesis 13:5-18"
+                }
+            ],
+            "tag": "am"
+        },
+        "ls-1": {
+            "reading": 85
+        },
+        "sermon-1": {
+            "title": "Blessed are the Poor",
+            "título": "Bienaventurados los pobres"
+        }
+    }
+}

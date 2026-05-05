@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 78:5-17"
+                },
+                {
+                    "passage": "Salmos 78:5-17"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "The Crossing of the Red Sea",
+            "título": "El cruce del Mar Rojo"
+        }
+    }
+}

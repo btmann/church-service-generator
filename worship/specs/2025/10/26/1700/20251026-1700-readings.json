@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 20"
+                },
+                {
+                    "passage": "Salmos 20"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "Questions Surrounding Prayer",
+            "título": "Preguntas en torno a la oración"
+        }
+    }
+}

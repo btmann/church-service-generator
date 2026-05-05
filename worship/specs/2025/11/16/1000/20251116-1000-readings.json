@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Genesis 28:10-22"
+                },
+                {
+                    "passage": "Génesis 28:10-22"
+                }
+            ],
+            "tag": "am"
+        },
+        "ls-1": {
+            "reading": 88,
+            "background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "The Gospel & Divine Justice",
+            "título": "El Evangelio y la Justicia Divina"
+        }
+    }
+}

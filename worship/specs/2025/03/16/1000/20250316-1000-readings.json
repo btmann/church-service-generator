@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Philippians 4:1-9"
+                },
+                {
+                    "passage": "Filipenses 4:1-9"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 231,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "Jealousy & Insecurity",
+            "título": "Celos e inseguridad"
+        }
+    }
+}

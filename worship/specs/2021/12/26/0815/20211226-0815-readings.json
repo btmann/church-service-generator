@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 91:1-16",
+                    "pew": "405"
+                },
+                {
+                    "passage": "Salmo 91:1-16"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 49
+        },
+        "sermon-1": {
+            "title": "Around the Table with Jesus",
+            "título": "Alrededor de la mesa con Jesús"
+        }
+    }
+}

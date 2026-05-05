@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "2 Timothy 2:1-13"
+                },
+                {
+                    "passage": "2 Timoteo 2:1-13"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 30,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "All In: Guarding The Truth",
+            "título": "Con Todo: Defendiendo la verdad"
+        }
+    }
+}

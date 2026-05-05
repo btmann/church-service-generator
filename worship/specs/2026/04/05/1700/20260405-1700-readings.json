@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 125"
+                },
+                {
+                    "passage": "Salmos 125"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "Rabshakeh's Worldview",
+            "título": "La visión del mundo de Rabshakeh"
+        }
+    }
+}

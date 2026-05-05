@@ -1,0 +1,36 @@
+{
+	"isodate": "2021-08-15T18:00:00",
+	"language": "bil",
+	"leader": "Danny Ingle",
+	"items": [
+		{ "type": "welcome", "esp": "Bienvenida" },
+		{ "type": "reading", "leader": "Andy Baker", "lang": [
+		   { "passage": "Genesis 2:15-25", "pew": "2" },
+		   { "passage": "Génesis 2:15-25" }
+		]},
+		{ "type": "song", "book": "pftl", "song": "416", "chorus": [2,4], "leader": "Danny Ingle" },
+		{ "type": "song", "book": "pftl", "song": "40", "verses": [1,2,3] },
+		{ "type": "song", "book": "pftl", "song": "416", "chorus": [2,4], "leader": "Danny Ingle" },
+		{ "type": "song", "book": "pftl", "song": "40", "verses": [1,2,3] },
+		{ "type": "song", "book": "pftl", "song": "416", "chorus": [2,4], "leader": "Danny Ingle" },
+		{ "type": "song", "book": "pftl", "song": "40", "verses": [1,2,3] },
+		{ "type": "song", "book": "pftl", "song": "416", "chorus": [2,4], "leader": "Danny Ingle" },
+		{ "type": "song", "book": "pftl", "song": "40", "verses": [1,2,3] },
+		{ "type": "song", "book": "pftl", "song": "416", "chorus": [2,4], "leader": "Danny Ingle" },
+		{ "type": "song", "book": "pftl", "song": "40", "verses": [1,2,3] },
+		{ "type": "song", "book": "pftl", "song": "416", "chorus": [2,4], "leader": "Danny Ingle" },
+		{ "type": "song", "book": "pftl", "song": "40", "verses": [1,2,3] },
+		{ "type": "song", "book": "pftl", "song": "416", "chorus": [2,4], "leader": "Danny Ingle" },
+		{ "type": "song", "book": "pftl", "song": "40", "verses": [1,2,3] },
+		{ "type": "song", "book": "pftl", "song": "416", "chorus": [2,4], "leader": "Danny Ingle" },
+		{ "type": "song", "book": "pftl", "song": "40", "verses": [1,2,3] },
+		{ "type": "prayer", "leader": "Cedric McCollins" },
+		{ "type": "song-title", "book": "pftl", "song": "771", "chorus": [3], "bubble": "Invitation Song" },
+		{ "type": "song", "book": "pftl", "song": "977", "chorus": [3] },
+		{ "type": "sermon", "title": "Evangelizing Through Ecclesiastes", "título": "Evangelizando a través de Eclesiastés", "leader": "Bill Sanchez" },
+		{ "type": "song-music", "book": "pftl", "song": "771", "chorus": [3] },
+		{ "type": "announcements", "leader": "Rod Hovater" },
+		{ "type": "ls-pm" },
+		{ "type": "prayer", "background": "mountain-ocean", "leader": "Luke Carter" }
+	]
+}

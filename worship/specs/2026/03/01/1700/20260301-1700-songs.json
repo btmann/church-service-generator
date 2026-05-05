@@ -1,0 +1,24 @@
+{
+    "songs": {
+        "song-1": {
+            "book": "pftl",
+            "song": "682",
+            "coda": 0
+        },
+        "song-2": {
+            "book": "pftl",
+            "song": "195",
+            "coda": 0
+        },
+        "song-3": {
+            "book": "pftl",
+            "song": "239",
+            "coda": 0
+        },
+        "song-4": {
+            "book": "pftl",
+            "song": "163",
+            "coda": 0
+        }
+    }
+}

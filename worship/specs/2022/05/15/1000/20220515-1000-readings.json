@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "1 Thessalonians 5:1-11",
+                    "pew": "796"
+                },
+                {
+                    "passage": "1 Tesalonicenses 5:1-11"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 4
+        },
+        "sermon-1": {
+            "title": "The Shepherd of the Kingdom",
+            "título": "El pastor del reino"
+        }
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 89:1-18",
+                    "pew": "404"
+                },
+                {
+                    "passage": "Salmo 89:1-18"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 126
+        },
+        "sermon-1": {
+            "title": "Remember God, the Son of Man",
+            "título": "Acuérdate de Dios, el Hijo del Hombre"
+        }
+    }
+}

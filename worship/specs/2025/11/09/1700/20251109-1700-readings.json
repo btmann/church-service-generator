@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 32"
+                },
+                {
+                    "passage": "Salmos 32"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "Coming to Christ Through Contrition and Confession",
+            "título": "Acercarse a Cristo mediante la contrición y la confesión"
+        }
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 61"
+                },
+                {
+                    "passage": "Salmos 61"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "Paul at Antioch of Pisidia",
+            "título": "Pablo en Antioquía de Pisidia"
+        }
+    }
+}

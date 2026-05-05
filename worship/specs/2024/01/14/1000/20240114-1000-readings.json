@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Mark 9:2-13"
+                },
+                {
+                    "passage": "Marcos 9:2-13"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 197,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "Two by Two (Luke 10)",
+            "título": "De dos en dos (Lucas 10)"
+        }
+    }
+}

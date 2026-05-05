@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Ruth 1:1-7, 14-18"
+                },
+                {
+                    "passage": "Rut 1:1-7, 14-18"
+                }
+            ],
+            "tag": "am"
+        },
+        "ls-1": {
+            "reading": 4
+        },
+        "sermon-1": {
+            "title": "Deacons: Forces for Good",
+            "título": "Diáconos: Fuerzas para el bien"
+        }
+    }
+}

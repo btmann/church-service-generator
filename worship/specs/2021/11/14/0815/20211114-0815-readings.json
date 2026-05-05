@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "John 21:15-25",
+                    "pew": "732"
+                },
+                {
+                    "passage": "Juan 21:15-25"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 121,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "Isaiah 40: The Majesty of God",
+            "título": "Isaías 40: La majestad de Dios"
+        }
+    }
+}

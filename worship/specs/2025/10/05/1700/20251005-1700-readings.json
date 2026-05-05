@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 8"
+                },
+                {
+                    "passage": "Salmos 8"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "In Defense of God's One True Church",
+            "título": "En defensa de la única Iglesia verdadera de Dios"
+        }
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Genesis 6:17-7:5"
+                },
+                {
+                    "passage": "Génesis 6:17-7:5"
+                }
+            ],
+            "tag": "am"
+        },
+        "ls-1": {
+            "reading": 84
+        },
+        "sermon-1": {
+            "title": "What Are You Afraid Of?",
+            "título": "¿De qué tienes miedo?"
+        }
+    }
+}

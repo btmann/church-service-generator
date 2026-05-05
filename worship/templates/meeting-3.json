@@ -1,0 +1,10 @@
+{ "order": [
+	{ "type": "welcome", "esp": "Bienvenida" },
+	{ "type": "song", "id": "song-1", "position": "Song Leader"  },
+	{ "type": "prayer", "id": "prayer-1", "position": "First Prayer" },
+	{ "type": "song-title", "id": "song-3", "bubble": "Invitation Song" },
+	{ "type": "song", "id": "song-2" },
+	{ "type": "sermon", "id": "sermon-1", "position": "Preach" },
+	{ "type": "song-music", "id": "song-3", "fade": "out" },
+	{ "type": "prayer", "id": "prayer-2",  "position": "Last Prayer" }
+]}

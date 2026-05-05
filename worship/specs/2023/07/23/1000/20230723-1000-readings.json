@@ -1,0 +1,21 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 146"
+                },
+                {
+                    "passage": "Salmos 146"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 72
+        },
+        "sermon-1": {
+            "title": "God's Holy People",
+            "título": "Pueblo Santo de Dios"
+        }
+    }
+}

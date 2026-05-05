@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Ephesians 1:13-23",
+                    "pew": "787"
+                },
+                {
+                    "passage": "Efesios 1:13-23"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 131,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "2021: Lessons Learned for 2022",
+            "título": "2021: lecciones aprendidas para 2022"
+        }
+    }
+}

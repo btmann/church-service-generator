@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Genesis 12:1-8"
+                },
+                {
+                    "passage": "Génesis 12:1-8"
+                }
+            ],
+            "tag": "am"
+        },
+        "ls-1": {
+            "reading": 14,
+            "background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "A Biblical Perspective on LGBT",
+            "título": "Una perspectiva bíblica sobre la comunidad LGBT"
+        }
+    }
+}

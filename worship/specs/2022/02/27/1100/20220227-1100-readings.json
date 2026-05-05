@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Ephesians 4:17-32",
+                    "pew": "788"
+                },
+                {
+                    "passage": "Efesios 4:17-32"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 14,
+			"background": "bible-table"
+        },
+        "sermon-1": {
+            "title": "Dealing with Differences",
+            "título": "Lidiando con las diferencias"
+        }
+    }
+}

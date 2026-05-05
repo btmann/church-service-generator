@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "1 Thessalonians 2:13-20",
+                    "pew": "795"
+                },
+                {
+                    "passage": "1 Tesalonicenses 2:13-20"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 140,
+			"background": "bible-table"
+        },
+        "sermon-1": {
+            "title": "Honoring Our Commitment to God",
+            "título": "Honrando nuestro compromiso con Dios"
+        }
+    }
+}

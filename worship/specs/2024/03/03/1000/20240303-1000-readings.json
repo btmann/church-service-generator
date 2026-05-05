@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Luke 14:1-14"
+                },
+                {
+                    "passage": "Lucas 14:1-14"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 4,
+			"background": "bible-table"
+        },
+        "sermon-1": {
+            "title": "Drawing Closer to God Through His Word",
+            "título": "Acercándonos a Dios a través de su Palabra"
+        }
+    }
+}

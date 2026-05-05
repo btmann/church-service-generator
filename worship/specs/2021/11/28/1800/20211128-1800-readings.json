@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Genesis 9:1-11",
+                    "pew": "5"
+                },
+                {
+                    "passage": "Génesis 9:1-11"
+                }
+            ]
+        },
+        "sermon-1": {
+            "title": "Reflections From My Time at Embry Hills",
+            "título": "Reflexiones de mi tiempo en Embry Hills"
+        }
+    }
+}

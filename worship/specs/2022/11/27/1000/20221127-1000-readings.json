@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Titus 1:10-16"
+                },
+                {
+                    "passage": "Tito 1:10-16"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 158,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "Guard Yourselves From Idols",
+            "título": "Guárdense de los ídolos"
+        }
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "2 Timothy 3:1-9"
+                },
+                {
+                    "passage": "2 Timoteo 3:1-9"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 155,
+			"background": "bible-table"
+        },
+        "sermon-1": {
+            "title": "Break the Cycle: Lessons from the Judges",
+            "título": "Rompe el ciclo: lecciones de los jueces"
+        }
+    }
+}

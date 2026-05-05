@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Genesis 33:1-11"
+                },
+                {
+                    "passage": "Génesis 33:1-11"
+                }
+            ],
+            "tag": "am"
+        },
+        "sermon-1": {
+            "title": "But When He Was Lifted Up",
+            "título": "Pero cuando fue levantado"
+        },
+        "ls-1": {
+            "reading": 1
+        }
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Ephesians 2:11-22",
+                    "pew": "787"
+                },
+                {
+                    "passage": "Efesios 2:11-22"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 43
+        },
+        "sermon-1": {
+            "title": "Restoring a Broken Life",
+            "título": "Restaurar una vida rota"
+        }
+    }
+}

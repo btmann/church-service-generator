@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 111"
+                },
+                {
+                    "passage": "Salmos 111"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "All Things to All Men",
+            "título": "A todos me he hecho de todo"
+        }
+    }
+}

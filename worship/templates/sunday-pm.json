@@ -1,0 +1,14 @@
+{ "order": [
+	{ "type": "welcome", "esp": "Bienvenida" },
+	{ "type": "reading", "id": "reading-1", "position": "Scripture Reading" },
+	{ "type": "song", "id": "song-1", "position": "Song Leader"  },
+	{ "type": "song", "id": "song-2"},
+	{ "type": "prayer", "id": "prayer-1", "position": "First Prayer" },
+	{ "type": "song-title", "id": "song-4", "bubble": "Invitation Song" },
+	{ "type": "song", "id": "song-3" },
+	{ "type": "sermon", "id": "sermon-1", "position": "Preach" },
+	{ "type": "song-music", "id": "song-4" },
+	{ "type": "announcements", "position": "Announcements" },
+	{ "type": "ls-pm" },
+	{ "type": "prayer", "id": "prayer-2",  "position": "Last Prayer" }
+]}

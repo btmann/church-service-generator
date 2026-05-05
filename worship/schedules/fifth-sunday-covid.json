@@ -1,0 +1,7 @@
+{ "schedule": [
+	{ "time": "08:15:00", "language": "eng", "template": "fifth-sunday-am-covid", "service": "Sun - EarlyAM" },
+	{ "time": "11:00:00", "language": "bil", "template": "fifth-sunday-am-covid", "service": "Sun - AM" },
+	{ "time": "18:00:00", "language": "bil", "template": "sunday-pm", "service": "Sun - PM" }
+]}
+
+

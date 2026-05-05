@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "1 Thessalonians 4:13-18",
+                    "pew": "795"
+                },
+                {
+                    "passage": "1 Tesalonicenses 4:13-18"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 141,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "The Beginning of the Church",
+            "título": "El comienzo de la iglesia"
+        }
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 14"
+                },
+                {
+                    "passage": "Salmos 14"
+                }
+            ],
+            "tag": "pm"
+        },
+        "sermon-1": {
+            "title": "Running from God: The Story of Jonah",
+            "título": "Huyendo de Dios: La historia de Jonás"
+        }
+    }
+}

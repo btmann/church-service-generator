@@ -1,0 +1,23 @@
+{
+    "readings": {
+        "reading-1": {
+            "lang": [
+                {
+                    "passage": "Psalm 86:1-13",
+                    "pew": "403"
+                },
+                {
+                    "passage": "Salmo 86:1-13"
+                }
+            ]
+        },
+        "ls-1": {
+            "reading": 8,
+			"background": "supper-chalice"
+        },
+        "sermon-1": {
+            "title": "Every Knee Will Bow",
+            "título": "Se doble toda rodilla"
+        }
+    }
+}
