@@ -1,0 +1,1585 @@
+
+
+
+Auditorium projector appears to have 16:10 aspect ratio -- PowerPoint resolution of 960x600
+
+WXGA
+WUXGA 1920x1200 - confirmed with Brad, native resolution
+
+Teamviewer icon: approximately 32x60 @ 1888, 1068 on 1920x1200
+
+
+5b7aab -- EH text font color (91, 122, 171) (dark)
+
+(146, 171, 197): lighter
+
+
+Environment Setup
+-----------------
+Install Python 3.7
+pip install python-pptx
+
+Install Visual Studio
+Install git for windows
+Install GTK https://www.gtk.org/download/windows.php to get cairo and other libraries
+  git clone https://github.com/Microsoft/vcpkg
+  cd vcpkg
+  .\bootstrap-vcpkg.bat
+  vcpkg install gtk:x64-windows
+  PS D:\src\vcpkg> .\vcpkg integrate install
+pip install pycairo
+
+set LIB=c:\Users\williamsd\Documents\song-leading\development\build\vcpkg\installed\x64-windows\lib
+pip install --global-option="build_ext" --global-option="-Ic:\Users\williamsd\Documents\song-leading\development\build\vcpkg\installed\x64-windows\include" pycairo
+
+pip install --global-option="build_ext" --global-option="-Ic:\Users\williamsd\Documents\song-leading\development\build\vcpkg\installed\x64-windows\include" --global-option=""/LIBPATH:c:\Users\williamsd\Documents\song-leading\development\build\vcpkg\installed\x64-windows\include\lib"" pycairo
+
+
+
+Strategy
+--------
+
+Define Embry Hills Song Format (EHSF)
+  - Images, JSON/XML, that define a song, independent of source
+
+Praise for the Lord
+  x Need PowerPoint 2007 format to parse ... use VB macro (see below) to bulk convert
+  - Script to parse PPT files, extract metadata, scale images for 16:10
+  - Outputs in EHSF
+  - Use Paperless Hymnal Index as a data source?
+  - Or are slides consistent enough to parse directly?
+  - Need verse count, slides per verse, chorus/coda data
+
+PHSS Slide Maker
+  - Use test automation tool to output each song into either HTML or PPT format
+  - Script to parse the output, extract metadata, scale images for 16:10
+  - Outputs in EHSF
+  - Need to handle Chorus, Refrain, Sanctus, Coda
+  - Need mappings for Supplement song numbers
+    - These songs should display Supplement numbers first if they exist
+	- Only use PHSS numbers/logo if song is not in supplement
+
+Create Template (not a .potx, but a .pptx) File
+  - Master/Slide Layouts for various slides
+  - Animations/backgrounds are part of the Layout
+  - Slide generator inserts slides based on Layouts
+
+
+ehsf/pftl/001/*.*
+ehsf/pftl/ppt/001.ppt
+ehsf/pftl/pptx/001.pptx
+
+ehsf/phss/001/*.*
+ehsf/phss/html/001/*.*
+
+Batch PowerPoint Conversion
+http://www.pptfaq.com/FAQ00740_Batch_re-save_presentations-_update_older_presentations_to_newer_PowerPoint_version.htm
+
+
+PTFL Convention
+---------------
+Text: Lyrics Verse (for first slide of verse)
+Picture
+Text: 'Verse/chorus - Title'
+Text: Credits (for first slide of verse)
+Text: Copyright
+Text: Song Number
+
+Special cases:
+Amen as final slide (187)
+Shapes with "END" or other additions: filter out, or remove from pptx input? (742)
+
+
+Songbook Logo Shapes
+--------------------
+323x113: size of songbook logo rectangle (960x600)
+646x226
+
+245x61
+490x122 => plus circular right side 612x122
+
+
+EH Logo Blue Lettering Color: #5A7AA0 (90, 122, 160)
+
+#5A7BA4 - website background (90, 123, 164)
+#73A3CB - alternate blue from website (115, 163, 203)
+#FF8C00 - orange text color on website (255, 140, 0)
+#6A0008 - PFTL color
+
+#5B7BA1
+
+Verse Circles
+-------------
+Large 0.4: room for 7?   (almost 8)
+Small 0.28: room for 10?
+Medium Size (0.34) -- could we use this?
+Squeeze arrow smaller?
+
+To Do
+-----------------------------------------------------------------
+- Evaluate per-slide scaling?
+x Use exception handling to reduce font size when fitting text into placeholders
+- Rework Chorus lyric handling in PFTL?
+- Need to handle Chorus, Refrain, Sanctus, Coda options in PHSS parsing
+x Tweak PHSS logo
+- Filter out bogus characters from PHSS HTML (0xa0 in copyright text)
+* SHS to PHSS mapping
+  - SHS Exceptions: (34) has no PHSS equivalent
+    - Currently using hand-made PPT
+	- Consider free 30-day trial of Finale to generate this song?
+- Handling really long Scripture Reading subtitles
+* Lord's Supper & Collection slides & Scripture text
+x Tag PHSS and SHS songs in Welcome slide
+- Tighten spacing on Welcome slide if larger number of items
+
+PHSS Processing
+---------------
+Use PPT files (need to generate ~48), or stick with HTML (need to gen all of them)?
+
+PS C:\Users\williamsd\Documents\song-leading\fromDanny\usb-database\PHSS-4x3 by Title> Get-ChildItem | Foreach-Object {
+>> $NewName = $_.Name -replace "(.*)-(.*).pptx", "`$2.pptx"
+>> Write-Host $NewName
+>> }
+    Rename-Item -Path $_.FullName -NewName $NewName
+
+
+Bilingual Slides
+----------------
+pftl/pptx/xyz.pptx
+pftl/xyz/ -- json and pngs
+
+phss/pptx/xyz.pptx
+phss/xyz/ -- json and pngs
+
+esp/pftl/xyz/ -- json and pngs
+esp/pftl/eng/book-xyz-eng.pptm (tool generated deck with expanded space for subtitles)
+esp/pftl/bil/book-xyz-bil.pptm (deck with embedded text boxes for subtitles)
+esp/pftl/bil/xyz/*.png, *.txt (intermediate output from exporting from pptm file)
+
+
+slides --esp-eng -b pftl -s 123		# converts raw pptx to blank format (inserts space)
+slides --esp-bil -b pftl -s 123		# parses subtitles to create esp/pftl/xyz files (json, png)
+
+blank format: title slide with space for title, translation copyright -- song data for injestion
+each verse in sequence
+chorus in sequence
+code, etc, in sequence
+
+Work flow
+- Export blank pptx (book-xyz-eng)
+- Copy/rename blank to book-xyz-bil
+- Add translation subtitles into bil pptx
+- Import book-xyz-bil pttx to esp/book/xyz
+
+
+https://github.com/UB-Mannheim/tesseract/wiki
+
+
+- Create blank-spanish template to hold VBA macros and metadata placeholders
+- Compute correct for dpi (10x7.5) 4:3 slide
+- if slide is too tall, make image narrower
+- Add notes page with actual dimensions of each slide (in pixels)
+- VBA macro gets dimensions from notes and exports slides accordingly
+- Python script
+  - invokes PPT macro to export PNG files
+  - parses placeholders on first slide to extract metadata
+  - creates EHSF data in esp/book/xyz data (scaled PNGs and JSON)
+
+
+
+
+To-Do Aug 18
+------------
+- Updated Collection Graphic
+- Parsing Readings from PowerPoint Slides
+  - Scripture Readings (or use XML?)
+  - On screen passages (with formatting)
+  - Keep passages in PowerPoint?  Use HTML/MarkDown?
+- Order of Services Navbar
+  - Template tweaks
+  - "Group" Shape to support animation?
+  - Resizing background shape (with transparency) to fit order of worship
+  - Navbar generation
+- Text-size improvements (font support)
+- Representing Spanish special characters in JSON?
+* Bilingual animation experiments (looping animations between languages)?
+  - Finalize Spanish logo
+- Bilingual translation work flow (expanding slides, baking in subtitles)
+- Bilingual slide deck generation
+x Updated song format (required for bilingual)
+  x Circular songbook logos
+  x New template layout
+  x Vertical verse bubble logic
+  x New aspect ratio/scaling/positioning logic
+- PHSS Support
+  x Generate remaining 53 PPTX songs
+  - Write/Run validation script
+- Rework Chorus lyric handling in PFTL?
+- Need to handle Chorus, Refrain, Sanctus, Coda options in PHSS parsing
+x SHS to PHSS mapping
+  - SHS Exceptions: (34) has no PHSS equivalent
+    - Currently using hand-made PPT
+	- Consider free 30-day trial of Finale to generate this song?
+
+
+
+Headphones with Spanish translation available in the right back corner
+Auriculares con traducci�n al Espa�ol disponibles en la esquina posterior derecha
+
+Hay audifonos con traducci�n al Espa�ol disponibles atras in la esquina derecha
+
+A reminder that we have headphones with translation into Spanish.
+Un recordatorio que tenemos aud�fonos con transducci�n en Espa�ol.
+
+They are in the back corner on the right.
+Est�n atr�s en la esquina de la derecha.
+
+
+
+Pan transitions from title slide to first song slide
+  - from title slide to first song slide
+  - from last song slide to next title slide?
+
+Song Title Layout
+ - English Only
+ - Bilingual
+Song Music Layouts -- assume we can delete next-verse-animation via placeholders
+ - Wide
+   - first slide (pan transition)
+   - non-first slide (no transition)
+ - Tall
+   - first slide (pan transition)
+   - non-first slide (no transition)
+
+
+Original: 9.6 x 5.4 (16x9)
+
+1) < 1.25   phss-88  (1.074)
+2) < 1.388	phss-448 (1.2987)
+3) < 1.67   pftl-1   (1.536)
+4) > 1.67   pftl-945 (1.894)
+
+< 1.25 (max height, narrow width)
+Tall: 7.5 x 6 (5x4) 1.250
+
+  < 1.388 (max width, lower height)
+Mid: 7.5 x 5.4  (5x3.6) 1.388  
+  > 1.388 (max height, narrow width)
+
+Wide: 9 x 5.4 (5x3) 1.677
+> 1.67 (max width, lower height)
+
+
+Possible Oldies to Sing
+-----------------------
+Blessed Be the Name
+At Calvary
+Are You Coming to Jesus Tonight?
+Christ Returneth
+Close to Thee
+More Love to Thee
+Into the Heart of Jesus
+My Jesus, As Thou Wilt
+Near to the Heart of God
+No One Ever Cared for Me Like Jesus
+Open My Eyes, That I May See
+One Step at a Time
+On the Cross of Calvary
+Lead Me Gently Home, Father
+There is a Sea
+Let Every Heart Rejoice and Sing
+O God of Infinite Mercy
+I Walk with the King
+Hide Me, O My Savior
+Sweeter Than All
+Shall I Crucify My Savior?
+Savior, Lead Me
+Safe in the Arms of Jesus
+
+
+September 29 PM Bilingual Service
+#22 - All the Way My Savior Leads Me
+#622 - Tell Me the Story of Jesus
+-- Prayer
+#598 - Standing on the Promises
+-- Sermon
+#714 - Trust and Obey (all verses)
+
+
+C:\Users\williamsd\Documents\song-leading\development>python slides.py -s 468
+
+
+title True False 5
+0 1.
+O for a thousand tongues to sing
+My great Redeemer's praise,
+The glories of my God and King,
+The triumphs of His grace. TEXT_BOX (17)
+1 (2400, 1800)
+1 (2400, 1800)
+212 1429 256 31 2370
+title True False 1
+1 1 � O for A Thousand Tongues To Sing PLACEHOLDER (14)
+title False False 2
+1 Words: Charles Wesley
+Music: Carl G. Gl�ser / Arr.: Lowell Mason TEXT_BOX (17)
+1 � 2003 The Paperless Hymnal� TEXT_BOX (17)
+1 468 TEXT_BOX (17)
+
+
+1 (2400, 1800)
+1 (2400, 1800)
+214 1444 256 31 2370
+title True False 1
+1 1 � O for A Thousand Tongues To Sing PLACEHOLDER (14)
+1 � 2003 The Paperless Hymnal� TEXT_BOX (17)
+1 468 TEXT_BOX (17)
+
+
+title True False 5
+1 2.
+My gracious Master and my God,
+Assist me to proclaim,
+To spread through all the earth abroad
+The honors of Thy name. TEXT_BOX (17)
+1 (2400, 1800)
+1 (2400, 1800)
+212 1429 256 31 2370
+title True False 1
+2 2 � O for A Thousand Tongues To Sing PLACEHOLDER (14)
+title False False 2
+2 Words: Charles Wesley
+Music: Carl G. Gl�ser / Arr.: Lowell Mason TEXT_BOX (17)
+2 � 2003 The Paperless Hymnal� TEXT_BOX (17)
+2 468 TEXT_BOX (17)
+
+
+1 (2400, 1800)
+1 (2400, 1800)
+214 1444 256 31 2370
+title True False 1
+2 2 � O for A Thousand Tongues To Sing PLACEHOLDER (14)
+2 � 2003 The Paperless Hymnal� TEXT_BOX (17)
+2 468 TEXT_BOX (17)
+
+
+title True False 5
+2 3.
+Jesus, the name that charms our fears,
+That bids our sorrows cease;
+'Tis music in the sinner's ears,
+'Tis life and health and peace. TEXT_BOX (17)
+1 (2400, 1800)
+1 (2400, 1800)
+212 1429 256 31 2370
+title True False 1
+3 3 � O for A Thousand Tongues To Sing PLACEHOLDER (14)
+title False False 2
+3 Words: Charles Wesley
+Music: Carl G. Gl�ser / Arr.: Lowell Mason TEXT_BOX (17)
+3 � 2003 The Paperless Hymnal� TEXT_BOX (17)
+3 468 TEXT_BOX (17)
+
+
+1 (2400, 1800)
+1 (2400, 1800)
+214 1444 256 31 2370
+title True False 1
+3 3 � O for A Thousand Tongues To Sing PLACEHOLDER (14)
+3 � 2003 The Paperless Hymnal� TEXT_BOX (17)
+3 468 TEXT_BOX (17)
+
+
+title True False 5
+3 4.
+He breaks the power of cancelled sin,
+He sets the prisoner free;
+His blood can make the foulest clean;
+His blood avails for me. TEXT_BOX (17)
+1 (2400, 1800)
+1 (2400, 1800)
+212 1429 256 31 2370
+title True False 1
+4 4 � O for A Thousand Tongues To Sing PLACEHOLDER (14)
+title False False 2
+4 Words: Charles Wesley
+Music: Carl G. Gl�ser / Arr.: Lowell Mason TEXT_BOX (17)
+4 � 2003 The Paperless Hymnal� TEXT_BOX (17)
+4 468 TEXT_BOX (17)
+
+
+1 (2400, 1800)
+1 (2400, 1800)
+214 1444 256 31 2370
+title True False 1
+4 4 � O for A Thousand Tongues To Sing PLACEHOLDER (14)
+4 � 2003 The Paperless Hymnal� TEXT_BOX (17)
+4 468 TEXT_BOX (17)
+[0.11777777777777777, 0.012916666666666667, 0.9745833333333334, 0.6844444444444444]
+1.0233125 0.7186666666666667
+1.8985389610389611
+size image
+(31.0, 212.0, 2371.0, 1445.0)
+size image
+(31.0, 212.0, 2371.0, 1445.0)
+size image
+(31.0, 212.0, 2371.0, 1445.0)
+size image
+(31.0, 212.0, 2371.0, 1445.0)
+size image
+(31.0, 212.0, 2371.0, 1445.0)
+size image
+(31.0, 212.0, 2371.0, 1445.0)
+size image
+(31.0, 212.0, 2371.0, 1445.0)
+size image
+(31.0, 212.0, 2371.0, 1445.0)
+{'chorus': {},
+ 'codas': {},
+ 'copyright': '� 2003 The Paperless Hymnal�',
+ 'credits': 'Words: Charles Wesley \n'
+            'Music: Carl G. Gl�ser / Arr.: Lowell Mason',
+ 'lyrics': {1: ['1.\n'
+                'O for a thousand tongues to sing\n'
+                "My great Redeemer's praise,\n"
+                'The glories of my God and King,\n'
+                'The triumphs of His grace.'],
+            2: ['2.\n'
+                'My gracious Master and my God,\n'
+                'Assist me to proclaim,\n'
+                'To spread through all the earth abroad\n'
+                'The honors of Thy name.'],
+            3: ['3.\n'
+                'Jesus, the name that charms our fears,\n'
+                'That bids our sorrows cease;\n'
+                "'Tis music in the sinner's ears,\n"
+                "'Tis life and health and peace."],
+            4: ['4.\n'
+                'He breaks the power of cancelled sin,\n'
+                'He sets the prisoner free;\n'
+                'His blood can make the foulest clean;\n'
+                'His blood avails for me.']},
+ 'number': '468',
+ 'title': 'O for A Thousand Tongues To Sing',
+ 'verses': {1: [1, 2], 2: [3, 4], 3: [5, 6], 4: [7, 8]},
+ 'window': [0.32174005985463927, 0.2, 9.6, 5.056519880290722]}
+
+
+(31.0, 212.0, 2371.0, 1445.0)
+31, 212, 2340, 1233
+2457 x 1295
+(58, 31)
+
+
+Sub ExportSlides()
+  For i = 1 To ActiveWindow.Selection.SlideRange.Count
+    Dim fileName As String
+    If (i > 10) Then
+      fileName = "Slide" & CStr(i) & ".png"
+    Else
+      fileName = "Slide0" & CStr(i) & ".png"
+    End If
+    ActiveWindow.Selection.SlideRange(i).Export fileName, "PNG", 2400, 1800
+  Next
+End Sub
+
+
+
+"Himno de Invitaci�n"
+"Coro despu�s de los versos x & y"
+"Coro despu�s del verso"
+"Coro despu�s del �ltimo verso"
+"Omitir el verso z"
+"Omitir los versos x, y, z"
+
+"Invitation Song"
+"Chorus after Verses x & y"
+"Chorus after Verse"
+"Chorus after Last Verse"
+"Omit Verse z"
+"Omit Verses x, y, z"
+
+"Welcome: Please silence any mobile devices before we begin" -- similar to what you have on the first slide. // "Bienvenido: Silencie cualquier dispositivo m�vil antes de comenzar"
+
+"Welcome & Announcements" // "Bienvenido y anuncios"
+
+"Sunday Morning" // "Domingo por la ma�ana"
+
+"Sunday Evening" // "Domingo por la tarde"
+
+"Wednesday Evening" // Miercoles por la tarde
+
+"Bible Classes" // "Clases B�blicas"
+
+"Morning Worship" // "Culto de la ma�ana"
+
+"Evening Worship" // "Culto por la tarde"
+
+"Invitation" // "Invitaci�n"
+
+"Thanks for being with us tonight. Please join us again this Sunday!" // "Gracias por estar con nosotros esta noche. ��nase a nosotros nuevamente este domingo!"
+
+Any conventions about "am/pm" with time // "am/pm" - haha
+
+For some future enhancements, confirm the shortened version of these:
+
+"Welcome" // "Bienvenido"
+
+"Reading" // "Lectura"
+
+"Collection" "Colecta" OR "Ofrenda de los Miembros"
+
+
+
+To-Do September 28
+------------------
+Song Title Slides: Bilingual
+  - New Pan animation, show others all up front
+Welcome Slide: Bilingual
+Reading Slide: Bilingual (take from json file)
+Prayer Slide: Bilingual
+LS Passage Slide: Bilingual
+Co Passage Slide: Bilingual
+  - Need PPT parsing of text
+
+Bilingual Logo
+Silent Audio Clips for Animation Loops
+  - 6-second (3x)
+  - 10-second (5x)
+  - 40-second (10, 20, 30, 40) -- for welcome slide
+
+
+Service Navbar: Punt until later
+
+En Espa�ol
+&ntilde;
+
+Novmber 24th PM
+Ten thousand angels (621)
+Hallelujah praise Jehovah(200)
+Theophany (phss88).
+Inv 707
+
+
+593 - Sun Of My Soul
+2400x1800 raw
+
+[0.12166666666666667, 0.012916666666666667, 0.9745833333333334, 0.75]
+1.0233125 0.7875000000000001
+1.7325925925925925
+(31.0, 219.0, 2370.0, 1569.0)
+
+mw = 2339
+my = 1350
+dx = 58
+dy = 34
+
+2456x1418 png
+
+
+Entendiendo a los �ngeles
+Understanding Angels
+
+163 Give Me Thy Heart
+179 God Is Calling the Prodigal
+197 Have Thine Own Way
+255 I Am Resolved
+272 I Have Decided to Follow Jesus
+368 Jesus Paid It All
+369 Jesus the Loving Shepherd
+384 Lead Me to Calvary
+389 Let Him Have His Way
+421 Love Lifted Me
+557 Rock of Ages
+634 The Great Physician
+662 There Is A Fountain
+667 There Is Power in the Blood
+714 Trust and Obey
+766 Whiter Than Snow
+
+
+
+def make_esp_blank(book, number):
+			pngs.append(add_subtitle_space(f, ndx, nfiles))
+	ops = find_subtitle_space(picture, fndx, nfiles, passthru)
+		spec1 = expand_staff(oimg, pixels, width, egbdf[0:10], True)
+			def expand_staff(img, pixels, width, egbdf, topstaff):
+				tsv = pytesseract.image_to_data(lyric, output_type=pytesseract.Output.DICT, config='--dpi '+str(width/10) + ' --psm 12')
+				# find breakbottom
+				mask, mask_h = break_mask(img, width, breakline, pw)
+				# returns spec (insert, height, width, padline, mask, mask_h)
+		# creates op list from spec
+	# process each op in list
+
+
+eh-10x song process:
+--eh -b eh -s 10x		# takes eh/ppts/10x-raw.ppt and exports eh/10x/raw/*.png
+move eh/10x/raw/*.png to eh/10x/raw-input/*.png
+Edit files as needed from raw-input into cooked
+-b eh -s 10x				# parses cooked images and creates raw pngs, and main pngs and initial .json file
+Add metadata to .json file
+Make bilingual as normal
+
+eh-10x Put new lyrics on existing song:
+Process song with music as normal
+Copy raw images from input song to eh-song/raw-input
+Create raw-input/eh-song ppt file, using eh-song/raw-input images, and overlaying text
+  - embed WxHxeh-song-xxx.png in notes
+  - use export script to generate new images
+Put new images into cooked
+-b eh -s 10x				# parses cooked images and creates raw pngs, and main pngs and initial .json file
+Add metadata to .json file
+
+
+ 18 => 250
+327 => 298
+
+ 581 Sing On
+*622 Tell Me the Story of Jesus
+*274 I Have Found a Friend in Jesus
+*684 This World Is Not My Home
+*346 It Won't Be Very Long
+
+
+*440 My Jesus, I Love Thee
+N219 He's My King
+*755 When the Roll is Called Up Yonder
+ 584 Softly and Tenderly (1,4)
+
+
+
+Song History Database
+---------------------
+Trent == Trent Faris
+Cory == Corey Williams (or Corey Dutra)?
+
+
+  eh-104 Jesus, the Very Thought of Thee
+x  80 Beneath the Cross of Jesus
+  565 Something for Thee
+  131 Face to Face
+  297 I Want to be a Worker
+
+758 When this passing world is done
+743 We'll Work Till Jesus Comes
+87 Children of the Heavenly King
+650 The Sands of Time
+
+
+
+PFTL/PHSS*       Title                                     Leader                    Verses                                                                 
+618 / X                  Sweet Hour of Prayer          Tracy                     1, 2 & 3 
+124 / X                  Did You Think to Pray          Patrece                 1, 2 & 4
+70 / X                    Be Thou My Vision               Keren                    1, 2 & 5 
+X / 88                   Theophany (High above...)    Abby                      all (3)
+RJ Stevens Book   The Mountain Song             Keren                     all (2)                                          (O Lord I need a Mountain)
+
+Order of Study & Songs:
+- Welcoming remarks
+-  Song - Sweet Hour of Prayer (verses 1, 2 & 3) 
+- Prayer 
+- Intro Vera
+-  Song - Did You Think to Pray (all 3 verses) 
+- Vera's lesson
+9:00     Vera McCollins: "Your Face, O Lord, I Will Seek" David's Prayers in the Psalms
+- Song - Be Thou My Vision (verses 1, 2 & 4)
+
+- Intro Bertina
+- Song - Theophany (all 3 verses) 
+- Bertina Smelser lesson: God Sees and Hears: Nehemiah and the Early Church
+- Song - The Mountain Song (all 2 verses) 
+- Prayer
+
+- Closing remarks
+
+
+
+
+
+
+
+WorshipCAST Reporting
+=====================
+
+Thanks, David.  I've received no complaints, but Danny said he couldn't give them what they asked for.
+ 
+The username is MKercher.  Feel free to change it if you can.
+ 
+The password is now Davidwilliams1.  I assume you'll want to change that to something more secure.
+ 
+I gave them Grady's email as the "accounting contact."
+ 
+Michael 
+
+
+
+Slide Overhaul 2020
+===================
+
+Master: Title Slide English
+  Layout: Standard transition
+Master: Title Slide Bilingual 10-second flip
+  Layout: Standard transition
+  Trigger on TITLE element
+Master: Text Slide Bilingual 40-second flip
+  Trigger on DETAIL element
+Master: Song layouts
+  Layout: First slide (animation)
+  Layout: N+1 slide (no animation)
+  Dual for Wide/Tall layout
+Master: Welcome Slide
+  Layout: English with leaders (two, alternating)
+  Layout: Bilingual with leaders (eng, leaders, esp, leaders)
+  Layout: English (one, no animation)
+  Layout: Bilingual (two, alternating)
+
+side order
+eng  eng-order  13
+eng  leaders	7
+esp  leaders	7
+esp  esp-order  13
+
+
+Woo hoo!  Can set fade to black via XML without the need for another layout
+
+Q: Can trigger animations on a master be extended on a layout?
+Or: Can a single title slide (with navbar, title, supertitle, subtitle, highlight box, and credits box) all exist for all?
+A single master, with layouts with appropriate backgrounds?
+Or even insert the background from external (as with song backgrounds?)
+
+Switch verse bubbles from shapes to placeholders (so we can animate them)
+Supports fade in after delay animation on first slide of a song
+
+External background images
+-- folder to contain title background, blurred background: position of title stripe, credits area
+-- id for each background
+-- default id for all songs, preferred id in song metadata, override in worship metadata
+-- configurable supertitle
+
+
+Start Slide: Push button after slideshow begins to kick off timer & welcome slide
+Welcome Slide
+- Welcome to EH
+- Order of Worship
+- Please silence mobile devices
+- Visitor Info
+- Mask/COVID info
+- Translation Info (for bilingual services)
+
+When timer expires, click to Welcome slide (order of worship)
+
+
+
+
+Adding libraqm to Pillow (for small caps font support)
+======================================================
+
+https://www.lfd.uci.edu/~gohlke/pythonlibs/#pillow
+Put x86 DLLs into C:\Users\drw\AppData\Local\Programs\Python\Python38-32
+
+Use downloaded AvenirNextLTPro-Regular.ttf in assets, with "smcp" feature
+
+fitText
+ frame.fit_text(features=None)
+ text.py: self._best_fit_font_size(features=None)
+  text.py:       return TextFitter.best_fit_font_size(  features=None
+  layout.py: add features to TextFitter class
+  layout.py: pass self._features to calls to _rendered_size
+
+
+Adding support for inserting a timed advance (transition)
+---------------------------------------------------------
+class CT_Slide(_BaseSlideElement):
+    """`p:sld` element, root element of a slide part (XML document)."""
+
+    _tag_seq = ("p:cSld", "p:clrMapOvr", "p:transition", "p:timing", "p:extLst")
+    cSld = OneAndOnlyOne("p:cSld")
+    clrMapOvr = ZeroOrOne("p:clrMapOvr", successors=_tag_seq[2:])
+    transition = ZeroOrOne("p:transition", successors=_tag_seq[3:])	# drw
+
+
+x Adjust arrow placeholder arrowhead size
+x Create highlight placeholder
+x Create "coda" placeholder
+- Adjust colors/styles of bubbles, etc
+x Replicate on tall slides
+x Add animation to first slide
+
+x Complete Title Page
+  x Credits
+  x Song number/Verse Plan
+x Finalize color scheme for music slides
+x Reading: Add Pew Bible
+x Shift main circle up (off center)
+x Adjust navbar height (leave space at bottom to clear logo, etc)
+x Add songbook circles to navbar
+x Retool SHS and PHSS round logos
+
+
+- Medley Support
+
+- Bilingual slides (all!)
+x Text slides (for LS and Collection)
+x Credits override & placement options
+- Worship file styles
+x Worship file background/style overrides
+- Visitor Card slide?
+- Bumper slide (new EH logo)
+
+- Song Bubbles: Codas/Amens
+x "Invitation Song" location
+- Future leader location?
+- Welcome slides
+  x Background
+  - Animations (leaders / bilingual)
+  - Please Silence
+  - Countdown timer
+- Macros for countdown (and start page/button)
+- Bumper Slides (for OBS Studio)
+
+
+Welcome Page text: 26 point, 0 point above paragraph, Multiple @ 0.88
+
+
+
+May 30
+------
+Announcements
+
+Scripture Reading: John 12:1-11 (Mary Anoints Jesus at Bethany)
+
+Prayer
+
+299 - I Stand Amazed (v 1-5, then chorus)
+
+	Verse 1
+	I stand amazed in the presence
+	Of Jesus the Nazarene,
+	And wonder how He could love me,
+	A sinner, condemned, unclean.
+
+	Verse 2
+	For me it was in the garden
+	He prayed, "Not my will, but Thine,"
+	He had no tears for His own griefs,
+	But sweatdrops of blood for mine.
+
+	Verse 3
+	In pity angels beheld Him,
+	And came from the world of light
+	To comfort Him in the sorrows
+	He bore for my soul that night.
+
+	Verse 4
+	He took my sins and my sorrows,
+	He made them His very own;
+	He bore the bur-den to Calvary,
+	And suffered, and died alone.
+
+	Verse 5
+	When with the ransomed in glory
+	His face I at last shall see,
+	'Twill be my joy thru the ages
+	To sing of His love for me.
+
+	Chorus
+	How marvelous! How wonderful!
+	And my song shall ever be:
+	How marvelous! How wonderful!
+	Is my Savior's love for me!
+
+
+452 - Night, with Ebon Pinion
+
+	Verse 1
+	Night, with ebon pinion,
+	Brooded over the vale;
+	All around was silent,
+	Save the night-wind's wail,
+	When Christ, the Man of Sorrows,
+	In tears and sweat and blood,
+	Prostrate in the garden,
+	Raised His voice to God.
+
+	Verse 2
+	Smitten for offenses
+	Which were not His own,
+	He, for our transgressions,
+	Had to weep alone;
+	No friend with words to comfort,
+	Nor hand to help was there,
+	When the Meek and Lowly
+	Humbly bowed in prayer.
+
+	Verse 3
+	"Abba, Father, Father,
+	If indeed it may,
+	Let this cup of anguish
+	Pass from Me, I pray;
+	Yet, if it must be suffered,
+	By Me, Thine only Son,
+	Abba, Father, Father,
+	Let Thy will be done."
+
+Sermon: On the Lord's Supper (Phillip)
+
+[Lord's Supper Observance]
+
+742 - When I Survey the Wondrous Cross v 1,2,5
+
+	Verse 1
+	When I survey the wondrous cross
+	On which the Prince of glory died,
+	My richest gain I count but loss
+	And pour contempt on all my pride.
+
+	Verse 2
+	Forbid it, Lord, that I should boast,
+	Save in the death of Christ, my Lord;
+	All the vain things that charm me most
+	I sacrifice them to His blood.
+
+	Verse 5
+	Were the whole realm of nature mine,
+	That were a present far too small;
+	Love so amazing, so divine,
+	Demands my soul, my life, my all.
+
+Invitation (Phillip)
+
+268 - I Gave My Life for Thee (v 1,4)
+
+	Verse 1
+	I gave My life for thee,
+	My precious blood I shed,
+	That thou might'st ransomed be,
+	And quickened from the dead;
+	I gave, I gave My life for thee,
+	What hast thou given for Me?
+	I gave, I gave My life for thee,
+	What hast thou given for Me?
+
+	Verse 4
+	And I have brought to thee,
+	Down from My home above,
+	Salvation full and free,
+	My pardon and My love;
+	I bring, I bring rich gifts to thee,
+	What hast thou brought for Me?
+	I bring, I bring rich gifts to thee,
+	What hast thou brought for Me?
+
+Closing Prayer
+
+
+
+
+
+
+
+module.exports = {
+    Congregate: {
+        Host: 'https://embryhills.com/admin',
+        User: 'daniel.grantham',
+        Pass: '*qI1sXTAeu@%^AH27O7nNR!DxK#EWWN$'
+    },
+    API: {
+        Port: 3000,
+        Tokens: {
+            '1126bc1a-bd4a-4591-985a-6bbbf605c39f': 'Grantham, Daniel',
+            '36d46d79-f0f3-45f2-8737-e80d576c1924': 'Williams, David'
+        }
+    }
+
+
+https://serverpilot.io/docs/how-to-run-apps-in-any-language/
+- Add api.embryhills.church to nodejs app in ServerPilot
+
+./curl.exe --header 'Authorization: 36d46d79-f0f3-45f2-8737-e80d576c1924' --url https://www.embryhills.church
+./curl.exe --header 'Authorization: 36d46d79-f0f3-45f2-8737-e80d576c1924' --url https://api.embryhills.church
+./curl.exe --header 'Authorization: 36d46d79-f0f3-45f2-8737-e80d576c1924' --url https://api.embryhills.church/api/v1/worship_management
+
+./curl.exe --header 'Authorization: 1126bc1a-bd4a-4591-985a-6bbbf605c39f' --url https://api.embryhills.church/api/v1/worship_management
+
+
+
+./curl.exe --request POST --header 'Authorization: 36d46d79-f0f3-45f2-8737-e80d576c1924' --url https://api.embryhills.church/v1/update_data
+./curl.exe --request POST --header 'Authorization: 36d46d79-f0f3-45f2-8737-e80d576c1924' --url https://api.embryhills.church/v1/worship_management/Assignments/Sun%20-%20EarlyAM/2021-09-26
+./curl.exe --request POST --header 'Authorization: 36d46d79-f0f3-45f2-8737-e80d576c1924' --url https://api.embryhills.church/v1/worship_management/Assignments/Sun%20-%20AM/2021-09-26
+./curl.exe --request POST --header 'Authorization: 36d46d79-f0f3-45f2-8737-e80d576c1924' --url https://api.embryhills.church/v1/worship_management/Assignments/Sun%20-%20PM/2021-09-26
+
+
+581 - Sing On 
+442 - My Faith Looks Up to Thee
+684 - This World Is Not My Home
+653 - The Way of the Cross
+
+
+958 - Meekness and Majesty
+621 - Ten Thousand Angels (verses only)
+
+August 29 Service
+-----------------
+842 A Common Love
+ 18 All Praise To Our Redeeming Lord
+619 Take Time to be Holy
+275 I Love to Tell the Story
+628 The Day Thou Gavest 
+754 When Jesus Comes -- fix black filler issue!
+
+234 Higher Ground
+
+
+
+pftl 951 Majesty
+pftl 484 O Sacred Head
+phss 313 I Could Not Do Without You
+
+
+We're going to sing this song in Spanish ...
+We sang it in Spanish at the services on Friday and Saturday and it was very edifying
+if you are able, or if you feel adventurous, please try to sing in Spanish ... 
+If you don't feel comfortable, feel free to sing in English
+
+Followed by a primer on "how to" sing in Spanish
+
+But I'm going to be leading in Spanish
+
+
+Service Spec JSON Tool
+======================
+
+template
+  - lists order of worship
+  - leader position ("Song Leader")
+  - Song References ("song-1", "song-2")
+
+schedule
+  - contains list of services on a given date (sunday, wednesday)
+  - time, language, template for each service
+  - Includes service type ("Sun AM") for Congregate lookup
+
+style
+  - contains background image names for different elements of worship
+  - other future adjustments?
+
+
+[service-id]-songs
+  - for each reference ("song-1"), provides song details
+
+[service-id]-leaders
+  - fetched from api.embryhills.church OR manual
+  - for each leader position, lists leader name
+  - include preacher
+
+[service-id]-readings
+  - list scripture readings, LS readings, Collection readings?
+  - sermon topics
+
+[service-id]-spec
+  - date, time
+  - language
+  - select service-template
+  - service type ("Sun AM") for Congregate lookup
+
+[service-id]
+  - final output of JSON compiler
+  - input to slides20.py to generate slide deck
+
+
+worship/templates/sunday-am-covid.json
+worship/templates/sunday-pm.json
+
+worship/schedules/sunday-covid.json
+
+worship/styles/default.json
+
+worship/specs/2021/08/29/0815/20210829-0815-spec.json
+worship/specs/2021/08/29/0815/20210829-0815-songs.json
+worship/specs/2021/08/29/0815/20210829-0815-leaders.json
+worship/specs/2021/08/29/0815/20210829-0815-readings.json
+
+worship/2021/20210829-0815.json
+worship/2021/20210829-0815.pptx
+
+
+worship.py -d date -s schedule
+ -- create initial worship files
+
+worship.py -d date -t time -t template [--lang language] [-type "Sun AM"]
+ -- create initial worship files
+
+worship.py -d date -t time -l 
+ -- fetch worship leaders
+
+worship.py -d date -t time -j [--style style]
+ -- generate worship JSON file
+
+
+
+Set the last modified date/time to Today:
+PS C:> (dir sample_file.txt).LastWriteTime = Get-Date
+
+PS C:> (dir sample_file.txt).LastWriteTime = New-object DateTime 2022,07,01
+
+
+new pftl  64 - Before Jehovah's Awful Throne
+fix pftl 359 - Jesus, Keep Me Near the Cross
+fix pftl 215 - Hear me when I Call
+fix   eh 103 - Behold our God
+fix pftl  67 - Bring Christ your Broken Life
+
+new pftl 647 - The Love of God (Beazley) 
+new phss 450 - The Way That he Loves
+new pftl 435 - More Love to Thee, O Christ
+fix pftl 440 - My Jesus, I Love Thee
+
+
+new pftl 433 - My Jesus, As Thou Wilt
+new pftl  33 - Am I a Soldier of the Cross?
+new pftl 554 - Rise Up, O Men of God
+
+
+
+Sep 04 AM
+new phss   3 - Oh, How Glorious, Full of Wonder
+aok pftl 622 - Tell Me the Story of Jesus
+aok pftl 619 - Take Time to be Holy
+fix pftl 434 - More Holiness Give Me
+fix pftl 207 - Hark, the Gentle Voice
+
+
+Sep 04 PM
+??? pftl 509 - On Jordan's Stormy Banks
+new pftl 348 - Jesus is All the World to Me
+??? pftl 599 - Stepping in the Light
+new pftl  65 - Behold a Stranger at the Door
+
+Sep 07 Wed
+??? pftl 157 � For the Beauty of the Earth
+new pftl 141 � Father of Mercies
+new pftl 725 � We Plow the Fields
+??? pftl 758 � When This Passing World is Done
+
+
+
+Sunday AM Sep 11
+aok pftl 388 Let Every Heart Rejoice and Sing
+new pftl 310 In Gethsemane Alone
+aok pftl 500 O Thou Fount of Every Blessing
+fix PHSS 306 In Christ Alone
+fix pftl 529 Out of My Bondage
+
+Sunday PM Sep 11
+new pftl 947 Jesus let us come to know You
+fix pftl 542 Purer in Heart, O God
+new pftl 332 In the desert of sorrow and Sin
+fix pftl 271 I heard the voice of Jesus Say
+
+
+pftl 782 Worthy Art Thou!
+pftl 250 How Sweet, How Heavenly
+pftl 492 O Master, Let Me Walk With Thee
+
+
+
+Translation Queue
+-----------------
+x  30 Alleluia! Sing to Jesus!
+   57 Awake, and Sing the Song
+x 122 Dear Lord and Father of Mankind
+  165 Glorious Things of Thee Are Spoken
+x 168 Go to Dark Gethsemane
+  177 God Himself is With Us
+x 216 He Leadeth Me
+x 221 He Lifted Me
+x 298 I'm Not Ashamed to Own My Lord
+x 300 I Will Sing of My Redeemer
+x 301 I Will Sing the Wondrous Story
+x 426 More Like Jesus
+  485 O Lord, Our Lord
+  488 O Praise the Lord
+x 547 Rejoice, the Lord Is King
+
+(Invitation Songs)
+x  23 All Things Are Ready
+   31 Almost Persuaded
+   61 Are You Coming to Jesus Tonight?
+x  95 Burdens are Lifted at Calvary
+x 103 Come to Jesus
+  107 Come Unto Me
+  110 Come, Ye Disconsolate
+  212 Have You Counted the Cost?
+x 337 Is Thy Heart Right With God?
+x 346 It Won't Be Very Long
+x 420 Love For All
+x 517 O Why Not Tonight?
+x 744 What Will Your Answer Be?
+x 765 Where Livest Thou?
+x 767 Who at the Door is Standing?
+
+
+
+
+
+
+July 2022 Singing
+
+      70	Be Thou My Vision	Alex Cruttenden	
+     190	Great Is Thy Faithfulness	Ryan Poe	
+     523	Our God, He is Alive	Alex Cruttenden	
+			
+PHSS   2	As The Deer	Jason Rich	Arrangement better in PHSS; add v.2 from PftL
+PHSS  49	Thy Word	Jason Rich	Do not include PftL v.2
+PHSS 297	What The Lord Has Done in Me	Ryan Poe	
+     216	He Leadeth Me	Carl Morgan	
+			
+     404	Looking to Thee	David Williams	
+      41	Be Still My Soul	Mason Broadwell	
+PHSS 313	I Could Not Do Without You	Mason Broadwell	
+     583	Sing to Me of Heaven	Grady Walker	
+			
+PHSS 277	Speak, O Lord	Jake Gibson	
+     483	O Love That Will Not Let Me Go	David Williams	
+     662	There is a Fountain	Carl Morgan	
+PHSS 650	Jesus Draw Me Ever Nearer	Jake Gibson	
+			
+     197	Have Thine Own Way	Grady Walker	Invitation Song
+
+
+Need Translation
+     216	He Leadeth Me	Carl Morgan	
+      41	Be Still My Soul	Mason Broadwell	
+
+
+
+ 41
+ 70
+197
+216
+404
+483
+523
+583
+662
+
+  2
+ 49
+277
+297
+650
+
+
+
+
+
+pftl-009
+pftl-041
+pftl-050
+pftl-070
+pftl-071
+pftl-076
+pftl-168
+pftl-192
+pftl-197
+pftl-216
+pftl-226
+pftl-238
+pftl-250
+pftl-253
+pftl-362
+pftl-365
+pftl-404
+pftl-454
+pftl-462
+pftl-470
+pftl-483
+pftl-492
+pftl-495
+pftl-523
+pftl-572
+pftl-583
+pftl-585
+pftl-618
+pftl-640
+pftl-655
+pftl-662
+pftl-714
+pftl-756
+pftl-758
+pftl-766
+pftl-868
+pftl-937
+pftl-958
+
+phss-002
+phss-049
+phss-071
+phss-088
+phss-105
+phss-157
+phss-277
+phss-297
+phss-448
+phss-524
+phss-549
+phss-650
+
+
+221 He Lifted Me
+621 Ten Thousand Angels (by request)
+328 In the Hour of Trial
+426 More Like Jesus
+717 Victory In Jesus
+
+
+
+Updates for October 2024 Singing
+
+x   7 Abide with Me
+x  41 Be Still My Soul
+x  43 All Glory Laud and Honor 
+x 154 Give Me the Bible
+x 163 Give Me Thy Heart 
+x 345 It Is Well with My Soul 
+x 397 Let the Lower Lights Be Burning
+x 483 O Love that Wilt Not Let Me Go
+x 842 A Common Love
+
+x EH 101 Just As I Am/I Come Broken
+x EH 103 Behold Our God 
+x EH 108 Healing in Its Wings
+x EH 111 A Shield About Me
+x EH 500 In the Darkness of Death's Waters
+
+x PHSS 100 Our Father Forever
+x PHSS 194 I Am the Way
+x PHSS 304 Before the Throne of God Above
+x PHSS 675 Walk Beside Me 
+
+
+
+
+
+Lesson%201-2%20-%20Intro%20Gen%201-11%20-%20Old%20Testament%20Survey.docx
+Lesson%2010%20-%20Judah%20Alone%20-%20Old%20Testament%20Survey.docx
+Lesson%2011%20-%20Captivity%20-%20Old%20Testament%20Survey.docx
+Lesson%2012%20-%20Remnant%20Returns%20-%20Old%20Testament%20Survey.docx
+Lesson%203%20-%20The%20Patriarchs%20-%20Old%20Testament%20Survey.docx
+Lesson%204%20-%20Exodus;%20Law%20Giving%20-%20Old%20Testament%20Survey.docx
+Lesson%205%20-%20Wanderings;%20Conquest%20-%20Old%20Testament%20Survey.docx
+Lesson%206%20-%20Judges%20-%20Old%20Testament%20Survey.docx
+Lesson%207%20-%20United%20Kingdom%20-%20Old%20Testament%20Survey.docx
+Lesson%208%20-%20Poetry%20and%20Wisdom%20-%20Old%20Testament%20Survey.docx
+Lesson%209%20-%20Divided%20Kingdom%20-%20Old%20Testament%20Survey.docx
+
+
+Here is Love
+https://1drv.ms/p/s!ArisEnrN8GFigec7c82GHzmy_KOwgA?e=IU3cW9
+
+Here is love, vast as the ocean,
+Lovingkindness as the flood,
+When the Prince of life, our ransom,
+Shed for us His precious blood.
+Who His love will not remember?
+Who can cease to sing His praise?
+He can never be forgotten,
+Throughout heav�n�s eternal days.
+
+On the mount of crucifixion,
+Fountains opened deep and wide;
+Thru the floodgates of God�s mercy
+Flowed a vast and gracious tide.
+Grace and love, like mighty rivers,
+Poured incessant from above;
+Heaven�s peace and perfect justice
+Kissed a guilty world in love.
+
+You alone shall be my glory;
+Nothing in the world I see.
+You have cleansed and sanctified me;
+You Yourself have set me free.
+Let me, all Your love accepting,
+Love You ever all my days;
+Let me seek Your kingdom only
+And my life be to Your praise.
+
+
+
+
+        Host: 'https://embryhills.com/admin',
+        MemberHost: 'https://embryhills.com/members',
+        User: 'daniel.grantham',
+        Pass: '*qI1sXTAeu@%^AH27O7nNR!DxK#EWWN$'
+
+
+
+Song History Database
+---------------------
+py -m pip install python-dateutil
+
+songs 
+- id
+- book
+- song number
+- verse string? ("12c") can be null
+- song position
+- song usage id NULL
+- service id
+- leader id
+
+usages
+- id
+- description (Opening, before prayer, before LS, after LS, before Lesson, Invitation, Closing?)
+
+leaders
+- id
+- fname
+- lname
+- cid		// congregate member id
+
+services
+- id
+- datetime
+- service_type_id
+
+service_types
+- id
+- description (Sunday AM, Sunday PM, etc)
+
+
+
+Queries:
+Given a book/song = how long since it was last led?
+Given a book/song = list of dates/services led and by whom ... histogram?
+Given a book/song/leader = list of dates/services leader led that song
+Given a leader = list of songs led, by popularity? Variation Score?
+Given a service type = list of popular songs?
+
+Given a date/service = list of songs + leaders
+Given a date range = list of songs (=> index into database for copyright info)
+
+Given a service type = list of songs
+
+
+select book, songnum, count(song_id) from songs group by book, songnum order by count(song_id);
+
+
+ESP Files
+dir 'C:\Users\drw\OneDrive\ESP Files\'
+
+
+
+Intown
+Mountain View
+Roswell
+Powers Ferry
+Alpharetta
+Gainesville
+Fayetteville
+Eastside (Newnan)
+West Douglas (Beulah)
+Lawrenceville
+Rockdale
+Covington
+Kellogg Creek
+West Cartersville
+
+
+
+May Batch
+x 509
+x 527
+x 541
+x 542
+x 544
+x 547
+x 551
+x 568
+x 581
+x 584
+x 603
+x 612
+x 621
+x 624
+x 653
+x 707
+x 711
+x 716
+x 726
+x 730
+x 738
+x 746
+
+August Batch
+x 766
+x 826
+x 855
+x 874
+x 884 - not listed, but found
+x 929
+x 947
+x 958
+x 961
+x 989
+
+September Batch
+PFTL
+x 951
+x 970 
+
+PHSS
+x 205
+x 223
+x 229
+x 341
+x 371
+x 372
+x 415
+x 518
+x 531
+x 579
+x 699
+x 780  
+
+EH
+x 56
+x 77
+x 101
+x 102
+x 104
+x 105
+x 106
+x 107
+x 112
+x 408 
+
+May 2026 New Songs
+==================
+x 200 Living Hope             21173
+x 201 Never Once
+x 202 Goodness of God         22180
+x 203 Only a Holy God
+s 204 Hymn of Heaven
+s 205 The Great I Am          
+s 206 Beautiful Lamb of God   20194
+s 207 Highly Exalted            20943
+s 208 Christ Our Glory          22129
+s 209 Be Unto Your Name         1092, 20193
+
+
+
+Root Email Account
+==================
+ehillschurchofchrist@gmail.com
+ApostleP@ul
+
+Cloudflare Account
+ehillschurchofchrist@gmail.com
+Ap0stleP@ul
+
+
+
+Common Stretching Problems
+==========================
+Left bar gets included in "blobs" and extends mask height to the bottom: adjust with pwdelta

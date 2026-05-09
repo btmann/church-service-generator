@@ -1,0 +1,25 @@
+{
+	"isodate": "2021-09-26T08:30:00",
+	"time": "08:30:00",
+	"service": "Sunday 8:30AM",
+	"servicio": "Domingo por la mañana",
+	"language": "bil",
+	"leader": "Larry Brown",
+	"items": [
+		{ "type": "welcome", "desc": "Announcements", "esp": "Anuncios", "leader": "James Newman" },
+		{ "type": "reading", "leader": "Blaine Mellor, Jr.", "lang": [
+		   { "passage": "John 8:1-11", "pew": "720", "desc": "The Woman Caught in Adultery" }, 
+		   { "passage": "Juan 8:1-11", "desc": "La mujer sorprendida en adulterio" }
+		]},
+		{ "type": "prayer", "desc": "Prayer", "leader": "Stuart Shannon" },
+		{ "type": "song", "book": "shs", "song": "32", "verses": [1,3], "leader": "Larry Brown" },
+		{ "type": "song", "book": "pftl", "song": "168", "verses": [1,2,4]  },
+		{ "type": "ls-am", "reading": 75, "leader": "Marty Broadwell" },
+		{ "type": "collection", "reading": 1, "leader": "Marty Broadwell" },
+		{ "type": "song-title", "book": "pftl", "song": "380", "bubble": "Invitation Song", "verses": [1,2,5] },
+		{ "type": "song", "book": "pftl", "song": "519", "background": "mountains", "verses": [1,2,4] },
+		{ "type": "sermon", "title": "Immovable Against Temptations", "título": "Inamovible contra las tentaciones", "leader": "Bill Sanchez"  },
+		{ "type": "song-music", "book": "pftl", "song": "380", "fade": "out", "verses": [1,2,5] },
+		{ "type": "prayer", "background": "mountain-ocean", "leader": "Maurice Norman" }
+	]
+}

@@ -1,0 +1,23 @@
+{
+	"date": "September 29, 2019",
+	"language": "bil",
+	"service": "Sunday Evening",
+	"items": [
+		{ "type": "welcome" },
+		{ "type": "reading", "lang": [
+		   { "passage": "Proverbs 1:8-19", "pew": "428", "desc": "The Enticement of Sinners" },
+		   { "passage": "Proverbios 1:8-19", "pew": "428", "desc": "La seducción de los pecadores" }
+		]},
+		{ "type": "reading", "passage": "Proverbs 1:8-19", "pew": "428", "desc": "The Enticement of Sinners" },
+		{ "type": "song", "book": "pftl", "song": "22" },
+		{ "type": "song", "book": "pftl", "song": "622" },
+		{ "type": "prayer" },
+		{ "type": "song-title", "book": "pftl", "song": "714", "bubble": "Invitation Song" },
+		{ "type": "song", "book": "pftl", "song": "598" },
+		{ "type": "sermon" },
+		{ "type": "song-music", "book": "pftl", "song": "714" },
+		{ "type": "announcements" },
+		{ "type": "ls-pm" },
+		{ "type": "prayer", "desc": "Closing Prayer" }
+	]
+}

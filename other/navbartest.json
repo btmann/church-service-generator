@@ -1,0 +1,25 @@
+{
+	"isodate": "2019-12-01T08:30:00",
+	"service": "Sunday Morning",
+	"servicio": "Domingo por la mañana",
+	"language": "eng",
+	"leader": "David Williams",
+	"items": [
+		{ "type": "welcome", "desc": "Welcome & Announcements", "esp": "Bienvenido y anuncios", "leader": "Stuart Shannon" },
+		{ "type": "reading", "leader": "Nate Creekmore", "lang": [
+		   { "passage": "Isaiah 40:1-11", "pew": "485", "desc": "Comfort for God’s People" },
+		   { "passage": "Isaías 40:1-11", "desc": "Consuelo para el pueblo de Dios" }
+		]},
+		{ "type": "prayer", "desc": "Prayer", "leader": "Marty Broadwell" },
+		{ "type": "song", "book": "pftl", "song": "115", "verses": [1,2,4], "background": "song-beige"  },
+		{ "type": "song", "book": "pftl", "song": "950"},
+		{ "type": "ls-am", "reading": 26, "leader": "Barry Caudill" },
+		{ "type": "song", "book": "shs", "song": "32" },
+		{ "type": "collection", "reading": 2 },
+		{ "type": "song-title", "book": "pftl", "song": "739", "bubble": "Invitation Song" },
+		{ "type": "song", "book": "phss", "song": "105" },
+		{ "type": "sermon", "title": "The Goal of our Instruction is Love", "título": "Pero el propósito de nuestra instrucción es el amor" },
+		{ "type": "song-music", "book": "pftl", "song": "739", "fade": "out" },
+		{ "type": "prayer" }
+	]
+}

@@ -1,0 +1,92 @@
+1.
+Immortal, invisible, God only wise,
+In light inaccessible hid from our eyes.
+Most bless-ed, most glorious, the Ancient of Days,
+Al-might-y, victorious, Thy great name we praise.
+1 (2400, 1800)
+1 (2400, 1800)
+212 1409 256 31 2370
+1 - Immortal, Invisible, God Only Wise
+Words by: Walter Chalmers Smith
+Music by: Welsh melody / Roberts’s Caniadau y Cyssegr
+© 2001 The Paperless Hymnal™
+945
+RGBA (1200, 900)
+1 (1200, 900)
+106 724 129 16 1186
+1 - Immortal, Invisible, God Only Wise
+© 2001 The Paperless Hymnal™
+945
+2.
+Unresting, unhasting, and silent as light,
+Nor wanting, nor wasting, Thou rulest in might;
+Thy justice, like mountains, high soaring above
+Thy clouds, which are fountains of good-ness and love.
+1 (2400, 1800)
+1 (2400, 1800)
+212 1409 256 31 2370
+2 - Immortal, Invisible, God Only Wise
+Words by: Walter Chalmers Smith
+Music by: Welsh melody / Roberts’s Caniadau y Cyssegr
+© 2001 The Paperless Hymnal™
+945
+RGBA (1200, 900)
+1 (1200, 900)
+106 724 129 16 1186
+2 - Immortal, Invisible, God Only Wise
+© 2001 The Paperless Hymnal™
+945
+3.
+To all, life Thou givest to both great and small,
+In all life Thou livest the true life of all.
+We blossom and flourish as leaves on the tree,
+And wither and perish but naught changeth Thee.
+1 (2400, 1800)
+1 (2400, 1800)
+212 1409 256 31 2370
+3 - Immortal, Invisible, God Only Wise
+Words by: Walter Chalmers Smith / Alt.: W. Garrett Horder
+Music by: Welsh melody / Roberts’s Caniadau y Cyssegr
+© 2001 The Paperless Hymnal™
+945
+RGBA (1200, 900)
+1 (1200, 900)
+106 724 129 16 1186
+3 - Immortal, Invisible, God Only Wise
+© 2001 The Paperless Hymnal™
+945
+4.
+Great Father of glory, pure Father of light,
+Thine angels adore Thee, all veiling their sight;
+All praise we would render O help us to see
+'Tis only the splendor of light hid-eth Thee!
+1 (2400, 1800)
+1 (2400, 1800)
+212 1409 256 31 2370
+4 - Immortal, Invisible, God Only Wise
+Words by: Walter Chalmers Smith
+Music by: Welsh melody / Roberts’s Caniadau y Cyssegr
+© 2001 The Paperless Hymnal™
+945
+RGBA (1200, 900)
+1 (1200, 900)
+106 724 129 16 1186
+4 - Immortal, Invisible, God Only Wise
+© 2001 The Paperless Hymnal™
+945
+{'width': 2400, 'height': 1800, 'top': 0.11777777777777777, 'bot': 0.8044444444444444, 'staff': 0.14222222222222222, 'left': 0.012916666666666667, 'right': 0.9875}
+crop 0 154.99999999999997 2400 1655.0
+{'width': 1200, 'height': 900, 'top': 0.11777777777777777, 'bot': 0.8044444444444444, 'staff': 0.14333333333333334, 'left': 0.013333333333333334, 'right': 0.9883333333333333}
+crop 0 77.49999999999999 1200 827.5
+{'width': 2400, 'height': 1800, 'top': 0.11777777777777777, 'bot': 0.8044444444444444, 'staff': 0.14222222222222222, 'left': 0.012916666666666667, 'right': 0.9875}
+crop 0 154.99999999999997 2400 1655.0
+{'width': 1200, 'height': 900, 'top': 0.11777777777777777, 'bot': 0.8044444444444444, 'staff': 0.14333333333333334, 'left': 0.013333333333333334, 'right': 0.9883333333333333}
+crop 0 77.49999999999999 1200 827.5
+{'width': 2400, 'height': 1800, 'top': 0.11777777777777777, 'bot': 0.8044444444444444, 'staff': 0.14222222222222222, 'left': 0.012916666666666667, 'right': 0.9875}
+crop 0 154.99999999999997 2400 1655.0
+{'width': 1200, 'height': 900, 'top': 0.11777777777777777, 'bot': 0.8044444444444444, 'staff': 0.14333333333333334, 'left': 0.013333333333333334, 'right': 0.9883333333333333}
+crop 0 77.49999999999999 1200 827.5
+{'width': 2400, 'height': 1800, 'top': 0.11777777777777777, 'bot': 0.8044444444444444, 'staff': 0.14222222222222222, 'left': 0.012916666666666667, 'right': 0.9875}
+crop 0 154.99999999999997 2400 1655.0
+{'width': 1200, 'height': 900, 'top': 0.11777777777777777, 'bot': 0.8044444444444444, 'staff': 0.14333333333333334, 'left': 0.013333333333333334, 'right': 0.9883333333333333}
+crop 0 77.49999999999999 1200 827.5

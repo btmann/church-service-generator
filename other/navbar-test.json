@@ -1,0 +1,9 @@
+{
+	"date": "August 25, 2019",
+	"service": "Sunday Evening",
+	"items": [
+		{ "type": "welcome" },
+		{ "type": "reading", "passage": "Deuteronomy 7:1-11", "pew": "128", "desc": "A Chosen People" },
+		{ "type": "prayer", "desc": "Prayer of Praise" }
+	]
+}
