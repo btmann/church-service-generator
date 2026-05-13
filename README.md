@@ -8,10 +8,37 @@ Tools for preparing church service slides, including:
 
 The primary entry scripts are at the repository root:
 
-- `worship.py` for service spec JSON workflows.
-- `slides.py` for song processing and PowerPoint generation.
 
 ## What This Project Does
+## New: Streamlit Web UI (Recommended for Non-Technical Users)
+
+For non-technical users, a simple web interface is available:
+
+- **`ui.py`** - Browser-based interface (Streamlit)
+- **`launch-ui.py`** - Single-click launcher for OneDrive distribution
+- **See `UI-README.md`** for setup and packaging instructions
+
+The UI allows users to:
+1. Select a service date/time and template
+2. Enter songs (book + number)
+3. Assign leader names
+4. Click "Generate" to create PowerPoint decks
+5. Download or share the generated files
+
+**Quick Start:**
+```bash
+pip install -r requirements-ui.txt
+python -m streamlit run ui.py
+```
+
+For OneDrive distribution, see packaging instructions in `UI-README.md`.
+
+---
+
+## Advanced: Command-Line Scripts
+
+For technical users and automation:
+
 
 Main workflow:
 
