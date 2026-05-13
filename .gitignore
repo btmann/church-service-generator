@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+
+# PyInstaller artifacts
+build/
+dist/
+*.spec
+
+# macOS metadata
+.DS_Store

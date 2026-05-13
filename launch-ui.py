@@ -16,6 +16,11 @@ os.chdir(script_dir)
 subprocess.run([
     sys.executable, "-m", "streamlit", "run",
     "ui.py",
+    "--server.address=127.0.0.1",
+    "--server.port=8501",
+    "--server.headless=true",
+    "--server.fileWatcherType=none",
     "--logger.level=info",
-    "--client.showErrorDetails=true"
+    "--client.showErrorDetails=true",
+    "--browser.gatherUsageStats=false"
 ])
