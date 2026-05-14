@@ -8,8 +8,10 @@ Tools for preparing church service slides, including:
 
 The primary entry scripts are at the repository root:
 
+- `worship.py` — service spec JSON workflows.
+- `slides.py` — song processing and PowerPoint generation.
+- `ui.py` + `launch-ui.py` — Streamlit web interface for non-technical users.
 
-## What This Project Does
 ## New: Streamlit Web UI (Recommended for Non-Technical Users)
 
 For non-technical users, a simple web interface is available:
@@ -27,8 +29,8 @@ The UI allows users to:
 
 **Quick Start:**
 ```bash
-pip install -r requirements-ui.txt
-python -m streamlit run ui.py
+pip3 install -r requirements-ui.txt
+python3 -m streamlit run ui.py
 ```
 
 For OneDrive distribution, see packaging instructions in `UI-README.md`.
@@ -38,7 +40,6 @@ For OneDrive distribution, see packaging instructions in `UI-README.md`.
 ## Advanced: Command-Line Scripts
 
 For technical users and automation:
-
 
 Main workflow:
 
@@ -208,14 +209,25 @@ python slides.py --hist -b pftl -s 123
 
 Use scripts in `packaging/`.
 
-macOS:
+**UI app (Streamlit — for end users):**
 
+macOS:
+```bash
+./packaging/build-ui-macos.sh
+```
+Windows (PowerShell):
+```powershell
+.\packaging\build-ui-windows.ps1
+```
+Output: `dist/church-service-ui/` — copy entire folder to OneDrive for distribution.
+
+**CLI tool (slides.py — for technical users):**
+
+macOS:
 ```bash
 ./packaging/build-macos.sh --entry slides.py --name church-service-generator
 ```
-
-Windows (PowerShell):
-
+Windows:
 ```powershell
 .\packaging\build-windows.ps1 --entry slides.py --name church-service-generator
 ```
@@ -241,6 +253,7 @@ Notes:
 
 Project notes and legacy setup details are in:
 
-- `drw-songtool-notes.txt`
+- `old_root_files/drw-songtool-notes.txt`
 
 These notes include environment history, song processing conventions, and bilingual workflow details that informed this README.
+Other legacy experiment files (test PPTXs, scratch scripts, old JSON drafts) have been archived to `old_root_files/`.
