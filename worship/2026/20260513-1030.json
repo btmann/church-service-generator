@@ -1,0 +1,97 @@
+{
+    "isodate": "2026-05-13T10:30:00",
+    "template": "fifth-sunday-am-1",
+    "language": "eng",
+    "type": "Sun - AM",
+    "items": [
+        {
+            "type": "welcome",
+            "desc": "Announcements",
+            "esp": "Bienvenida",
+            "position": "Announcements"
+        },
+        {
+            "type": "collection",
+            "id": "coll-1",
+            "style": "zelle"
+        },
+        {
+            "type": "reading",
+            "id": "reading-1",
+            "position": "Scripture Reading",
+            "lang": [
+                {
+                    "passage": "",
+                    "pew": ""
+                },
+                {
+                    "passage": ""
+                }
+            ]
+        },
+        {
+            "type": "song",
+            "id": "song-1",
+            "position": "Song Leader",
+            "book": "pftl",
+            "song": "738",
+            "coda": 0
+        },
+        {
+            "type": "song",
+            "id": "song-2",
+            "book": "pftl",
+            "song": "738",
+            "coda": 0
+        },
+        {
+            "type": "prayer",
+            "id": "prayer-1",
+            "position": "First Prayer"
+        },
+        {
+            "type": "song",
+            "id": "song-3",
+            "book": "pftl",
+            "song": "738",
+            "coda": 0
+        },
+        {
+            "type": "sermon",
+            "id": "sermon-1",
+            "position": "Preach",
+            "title": "",
+            "título": ""
+        },
+        {
+            "type": "ls-am",
+            "id": "ls-1",
+            "reading": ""
+        },
+        {
+            "type": "song",
+            "id": "song-4",
+            "book": "pftl",
+            "song": "738",
+            "coda": 0
+        },
+        {
+            "type": "invitation",
+            "id": "invitation-1",
+            "position": "Preach"
+        },
+        {
+            "type": "song",
+            "id": "song-5",
+            "fade": "out",
+            "book": "pftl",
+            "song": "738",
+            "coda": 0
+        },
+        {
+            "type": "prayer",
+            "id": "prayer-2",
+            "position": "Last Prayer"
+        }
+    ]
+}

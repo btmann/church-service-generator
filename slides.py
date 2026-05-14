@@ -53,6 +53,15 @@ assetRoot = "assets/"
 
 from shs2phss import shs2phss
 
+def load_json_safe(filepath):
+	"""Load JSON file with UTF-8 and Latin-1 encoding support"""
+	try:
+		with open(filepath, 'r', encoding='utf-8') as f:
+			return json.load(f)
+	except UnicodeDecodeError:
+		with open(filepath, 'r', encoding='latin-1') as f:
+			return json.load(f)
+
 def get_song_paths(book, number):
 	# map shs songs to phss files
 	if book == 'shs':
@@ -767,7 +776,7 @@ def get_navigation(meta, verses, chorus, coda):
 # at least one of verses/chorus must be set
 
 vex_eng = dict(omit="Omit Verse ", omits="Omit Verses ", chorusafterone="Chorus After Verse ", chorusaftermany="Chorus After Verses ", chorusafterlast="Chorus After Last Verse", nochorus="Omit the Chorus")
-vex_esp = dict(omit="Omitir el verso ", omits="Omitir los versos ", chorusafterone="Coro después del verso ", chorusaftermany="Coro después de los versos ", chorusafterlast="Coro después del último verso", nochorus="Omitir el coro")
+vex_esp = dict(omit="Omitir el verso ", omits="Omitir los versos ", chorusafterone="Coro despuï¿½s del verso ", chorusaftermany="Coro despuï¿½s de los versos ", chorusafterlast="Coro despuï¿½s del ï¿½ltimo verso", nochorus="Omitir el coro")
 
 def get_verse_exceptions(meta, verses, chorus, repeat, vex):
 	if repeat:
@@ -1205,7 +1214,7 @@ def add_song_title_slide(outp, language, item, navitems, ndi, verses=None, choru
 			esp = dict()
 			esp[LAYOUT_TITLE_TITLE] = dict(text=str(displaySong), fonts=eng_fonts, max_size=60, step_size=6, bold=True, size=[0.675, 4.6, 2.5, 1])
 			esp[LAYOUT_TITLE_DETAIL] = dict(text=espm['title'].upper(), max_size=56, step_size=6, bold=True, size=[1.62, 3.75, 4.2, 1.8])
-			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CCANTANDO...AL SEÑOR\u201D\nCOLOSENSES 3:16", max_size=22, step_size=2, size=[4.280, 4.1, 3.5, 0.9])
+			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CCANTANDO...AL SEï¿½OR\u201D\nCOLOSENSES 3:16", max_size=22, step_size=2, size=[4.280, 4.1, 3.5, 0.9])
 			esp[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(espm['credits'].splitlines()), max_size=13, step_size=1)
 			if bubble:
 				esp[LAYOUT_TITLE_CALLOUT] = dict(text=espm['bubble'].upper(), max_size=18, step_size=2, size=[0.25, 7.4, 3.0, 0.44], align=PP_ALIGN.LEFT)
@@ -1513,7 +1522,7 @@ def add_verse_to_deck_tall(slide, displayBook, displaySong, basename, ndx, meta,
 			left = 0.1
 			width = 1.375
 			set_placeholder_size(v, top, left, width, v.height.inches)
-			v.text = "Traducción " + esp['translation_copyright']
+			v.text = "Traducciï¿½n " + esp['translation_copyright']
 		else:
 			v._element.getparent().remove(v._element)
 
@@ -1614,7 +1623,7 @@ def add_verse_to_deck_wide(slide, displayBook, displaySong, basename, ndx, meta,
 		espcopy = None
 		if esp:
 			if 'translation_copyright' in esp:
-				espcopy = "Traducción " + esp['translation_copyright']
+				espcopy = "Traducciï¿½n " + esp['translation_copyright']
 		if meta['copyright'] != '':
 			add_text_run(v.text_frame, meta['copyright'], 'Avenir Next LT Pro', 8, espcopy is not None, bold=False)
 		v.text_frame.margin_top = 0
@@ -1760,18 +1769,30 @@ def add_song_to_deck(outp, item, verses=None, chorus=None, repeat=None, coda=Tru
 	for iter in range(0, iterations):
 		for verse, pngs, skip in verse_iter(meta, verses):
 			for png in pngs:
-				add_verse_to_deck(outp, displayBook, displaySong, basename, png, meta, esp, navinfo['nav'][png], slide, bg_fn)
+				filename = basename + "-" + f"{png:02d}" + ".png"
+				if not os.path.exists(filename):
+					print(f"Warning: missing song image {filename}; skipping")
+					continue
+				add_verse_to_deck(outp, displayBook, displaySong, basename, png, meta, esp, navinfo['nav'].get(png, []), slide, bg_fn)
 				slide = False
 			if verse in meta['chorus'].keys():
 				if chorus and int(verse) not in chorus:
 					continue
 				for png in meta['chorus'][verse]:
-					add_verse_to_deck(outp, displayBook, displaySong, basename, png, meta, esp, navinfo['nav'][png], slide, bg_fn)
+					filename = basename + "-" + f"{png:02d}" + ".png"
+					if not os.path.exists(filename):
+						print(f"Warning: missing song image {filename}; skipping")
+						continue
+					add_verse_to_deck(outp, displayBook, displaySong, basename, png, meta, esp, navinfo['nav'].get(png, []), slide, bg_fn)
 					slide = False
 		if coda and len(meta['codas']) > 0:
 			for verse, pngs in meta['codas'].items():	# verse = "Coda" or "Amen" etc
 				for png in pngs:
-					add_verse_to_deck(outp, displayBook, displaySong, basename, png, meta, esp, navinfo['nav'][png], slide, bg_fn)
+					filename = basename + "-" + f"{png:02d}" + ".png"
+					if not os.path.exists(filename):
+						print(f"Warning: missing song image {filename}; skipping")
+						continue
+					add_verse_to_deck(outp, displayBook, displaySong, basename, png, meta, esp, navinfo['nav'].get(png, []), slide, bg_fn)
 					slide = False
 
 
@@ -1800,6 +1821,10 @@ def add_medley_to_deck(outp, item, sfv=True):
 			nd.append({ "text": vt, "color": color})
 
 		for png in vi:
+			filename = si['basename'] + "-" + f"{png:02d}" + ".png"
+			if not os.path.exists(filename):
+				print(f"Warning: missing song image {filename}; skipping")
+				continue
 			add_verse_to_deck(outp, si['book'], int(si['song']), si['basename'], png, si['meta'], si['esp'], nd, slide, bg_fn, (verse[0] == 1))
 			slide = False
 
@@ -1814,20 +1839,17 @@ def set_esp(paths, language):
 	espjson = paths['espbase'] + ".json"
 	if os.path.exists(espjson):
 		if language == 'esp' or language == 'bil':
-			with open(espjson, 'r') as jsonfile:
-				esp = json.load(jsonfile)
+			esp = load_json_safe(espjson)
 			pprint.pprint(esp)
 			basename = paths['espbase']
 	return esp, basename
 
 def make_deck(book, number, language, outputfn):
 	song, paths = get_song_paths_new(book, number)
-	with open(paths['engbase'] + ".json", 'r') as jsonfile:
-		meta = json.load(jsonfile)
+	meta = load_json_safe(paths['engbase'] + ".json")
 	custom = paths['engbase'] + "-custom.json"
 	if os.path.exists(custom):
-		with open(custom, 'r') as jsonfile:
-			meta.update(json.load(jsonfile))
+		meta.update(load_json_safe(custom))
 	pprint.pprint(meta)
 
 	esp, basename = set_esp(paths, language)
@@ -2038,7 +2060,7 @@ def add_song(outp, language, item, navitems, ndi, title=True, music=True):
 	if item['esp'] != None:
 		item['esp']['bubble'] = None
 		if bubble != None:
-			item['esp']['bubble'] = "Himno de Invitación"
+			item['esp']['bubble'] = "Himno de Invitaciï¿½n"
 	repeat = get_item(item, 'repeat')
 	coda = get_item(item, 'coda')
 	if coda is None:
@@ -2064,11 +2086,11 @@ def add_song_entry(outp, language, item, navitems, ndi):
 #		eng[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(meta['credits'].splitlines()), max_size=12, step_size=2)
 
 	if language == "bil" or language == "esp":
-		if 'título' in item:
+		if 'tï¿½tulo' in item:
 			esp = dict()
 			esp[LAYOUT_TITLE_TITLE] = dict(text=' ', fonts=eng_fonts, max_size=60, step_size=6, bold=True, size=[0.675, 4.6, 2.5, 1])
-			esp[LAYOUT_TITLE_DETAIL] = dict(text=item['título'].upper(), max_size=56, step_size=6, bold=True, size=[1.62, 3.75, 4.2, 1.8])
-			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CCANTANDO...AL SEÑOR\u201D\nCOLOSENSES 3:16", max_size=22, step_size=2, size=[4.280, 4.1, 3.5, 0.9])
+			esp[LAYOUT_TITLE_DETAIL] = dict(text=item['tï¿½tulo'].upper(), max_size=56, step_size=6, bold=True, size=[1.62, 3.75, 4.2, 1.8])
+			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CCANTANDO...AL SEï¿½OR\u201D\nCOLOSENSES 3:16", max_size=22, step_size=2, size=[4.280, 4.1, 3.5, 0.9])
 #			esp[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(espm['credits'].splitlines()), max_size=13, step_size=1)
 
 	slide = add_title_slide(outp, item, navitems, ndi, language, eng, esp, "song-beige", doLeader=False)
@@ -2102,8 +2124,8 @@ def add_prayer(outp, language, item, navitems, ndi):
 
 	if language == "bil" or language == "esp":
 		esp = dict()
-		esp[LAYOUT_TITLE_DETAIL] = dict(text="ORACIÓN", max_size=80, step_size=6, bold=True, size=[1.590, 3.35, 5.0, 1.8])
-		esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CPERSEVERAD EN LA ORACIÓN\u201D", max_size=28, step_size=2, size=[3.325, 3.9, 3.9, 1.0])
+		esp[LAYOUT_TITLE_DETAIL] = dict(text="ORACIï¿½N", max_size=80, step_size=6, bold=True, size=[1.590, 3.35, 5.0, 1.8])
+		esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CPERSEVERAD EN LA ORACIï¿½N\u201D", max_size=28, step_size=2, size=[3.325, 3.9, 3.9, 1.0])
 		esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"COLOSENSES 4:2", max_size=24, step_size=2, size=[4.225, 3.6, 4.52, 1.0])
 
 	add_title_slide(outp, item, navitems, ndi, language, eng, esp, "prayer-wheat")
@@ -2115,10 +2137,10 @@ def add_sermon(outp, language, item, navitems, ndi):
 
 	if item['type'] == 'lesson':
 		engt = 'LESSON'
-		espt = 'LECCIÓN'
+		espt = 'LECCIï¿½N'
 	else:
 		engt = 'SERMON'
-		espt = 'SERMÓN'
+		espt = 'SERMï¿½N'
 
 	if language == "bil" or language == "eng":
 		eng = dict()
@@ -2129,7 +2151,7 @@ def add_sermon(outp, language, item, navitems, ndi):
 	if language == "bil" or language == "esp":
 		esp = dict()
 		esp[LAYOUT_TITLE_DETAIL] = dict(text=espt, max_size=80, step_size=6, bold=True, size=[1.59, 3.35, 5.0, 1.8])
-		esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CNOS MANDÓ QUE PREDICÁSEMOS AL PUEBLO\u201D", max_size=26, step_size=2, size=[3.29, 3.47, 4.78, 1.0])
+		esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CNOS MANDï¿½ QUE PREDICï¿½SEMOS AL PUEBLO\u201D", max_size=26, step_size=2, size=[3.29, 3.47, 4.78, 1.0])
 		esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"HECHOS 10:42", max_size=24, step_size=2, size=[4.2, 3.6, 4.52, 1.0])
 
 	slide = add_title_slide(outp, item, navitems, ndi, language, eng, esp, "sermon-notes")
@@ -2145,7 +2167,12 @@ def add_sermon(outp, language, item, navitems, ndi):
 
 def get_reading_text(file, ndx, esp):
 	prs = Presentation(assetRoot + "readings-" + file + ".pptx")
-	slide = prs.slides[ndx]
+	if ndx is None:
+		raise ValueError("reading index is missing")
+	index = int(ndx)
+	if index < 0 or index >= len(prs.slides):
+		raise ValueError(f"reading index {index} out of range for {file}")
+	slide = prs.slides[index]
 	if esp == 0:
 		pr = get_placeholder(slide, 4)
 		ps = get_placeholder(slide, 6)
@@ -2153,6 +2180,20 @@ def get_reading_text(file, ndx, esp):
 		pr = get_placeholder(slide, 5)
 		ps = get_placeholder(slide, 7)
 	return [pr.text_frame, ps.text_frame]
+
+
+def get_valid_reading_index(item):
+	if 'reading' not in item:
+		return None
+	value = item['reading']
+	if value is None:
+		return None
+	if isinstance(value, str) and value.strip() == "":
+		return None
+	try:
+		return int(value)
+	except (TypeError, ValueError):
+		return None
 
 
 def get_collection_reading(ndx, esp):
@@ -2164,8 +2205,8 @@ def get_supper_reading(ndx, esp):
 
 def get_supper_reference(item, language):
 	reference = " "
-	if 'reading' in item:
-		rndx = item['reading']
+	rndx = get_valid_reading_index(item)
+	if rndx is not None:
 		if language == "eng":
 			reading = get_supper_reading(rndx, 0)
 		else:
@@ -2215,7 +2256,11 @@ def fade_to_black(outp, slide):
 		"  <p:fade/>\n"
 		"</p:transition>" % nsdecls("p")
 		)
-	slide.element._insert_transition(transition)
+	try:
+		slide.element._insert_transition(transition)
+	except AttributeError:
+		# Some python-pptx builds do not expose transition helpers; continue without transition.
+		pass
 	# fade to black
 	blayout = outp.slide_masters[MASTER_STATIC].slide_layouts[0]
 	slide = outp.slides.add_slide(blayout)
@@ -2243,18 +2288,17 @@ def add_ls(outp, language, item, navitems, ndi):
 		if language == "bil" or language == "esp":
 			esp = dict()
 			esp[LAYOUT_TITLE_DETAIL] = dict(text="CENA DEL", max_size=72, step_size=6, bold=True, size=[1.300, 3.35, 5.0, 1.5])
-			esp[LAYOUT_TITLE_REFERENCE] = dict(text="SEÑOR", max_size=72, step_size=6, bold=True, size=[2.575, 3.35, 5.0, 2.4])
-			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CHACED ESTO EN MEMORIA DE MÍ\u201D LUCAS 22:19", max_size=24, step_size=2, size=[3.925, 3.67, 4.36, 1.0])
+			esp[LAYOUT_TITLE_REFERENCE] = dict(text="SEï¿½OR", max_size=72, step_size=6, bold=True, size=[2.575, 3.35, 5.0, 2.4])
+			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CHACED ESTO EN MEMORIA DE Mï¿½\u201D LUCAS 22:19", max_size=24, step_size=2, size=[3.925, 3.67, 4.36, 1.0])
 
 		slide = add_title_slide(outp, item, navitems, ndi, language, eng, esp, "supper-vial")
 		fade_to_black(outp, slide)
 
 
-	if 'reading' in item:
+	rndx = get_valid_reading_index(item)
+	if rndx is not None:
 		eng = None
 		esp = None
-
-		rndx = item['reading']
 
 		if language == "bil" or language == "eng":
 			eng = dict()
@@ -2325,14 +2369,13 @@ def add_coll(outp, language, item, navitems, ndi):
 		else:
 			slide = add_giving(outp, language, item, navitems, ndi)
 
-	if 'reading' in item:
+	rndx = get_valid_reading_index(item)
+	if rndx is not None:
 		if slide:
 			fade_to_black(outp, slide)
 
 		eng = None
 		esp = None
-
-		rndx = item['reading']
 
 		if language == "bil" or language == "eng":
 			eng = dict()
@@ -2365,8 +2408,8 @@ def add_invitation(outp, language, item, navitems, ndi):
 
 	if language == "bil" or language == "esp":
 		esp = dict()
-		esp[LAYOUT_TITLE_DETAIL] = dict(text="INVITACIÓN", max_size=68, step_size=6, bold=True, size=[1.59, 3.35, 5.0, 1.8])
-		esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CVENID A MÍ...Y YO OS HARÉ DESCANSAR\u201D", max_size=26, step_size=2, size=[3.29, 3.47, 4.78, 1.0])
+		esp[LAYOUT_TITLE_DETAIL] = dict(text="INVITACIï¿½N", max_size=68, step_size=6, bold=True, size=[1.59, 3.35, 5.0, 1.8])
+		esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CVENID A Mï¿½...Y YO OS HARï¿½ DESCANSAR\u201D", max_size=26, step_size=2, size=[3.29, 3.47, 4.78, 1.0])
 		esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"MATEO 11:28", max_size=24, step_size=2, size=[4.2, 3.6, 4.52, 1.0])
 
 	slide = add_title_slide(outp, item, navitems, ndi, language, eng, esp, "invitation-road")
@@ -2461,7 +2504,7 @@ def getDisplayNumber(item):
 
 
 tags_eng = dict(desc="desc", sermon="Sermon", lesson="Lesson", report="Report", title="title", reading="Scripture Reading", prayer="Prayer", announcements="Announcements", supper=u"Lord\u2019s Supper", collection="Collection from Members", invitation="Invitation", medley="Song Medley")
-tags_esp = dict(desc="esp", sermon="Sermón", lesson="Lección", report="Reporte", title="título", reading="Lectura", prayer="Oración", announcements="Anuncios", supper="La Cena del Señor", collection="Ofrenda de los Miembros", invitation="Invitación", medley="Popurrí de canciones")
+tags_esp = dict(desc="esp", sermon="Sermï¿½n", lesson="Lecciï¿½n", report="Reporte", title="tï¿½tulo", reading="Lectura", prayer="Oraciï¿½n", announcements="Anuncios", supper="La Cena del Seï¿½or", collection="Ofrenda de los Miembros", invitation="Invitaciï¿½n", medley="Popurrï¿½ de canciones")
 
 
 ##########################################################################
@@ -2571,8 +2614,8 @@ def parse_worship_item(order, item, language):
 			title = meta['title']
 		order.append([title, 1, leader])
 	elif item['type'] == 'lyric' or item['type'] == 'singing':
-		if (language == 'esp') and ('título' in item):
-			title = item['título']
+		if (language == 'esp') and ('tï¿½tulo' in item):
+			title = item['tï¿½tulo']
 		else:
 			title = item['title']
 		order.append([title, 1, leader])
@@ -2683,10 +2726,24 @@ def add_welcome(outp, language, worship, navitems, ndi):
 		wd_eng = wdiso.strftime("%B ") + wdiso.strftime("%d, ").lstrip("0") + wdiso.strftime("%Y")
 		wd_eng = wd_eng + "\n" + wdiso.strftime("%A") + " \u2022 " + wdiso.strftime("%I").lstrip("0") + wdiso.strftime(":%M") + wdiso.strftime("%p").lower()
 
-		locale.setlocale(locale.LC_ALL, 'es_US')
-		wd_esp = wdiso.strftime("%d ").lstrip("0") + wdiso.strftime("de %B")
-		wd_esp = wd_esp + "\n" + wdiso.strftime("%A") + " \u2022 " + wdiso.strftime("%I").lstrip("0") + wdiso.strftime(":%M") + wdiso.strftime("%p").lower()
-		locale.setlocale(locale.LC_ALL, 'en_US')
+		# Try common Spanish locale names; if none are available, keep English date text.
+		wd_esp = wd_eng
+		original_locale = locale.setlocale(locale.LC_TIME)
+		spanish_locales = ['es_US.UTF-8', 'es_US', 'es_MX.UTF-8', 'es_MX', 'es_ES.UTF-8', 'es_ES', 'Spanish_Spain.1252']
+		try:
+			for loc in spanish_locales:
+				try:
+					locale.setlocale(locale.LC_TIME, loc)
+					wd_esp = wdiso.strftime("%d ").lstrip("0") + wdiso.strftime("de %B")
+					wd_esp = wd_esp + "\n" + wdiso.strftime("%A") + " \u2022 " + wdiso.strftime("%I").lstrip("0") + wdiso.strftime(":%M") + wdiso.strftime("%p").lower()
+					break
+				except locale.Error:
+					continue
+		finally:
+			try:
+				locale.setlocale(locale.LC_TIME, original_locale)
+			except locale.Error:
+				pass
 	else:
 		wd_eng = worship['date']		# for legacy compatibility
 		wd_esp = worship['date']		# for legacy compatibility
@@ -2775,31 +2832,31 @@ def get_navbar(worship, language):
 			ndi = ndi - 1
 		elif item['type'] == 'medley':
 			engitems.append([ndi, "medley", "Medley"])
-			espitems.append([ndi, "medley", "Popurrí"])
+			espitems.append([ndi, "medley", "Popurrï¿½"])
 		elif item['type'] == 'prayer':
 			engitems.append([ndi, "prayer", "Prayer"])
-			espitems.append([ndi, "prayer", "Oración"])
+			espitems.append([ndi, "prayer", "Oraciï¿½n"])
 		elif item['type'] == 'reading':
 			engitems.append([ndi, "reading", "Reading"])
 			espitems.append([ndi, "reading", "Lectura"])
 		elif item['type'] == 'sermon':
 			engitems.append([ndi, "sermon", "Sermon"])
-			espitems.append([ndi, "sermon", "Sermón"])
+			espitems.append([ndi, "sermon", "Sermï¿½n"])
 		elif item['type'] == 'lesson':
 			engitems.append([ndi, "lesson", "Lesson"])
-			espitems.append([ndi, "lesson", "Lección"])
+			espitems.append([ndi, "lesson", "Lecciï¿½n"])
 		elif item['type'] == 'report':
 			engitems.append([ndi, "report", "Report"])
 			espitems.append([ndi, "report", "Reporte"])
 		elif item['type'] == 'invitation':
 			engitems.append([ndi, "invitation", "Invitation"])
-			espitems.append([ndi, "invitation", "Invitación", 11])
+			espitems.append([ndi, "invitation", "Invitaciï¿½n", 11])
 		elif item['type'] == 'welcome':
 			engitems.append([ndi, "welcome", "Welcome"])
 			espitems.append([ndi, "welcome", "Bienvenida", 12])
 		elif item['type'] == 'ls-am' or item['type'] == 'ls-pm':
 			engitems.append([ndi, "supper", u"Lord\u2019s Supper", 10.5])
-			espitems.append([ndi, "supper", "Cena del Señor", 11])
+			espitems.append([ndi, "supper", "Cena del Seï¿½or", 11])
 		elif item['type'] == 'collection':
 			engitems.append([ndi, "collection", "Collection", 11])
 			espitems.append([ndi, "collection", "Ofrenda"])
@@ -2813,8 +2870,7 @@ def make_worship_deck(jsonfile):
 	# set output filename from input
 	outfn = os.path.splitext(jsonfile)[0] + ".pptx"
 
-	with open(jsonfile, 'r') as file:
-		worship = json.load(file)
+	worship = load_json_safe(jsonfile)
 	pprint.pprint(worship)
 
 	language = worship['language'] if 'language' in worship else 'eng'
@@ -2823,22 +2879,18 @@ def make_worship_deck(jsonfile):
 	for item in worship['items']:
 		if 'song' in item['type']:
 			song, paths = get_song_paths_new(item['book'], int(item['song']))
-			with open(paths['engbase'] + ".json", 'r') as jsonfile:
-				item['meta'] = json.load(jsonfile)
-				custom = paths['engbase'] + "-custom.json"
-				if os.path.exists(custom):
-					with open(custom, 'r') as jsonfile:
-						item['meta'].update(json.load(jsonfile))
+			item['meta'] = load_json_safe(paths['engbase'] + ".json")
+			custom = paths['engbase'] + "-custom.json"
+			if os.path.exists(custom):
+				item['meta'].update(load_json_safe(custom))
 			item['esp'], item['basename'] = set_esp(paths, language)
 		elif 'medley' in item['type']:
 			for songi in item['songs']:
 				song, paths = get_song_paths_new(songi['book'], int(songi['song']))
-				with open(paths['engbase'] + ".json", 'r') as jsonfile:
-					songi['meta'] = json.load(jsonfile)
-					custom = paths['engbase'] + "-custom.json"
-					if os.path.exists(custom):
-						with open(custom, 'r') as jsonfile:
-							songi['meta'].update(json.load(jsonfile))
+				songi['meta'] = load_json_safe(paths['engbase'] + ".json")
+				custom = paths['engbase'] + "-custom.json"
+				if os.path.exists(custom):
+					songi['meta'].update(load_json_safe(custom))
 				songi['esp'], songi['basename'] = set_esp(paths, language)
 
 	outp = Presentation(assetRoot + "template-2020.pptx")

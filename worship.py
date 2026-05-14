@@ -22,6 +22,15 @@ import time
 # https://www.blueletterbible.org/tools/MultiVerse.cfm
 # t=&t=NKJV&mvText=matthew+26%3A27-29&refDelim=1&refFormat=2&numDelim=0&sqrbrkt=1
 
+def load_json_safe(filepath):
+	"""Load JSON file with UTF-8 and Latin-1 encoding support"""
+	try:
+		with open(filepath, 'r', encoding='utf-8') as f:
+			return json.load(f)
+	except UnicodeDecodeError:
+		with open(filepath, 'r', encoding='latin-1') as f:
+			return json.load(f)
+
 def update_passages(args):
 	global s
 	directory = None
@@ -101,15 +110,11 @@ def get_spec_base(date, time):
 def load_template(template):
 	items = None
 	jsonfile = templatesRoot + template + ".json"
-	with open(jsonfile, 'r') as file:
-		items = json.load(file)
+	items = load_json_safe(jsonfile)
 	return items['order']
 
 def load_spec(base):
-	spec = None
-	jsonfile = base[1] + "-spec.json"
-	with open(jsonfile, 'r') as file:
-		spec = json.load(file)
+	spec = load_json_safe(base[1] + "-spec.json")
 	return spec
 
 drwAuthKey = '36d46d79-f0f3-45f2-8737-e80d576c1924'
@@ -272,7 +277,7 @@ def generate_readings(items):
 		elif item['type'] == 'ls-am':
 			readinglist[item['id']]  = { "reading": "" }
 		elif item['type'] == 'sermon':
-			readinglist[item['id']]  = { "title": "", "título": "" }
+			readinglist[item['id']]  = { "title": "", "tï¿½tulo": "" }
 	return { "readings" : readinglist }
 
 
@@ -312,11 +317,10 @@ def generate_worship(wdate, wtime, template, language, service_type):
 # generate_schedule
 #
 def generate_schedule(args):
-	with open(schedulesRoot + args.schedule +".json", 'r') as jsonfile:
-		schedule = json.load(jsonfile)
+	schedule = load_json_safe(schedulesRoot + args.schedule + ".json")
 #		pprint.pprint(schedule)
-		for service in schedule['schedule']:
-			generate_worship(args.wdate, service['time'], service['template'], service['language'], service['service'])
+	for service in schedule['schedule']:
+		generate_worship(args.wdate, service['time'], service['template'], service['language'], service['service'])
 
 
 ##
@@ -337,9 +341,8 @@ def update_leaders(args):
 def update_readings(args):
 	base = get_spec_base(args.wdate, args.wtime)
 	spec = load_spec(base)
-	with open(base[1] + "-readings.json", 'r') as jsonfile:
-		readings = json.load(jsonfile)['readings']
-		readings = fetch_readings(args.wdate, readings, spec['type'])
+	readings = load_json_safe(base[1] + "-readings.json")['readings']
+	readings = fetch_readings(args.wdate, readings, spec['type'])
 	with open(base[1] + "-readings.json", 'w') as jsonfile:
 		json.dump(readings, jsonfile, ensure_ascii=False, indent=4)
 
@@ -349,21 +352,16 @@ def update_readings(args):
 
 def generate_json(args):
 	base = get_spec_base(args.wdate, args.wtime)
-	with open(base[1] + "-spec.json", 'r') as jsonfile:
-		spec = json.load(jsonfile)
-	with open(base[1] + "-songs.json", 'r') as jsonfile:
-		songs = json.load(jsonfile)['songs']
-	with open(base[1] + "-leaders.json", 'r') as jsonfile:
-		leaders = json.load(jsonfile)['leaders']
-	with open(base[1] + "-readings.json", 'r') as jsonfile:
-		readings = json.load(jsonfile)['readings']
+	spec = load_json_safe(base[1] + "-spec.json")
+	songs = load_json_safe(base[1] + "-songs.json")['songs']
+	leaders = load_json_safe(base[1] + "-leaders.json")['leaders']
+	readings = load_json_safe(base[1] + "-readings.json")['readings']
 
 	template = spec['template']
 	items = load_template(template)
 
 	if args.style is not None:
-		with open(stylesRoot + args.style + ".json", 'r') as jsonfile:
-			style = json.load(jsonfile)
+		style = load_json_safe(stylesRoot + args.style + ".json")
 
 	if 'Song Leader' in leaders:
 		spec['leader'] = leaders['Song Leader']
