@@ -72,6 +72,7 @@ Song workflow (when adding/updating songs):
 - Python 3.7+ (project notes originally used 3.7).
 - PowerPoint files and assets in expected repository locations.
 - Tesseract OCR installed and available in PATH for OCR-dependent commands.
+- **Song data folder** (`ehsf/`): Large folder containing song JSON and slide images. A sample song (PFTL 738) is included for testing. Full song library should be kept in OneDrive alongside the app distribution.
 
 Notes from project history:
 
