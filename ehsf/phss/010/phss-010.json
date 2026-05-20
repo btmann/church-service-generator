@@ -1,0 +1,60 @@
+{
+    "lyrics": {
+        "1": [
+            "The law of the LORD is perfect, converting the soul;",
+            "The testimony of the LORD is sure, making wise the simple."
+        ],
+        "2": [
+            "The statutes of the LORD are right, rejoicing the heart;",
+            "The commandment of the LORD is pure, enlightening the eyes,"
+        ],
+        "3": [
+            "The fear of the LORD is clean, enduring forever;",
+            "The judgments of the LORD are true, and righteous altogether."
+        ],
+        "chorus": [
+            "More to be desired are they than gold, yea, than much fine gold,",
+            "Sweeter also than honey and the honeycomb."
+        ]
+    },
+    "verses": {
+        "1": [
+            1,
+            2
+        ],
+        "2": [
+            5,
+            6
+        ],
+        "3": [
+            9,
+            10
+        ]
+    },
+    "chorus": {
+        "1": [
+            3,
+            4
+        ],
+        "2": [
+            7,
+            8
+        ],
+        "3": [
+            11,
+            12
+        ]
+    },
+    "codas": {},
+    "number": "10",
+    "copyright": "© 2014 Sumphonia Productions, LLC",
+    "title": "The Law of the LORD",
+    "credits": "© 1969 Bud John Songs (admin. by Brentwood-Benson Music Publishing, Inc.)\nTune: Joanne Roberts Graham (1969), arr. Stevens and Shepard's Hymns for Worship\nHymn: Psalm 19:7-10 (KJV)\n_\n_\n_",
+    "window_orientation": "wide",
+    "window": [
+        0.125,
+        0.8835443037974697,
+        8.83291139240506,
+        5.4
+    ]
+}
