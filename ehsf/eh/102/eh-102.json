@@ -1,0 +1,41 @@
+{
+    "lyrics": {
+        "1": [
+            "1.\nAbide with me; 'tis eventide.\nThe day is past and gone;\nThe shadows of the evening fall;\nThe night is coming on.\nWithin my heart a welcome guest,\nWithin my home abide."
+        ],
+        "2": [
+            "2.\nAbide with me; 'tis eventide.\nThy walk today with me\nHas made my heart within me burn,\nAs I communed with Thee.\nThy earnest words have filled my soul\nAnd kept me near Thy side."
+        ],
+        "3": [
+            "3.\nAbide with me; 'tis eventide.\nAnd lone will be the night\nIf I cannot commune with Thee,\nNor find in Thee my light.\nThe darkness of the world, I fear,\nWould in my home abide."
+        ]
+    },
+    "verses": {
+        "1": [
+            1,
+            2
+        ],
+        "2": [
+            3,
+            4
+        ],
+
+        "3": [
+            5,
+            6
+        ]
+    },
+    "chorus": {},
+    "codas": {},
+    "copyright": "© 2006 The Paperless Hymnal®",
+    "title": "O Grant Us Light",
+    "number": "102",
+    "credits": "Words: Lawrence Tuttiett\nMusic: Louis Bourgeois\n",
+    "window_orientation": "wide",
+    "window": [
+        0.1,
+        0.8,
+        9.0,
+        5.0
+    ]
+}

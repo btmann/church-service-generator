@@ -1,0 +1,62 @@
+{
+    "lyrics": {
+        "1": [
+            "1.\n'Tis the grandest theme through the ages rung;\n'Tis the grandest theme for a mortal tongue;\n'Tis the grandest theme that the world ever sung,\n\"Our God is able to deliver thee.\""
+        ],
+        "1c": [
+            "He is able to deliver thee,\nHe is able to deliver thee;\nThough by sin oppressed, Go to Him for rest;\n\"Our God is able to de-liver thee.\""
+        ],
+        "2": [
+            "2.\n'Tis the grandest theme in the earth or main;\n'Tis the grandest theme for a mortal strain;\n'Tis the grandest theme, tell the world again,\n\"Our God is able to deliver thee.\""
+        ],
+        "2c": [
+            "He is able to deliver thee,\nHe is able to deliver thee;\nThough by sin oppressed, Go to Him for rest;\n\"Our God is able to de-liver thee.\""
+        ],
+        "3": [
+            "3.\n'Tis the grandest theme, let the tidings roll \nTo the guilty heart, to the sinful soul;\nLook to God in faith, He will make thee whole;\n\"Our God is able to deliver thee.\""
+        ],
+        "3c": [
+            "He is able to deliver thee,\nHe is able to deliver thee;\nThough by sin oppressed, Go to Him for rest;\n\"Our God is able to de-liver thee.\""
+        ]
+    },
+    "verses": {
+        "1": [
+            1,
+            2
+        ],
+        "2": [
+            5,
+            6
+        ],
+        "3": [
+            9,
+            10
+        ]
+    },
+    "chorus": {
+        "1": [
+            3,
+            4
+        ],
+        "2": [
+            7,
+            8
+        ],
+        "3": [
+            11,
+            12
+        ]
+    },
+    "codas": {},
+    "copyright": "© 2007 The Paperless Hymnal®",
+    "title": "He Is Able to Deliver Thee",
+    "number": "208",
+    "credits": "Words & Music: William A. Ogden",
+    "window_orientation": "wide",
+    "window": [
+        0.125,
+        1.0625754527162983,
+        8.474849094567404,
+        5.4
+    ]
+}
