@@ -18,6 +18,9 @@ from pathlib import Path
 import requests
 import urllib.parse
 import time
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # https://www.blueletterbible.org/tools/MultiVerse.cfm
 # t=&t=NKJV&mvText=matthew+26%3A27-29&refDelim=1&refFormat=2&numDelim=0&sqrbrkt=1
@@ -161,11 +164,17 @@ def update_data(args):
 #
 def fetch_leaders(wdate, wtime, service_type):
 	leaders = dict()
+	error = None
+	warning = None
 	headers = {'Authorization': drwAuthKey }
 	url = 'https://api.embryhills.church/v1/worship_management/Assignments/' + urllib.parse.quote(service_type) + '/' + wdate
 
 	try:
-		r = requests.post(url, headers=headers)
+		try:
+			r = requests.post(url, headers=headers, timeout=20)
+		except requests.exceptions.SSLError:
+			r = requests.post(url, headers=headers, timeout=20, verify=False)
+			warning = "SSL verification failed; using insecure HTTPS fallback for assignments API"
 		if r.status_code == 200:
 			response = json.loads(r.text)
 			if response['Success'] == True:
@@ -177,12 +186,19 @@ def fetch_leaders(wdate, wtime, service_type):
 						leaders[role] = name[1] + ' ' + name[0]
 					else:
 						leaders[role] = leader
+			else:
+				error = response.get('ErrorMessage', 'Assignments API returned Success=False')
 		else:
-			print("response", r.status_code)
-	except:
-		print("exception")
+			error = f"Assignments API response {r.status_code}: {r.text[:300]}"
+	except Exception as e:
+		error = f"Assignments API exception: {e}"
 
-	return { "leaders" : leaders }
+	result = { "leaders" : leaders }
+	if error:
+		result['_error'] = error
+	if warning:
+		result['_warning'] = warning
+	return result
 
 #
 # parse_reading() - parse API output and format into our JSON
@@ -200,13 +216,19 @@ def parse_reading(data):
 #
 def fetch_readings(wdate, readings, service_type):
 	reading = dict()
+	error = None
+	warning = None
 	headers = {'Authorization': drwAuthKey }
 	url = 'https://api.embryhills.church/v1/getScriptureReading'
 #	payload = {'service': service_type.replace('- ', ''), 'date': wdate }
 	payload = {'service': service_type, 'date': wdate }
 
 	try:
-		r = requests.post(url, headers=headers, data=payload)
+		try:
+			r = requests.post(url, headers=headers, data=payload, timeout=20)
+		except requests.exceptions.SSLError:
+			r = requests.post(url, headers=headers, data=payload, timeout=20, verify=False)
+			warning = "SSL verification failed; using insecure HTTPS fallback for scripture API"
 		if r.status_code == 200:
 			response = json.loads(r.text)
 			if response['Success'] == True:
@@ -214,12 +236,19 @@ def fetch_readings(wdate, readings, service_type):
 				reading = parse_reading(data)
 				readings['reading-1'] = reading		# tbd: support multiple readings?
 				pprint.pprint(reading)
+			else:
+				error = response.get('ErrorMessage', 'Scripture API returned Success=False')
 		else:
-			print("response", r.status_code, r.text)
-	except:
-		print("exception")
+			error = f"Scripture API response {r.status_code}: {r.text[:300]}"
+	except Exception as e:
+		error = f"Scripture API exception: {e}"
 
-	return { "readings" : readings }
+	result = { "readings" : readings }
+	if error:
+		result['_error'] = error
+	if warning:
+		result['_warning'] = warning
+	return result
 
 
 ##

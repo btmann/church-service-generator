@@ -22,6 +22,7 @@ import slides
 WORSHIP_ROOT = "worship/"
 TEMPLATES_ROOT = WORSHIP_ROOT + "templates/"
 SPECS_ROOT = WORSHIP_ROOT + "specs/"
+SERVICE_TYPE_OPTIONS = ['Sun - EarlyAM', 'Sun - AM', 'Sun - PM', 'Wed', 'Gospel Meeting']
 
 # Streamlit page config
 st.set_page_config(
@@ -90,7 +91,26 @@ def get_leader_positions(template_items):
     return leaders
 
 
-def create_worship_files(date, time, template, songs_data, leaders_data):
+def build_default_readings(template_items):
+    """Build default readings structure expected by worship.fetch_readings."""
+    readings = {}
+    for item in template_items:
+        if not isinstance(item, dict):
+            continue
+        item_id = item.get('id')
+        item_type = item.get('type')
+        if not item_id:
+            continue
+        if item_type == 'reading':
+            readings[item_id] = {"lang": [{"passage": "", "pew": ""}, {"passage": ""}]}
+        elif item_type in ['ls-am', 'collection']:
+            readings[item_id] = {"reading": ""}
+        elif item_type in ['sermon', 'lesson', 'report']:
+            readings[item_id] = {"title": "", "título": ""}
+    return readings
+
+
+def create_worship_files(date, time, template, songs_data, leaders_data, readings_data=None, service_type='Sun - AM'):
     """Create initial worship files (spec, songs, leaders, readings)"""
     # Parse date/time
     wdate = date.strftime("%Y-%m-%d")
@@ -112,13 +132,15 @@ def create_worship_files(date, time, template, songs_data, leaders_data):
         songs_data = {}
     if not isinstance(leaders_data, dict):
         leaders_data = {}
+    if not isinstance(readings_data, dict):
+        readings_data = {}
     
     # Create spec.json
     spec = {
         'isodate': isodate,
         'template': template,
         'language': 'eng',
-        'type': 'Sun - AM'
+        'type': service_type
     }
     with open(specbase + "-spec.json", 'w', encoding='utf-8') as f:
         json.dump(spec, f, ensure_ascii=False, indent=4)
@@ -142,6 +164,10 @@ def create_worship_files(date, time, template, songs_data, leaders_data):
             readings[item['id']] = {"reading": ""}
         elif item.get('type') in ['sermon', 'lesson', 'report'] and 'id' in item:
             readings[item['id']] = {"title": "", "título": ""}
+
+    for item_id, item_data in readings_data.items():
+        if isinstance(item_data, dict):
+            readings[item_id] = item_data
     
     with open(specbase + "-readings.json", 'w', encoding='utf-8') as f:
         json.dump({'readings': readings}, f, ensure_ascii=False, indent=4)
@@ -159,11 +185,42 @@ def load_json_safe(path):
             return json.load(f)
 
 
-def generate_presentation(date, time, template, songs_data, leaders_data):
+def get_song_structure(book, song_num):
+    """Return available verses and chorus slots for a song."""
+    try:
+        _, paths = slides.get_song_paths_new(book, int(song_num))
+        meta = load_json_safe(paths['engbase'] + ".json")
+        custom = paths['engbase'] + "-custom.json"
+        if os.path.exists(custom):
+            custom_data = load_json_safe(custom)
+            if isinstance(custom_data, dict):
+                meta.update(custom_data)
+
+        verses = []
+        chorus = []
+
+        if isinstance(meta, dict):
+            verses = sorted([
+                int(v)
+                for v in meta.get('verses', {}).keys()
+                if str(v).isdigit()
+            ])
+            chorus = sorted([
+                int(v)
+                for v in meta.get('chorus', {}).keys()
+                if str(v).isdigit()
+            ])
+
+        return verses, chorus, None
+    except Exception as e:
+        return [], [], str(e)
+
+
+def generate_presentation(date, time, template, songs_data, leaders_data, readings_data=None, service_type='Sun - AM'):
     """Generate the complete presentation"""
     try:
         # Step 1: Create worship files
-        specbase, jsonbase = create_worship_files(date, time, template, songs_data, leaders_data)
+        specbase, jsonbase = create_worship_files(date, time, template, songs_data, leaders_data, readings_data, service_type)
         
         # Step 2: Generate JSON (mimics worship.py generate_json)
         spec = load_json_safe(specbase + "-spec.json")
@@ -210,8 +267,7 @@ def generate_presentation(date, time, template, songs_data, leaders_data):
                 pos_name = item['position']
                 if pos_name in leaders:
                     leader_data = leaders[pos_name]
-                    if isinstance(leader_data, dict):
-                        item['leader'] = leader_data
+                    item['leader'] = leader_data
             
             # Merge song/reading data
             if 'id' in item:
@@ -251,41 +307,156 @@ def generate_presentation(date, time, template, songs_data, leaders_data):
 # Main UI layout
 col1, col2 = st.columns([1, 1])
 
+templates = get_available_templates()
+selected_template = None
+template_items = []
+songs_input = {}
+leaders_input = {}
+readings_input = {}
+leader_positions = {}
+
 with col1:
     st.subheader("📅 Service Details")
     service_date = st.date_input("Service Date", value=datetime.now())
     service_time = st.time_input("Service Time", value=datetime.strptime("10:30", "%H:%M").time())
-    
-    templates = get_available_templates()
-    selected_template = st.selectbox("Template", templates)
+    service_type = st.selectbox("Service Type", SERVICE_TYPE_OPTIONS, index=1)
+    if templates:
+        selected_template = st.selectbox("Template", templates)
+    else:
+        st.error("No templates found in worship/templates")
+
+if selected_template:
+    template_items = load_template(selected_template)
+
+    counts = {}
+    for item in template_items:
+        if isinstance(item, dict):
+            item_type = item.get('type', 'unknown')
+            counts[item_type] = counts.get(item_type, 0) + 1
+
+    if counts:
+        summary = ", ".join([f"{k}: {v}" for k, v in sorted(counts.items())])
+        st.caption(f"Template items: {summary}")
 
 with col2:
     st.subheader("👥 Leaders")
     if selected_template:
-        template_items = load_template(selected_template)
         leader_positions = get_leader_positions(template_items)
-        
-        leaders_input = {}
-        for pos_name in sorted(leader_positions.keys()):
-            leaders_input[pos_name] = st.text_input(pos_name)
+
+        if st.button("Pull Assigned Names + Reading", use_container_width=True, key="pull_assignments_btn"):
+            try:
+                wdate = service_date.strftime("%Y-%m-%d")
+                wtime = service_time.strftime("%H:%M:%S")
+
+                fetched_leaders_data = worship.fetch_leaders(wdate, wtime, service_type)
+                fetched_leaders = fetched_leaders_data.get('leaders', {}) if isinstance(fetched_leaders_data, dict) else {}
+                if not isinstance(fetched_leaders, dict):
+                    fetched_leaders = {}
+                leaders_error = fetched_leaders_data.get('_error') if isinstance(fetched_leaders_data, dict) else None
+                leaders_warning = fetched_leaders_data.get('_warning') if isinstance(fetched_leaders_data, dict) else None
+
+                fetched_readings_seed = build_default_readings(template_items)
+                fetched_readings_data = worship.fetch_readings(wdate, fetched_readings_seed, service_type)
+                fetched_readings = fetched_readings_data.get('readings', {}) if isinstance(fetched_readings_data, dict) else {}
+                if not isinstance(fetched_readings, dict):
+                    fetched_readings = {}
+                readings_error = fetched_readings_data.get('_error') if isinstance(fetched_readings_data, dict) else None
+                readings_warning = fetched_readings_data.get('_warning') if isinstance(fetched_readings_data, dict) else None
+
+                filled_leaders = 0
+                unmatched_positions = []
+
+                for pos_name in sorted(leader_positions.keys()):
+                    if pos_name in fetched_leaders and isinstance(fetched_leaders[pos_name], str):
+                        st.session_state[f"leader_{pos_name}"] = fetched_leaders[pos_name]
+                        filled_leaders += 1
+                    else:
+                        unmatched_positions.append(pos_name)
+
+                filled_readings = 0
+                for item in template_items:
+                    if not isinstance(item, dict):
+                        continue
+                    item_id = item.get('id')
+                    item_type = item.get('type')
+                    if not item_id or item_id not in fetched_readings:
+                        continue
+
+                    entry = fetched_readings[item_id]
+                    if not isinstance(entry, dict):
+                        continue
+
+                    if item_type == 'reading':
+                        lang = entry.get('lang')
+                        if isinstance(lang, list):
+                            if len(lang) > 0 and isinstance(lang[0], dict):
+                                st.session_state[f"reading_eng_passage_{item_id}"] = lang[0].get('passage', '')
+                                st.session_state[f"reading_eng_pew_{item_id}"] = lang[0].get('pew', '')
+                                if lang[0].get('passage', ''):
+                                    filled_readings += 1
+                            if len(lang) > 1 and isinstance(lang[1], dict):
+                                st.session_state[f"reading_esp_passage_{item_id}"] = lang[1].get('passage', '')
+                    elif item_type in ['ls-am', 'collection']:
+                        reading_index = entry.get('reading')
+                        try:
+                            st.session_state[f"reading_index_{item_id}"] = int(reading_index)
+                            filled_readings += 1
+                        except (TypeError, ValueError):
+                            pass
+                    elif item_type in ['sermon', 'lesson', 'report']:
+                        st.session_state[f"title_en_{item_id}"] = entry.get('title', '')
+                        st.session_state[f"title_es_{item_id}"] = entry.get('título', '')
+                        if entry.get('title', '') or entry.get('título', ''):
+                            filled_readings += 1
+
+                if leaders_error:
+                    st.warning(f"Leader pull issue: {leaders_error}")
+                if leaders_warning:
+                    st.info(f"Leader pull note: {leaders_warning}")
+                if readings_error:
+                    st.warning(f"Reading pull issue: {readings_error}")
+                if readings_warning:
+                    st.info(f"Reading pull note: {readings_warning}")
+
+                if unmatched_positions and len(unmatched_positions) == len(leader_positions):
+                    st.info("No leader names matched this template's position labels. You can still enter names manually.")
+                elif unmatched_positions:
+                    st.info("Some leader positions were not returned: " + ", ".join(unmatched_positions))
+
+                st.success(f"Pulled data. Leaders filled: {filled_leaders}. Reading fields filled: {filled_readings}.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Could not pull assignments: {e}")
+
+        if leader_positions:
+            for pos_name in sorted(leader_positions.keys()):
+                leaders_input[pos_name] = st.text_input(pos_name, key=f"leader_{pos_name}")
+        else:
+            st.info("This template has no leader fields")
 
 # Song Entry Section
 if selected_template:
     st.subheader("🎵 Songs")
-    template_items = load_template(selected_template)
     song_positions = get_song_positions(template_items)
-    
-    songs_input = {}
-    
     if song_positions:
-        cols = st.columns(len(song_positions))
-        
+        num_cols = min(3, max(1, len(song_positions)))
+        cols = st.columns(num_cols)
         for idx, (song_id, song_item) in enumerate(song_positions.items()):
-            with cols[idx % len(cols)]:
+            with cols[idx % num_cols]:
                 st.write(f"**{song_id}**")
+                default_book = song_item.get("book", "pftl") if isinstance(song_item, dict) else "pftl"
+                default_song = song_item.get("song", "1") if isinstance(song_item, dict) else "1"
+                try:
+                    default_song_num = int(default_song)
+                except (TypeError, ValueError):
+                    default_song_num = 1
+
+                book_options = ["pftl", "phss", "eh", "shs"]
+                default_book_index = book_options.index(default_book) if default_book in book_options else 0
                 book = st.selectbox(
                     f"Book ({song_id})",
-                    ["pftl", "phss", "eh", "shs"],
+                    book_options,
+                    index=default_book_index,
                     key=f"book_{song_id}"
                 )
                 song_num = st.number_input(
@@ -293,16 +464,98 @@ if selected_template:
                     min_value=1,
                     max_value=1000,
                     key=f"song_{song_id}",
-                    value=1
+                    value=default_song_num
                 )
-                
-                songs_input[song_id] = {
+
+                available_verses, available_chorus, song_error = get_song_structure(book, int(song_num))
+
+                selected_verses = None
+                if available_verses:
+                    selected_verses = st.multiselect(
+                        f"Verses ({song_id})",
+                        options=available_verses,
+                        default=available_verses,
+                        key=f"verses_{song_id}"
+                    )
+                elif song_error:
+                    st.caption(f"Could not load verses/chorus for {book}-{int(song_num):03d}: {song_error}")
+
+                selected_chorus = None
+                if available_chorus:
+                    selected_chorus = st.multiselect(
+                        f"Chorus After Verse ({song_id})",
+                        options=available_chorus,
+                        default=available_chorus,
+                        key=f"chorus_{song_id}"
+                    )
+
+                song_payload = {
                     "book": book,
                     "song": str(song_num),
                     "coda": 0
                 }
+
+                # Only write verse overrides when the user changes defaults.
+                if available_verses and selected_verses is not None:
+                    if len(selected_verses) == 0:
+                        st.warning(f"{song_id}: No verses selected. Using all verses.")
+                    elif selected_verses != available_verses:
+                        song_payload["verses"] = selected_verses
+
+                # Empty chorus selection means omit all chorus slides.
+                if available_chorus and selected_chorus is not None:
+                    if len(selected_chorus) == 0:
+                        song_payload["chorus"] = [0]
+                    elif selected_chorus != available_chorus:
+                        song_payload["chorus"] = selected_chorus
+
+                songs_input[song_id] = song_payload
     else:
         st.info("This template has no songs")
+
+    # Dynamic non-song fields driven by template item types
+    st.subheader("🧩 Other Template Items")
+    other_items = [it for it in template_items if isinstance(it, dict)]
+
+    for idx, item in enumerate(other_items):
+        item_id = item.get('id')
+        item_type = item.get('type', 'unknown')
+        if not item_id:
+            continue
+
+        label = f"{item_type} ({item_id})"
+
+        if item_type == 'reading':
+            with st.expander(label, expanded=False):
+                eng_passage = st.text_input("English passage", key=f"reading_eng_passage_{item_id}")
+                pew = st.text_input("Pew reference (optional)", key=f"reading_eng_pew_{item_id}")
+                esp_passage = st.text_input("Spanish passage (optional)", key=f"reading_esp_passage_{item_id}")
+                readings_input[item_id] = {
+                    "lang": [
+                        {"passage": eng_passage, "pew": pew},
+                        {"passage": esp_passage}
+                    ]
+                }
+        elif item_type in ['ls-am', 'collection']:
+            with st.expander(label, expanded=False):
+                reading_index = st.number_input(
+                    "Reading slide index (0-based)",
+                    min_value=0,
+                    max_value=50,
+                    value=0,
+                    key=f"reading_index_{item_id}"
+                )
+                readings_input[item_id] = {"reading": int(reading_index)}
+        elif item_type in ['sermon', 'lesson', 'report']:
+            with st.expander(label, expanded=False):
+                title_en = st.text_input("Title (English)", key=f"title_en_{item_id}")
+                title_es = st.text_input("Title (Spanish)", key=f"title_es_{item_id}")
+                readings_input[item_id] = {"title": title_en, "título": title_es}
+        elif item_type in ['prayer', 'welcome', 'invitation']:
+            with st.expander(label, expanded=False):
+                desc = st.text_input("Display text (optional)", key=f"desc_{item_id}_{idx}")
+                if desc:
+                    readings_input[item_id] = {"desc": desc}
 
 # Generate Button
 st.divider()
@@ -316,7 +569,9 @@ with col_generate:
                 service_time,
                 selected_template,
                 songs_input if 'songs_input' in locals() else {},
-                leaders_input if 'leaders_input' in locals() else {}
+                leaders_input if 'leaders_input' in locals() else {},
+                readings_input if 'readings_input' in locals() else {},
+                service_type
             )
         
         if success:
