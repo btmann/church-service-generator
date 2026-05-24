@@ -23,6 +23,13 @@ WORSHIP_ROOT = "worship/"
 TEMPLATES_ROOT = WORSHIP_ROOT + "templates/"
 SPECS_ROOT = WORSHIP_ROOT + "specs/"
 SERVICE_TYPE_OPTIONS = ['Sun - EarlyAM', 'Sun - AM', 'Sun - PM', 'Wed', 'Gospel Meeting']
+SERVICE_TIME_OPTIONS = ["10:30 AM", "4:00 PM", "5:00 PM", "7:00 PM"]
+SERVICE_TIME_MAP = {
+    "10:30 AM": "10:30",
+    "4:00 PM": "16:00",
+    "5:00 PM": "17:00",
+    "7:00 PM": "19:00",
+}
 
 # Streamlit page config
 st.set_page_config(
@@ -37,9 +44,9 @@ st.markdown(
     <style>
     .stApp {
         background:
-            radial-gradient(circle at 15% 10%, rgba(189, 225, 255, 0.35), transparent 40%),
-            radial-gradient(circle at 80% 15%, rgba(255, 233, 196, 0.45), transparent 34%),
-            linear-gradient(180deg, #f7f7f2 0%, #eef3f6 100%);
+            radial-gradient(circle at 12% 8%, rgba(71, 128, 166, 0.28), transparent 42%),
+            radial-gradient(circle at 84% 12%, rgba(155, 123, 88, 0.22), transparent 38%),
+            linear-gradient(180deg, #cfd9e1 0%, #bcc9d4 100%);
     }
     .hero {
         padding: 1.1rem 1.3rem;
@@ -78,10 +85,11 @@ st.markdown(
         font-size: 0.8rem;
     }
     div[data-testid="stVerticalBlock"] div:has(> div > .section-heading) {
-        border: 1px solid #d6e2ea;
+        border: 1px solid #9fb2c2;
         border-radius: 12px;
         padding: 0.55rem 0.85rem 0.75rem 0.85rem;
-        background: rgba(255, 255, 255, 0.66);
+        background: rgba(255, 255, 255, 0.86);
+        box-shadow: 0 6px 16px rgba(28, 53, 70, 0.12);
     }
     @media (max-width: 900px) {
         .hero h1 {
@@ -397,7 +405,8 @@ leader_positions = {}
 with col1:
     st.markdown('<div class="section-heading">Service Details</div>', unsafe_allow_html=True)
     service_date = st.date_input("Service Date", value=datetime.now())
-    service_time = st.time_input("Service Time", value=datetime.strptime("10:30", "%H:%M").time())
+    service_time_label = st.selectbox("Service Time", SERVICE_TIME_OPTIONS, index=0)
+    service_time = datetime.strptime(SERVICE_TIME_MAP[service_time_label], "%H:%M").time()
     service_type = st.selectbox("Service Type", SERVICE_TYPE_OPTIONS, index=1)
     if templates:
         selected_template = st.selectbox("Template", templates)
@@ -693,8 +702,9 @@ with col_generate:
                 'json': result,
                 'pptx': debug_info
             }
-            st.success("✅ Presentation generated successfully!")
-            st.balloons()
+            st.toast("It worked. Presentation files were created.", icon="✅")
+            st.success("Presentation generated successfully.")
+            st.info(f"Find your files here:\n- JSON: {result}\n- PPTX: {debug_info}")
         else:
             st.error(f"❌ Error generating presentation: {result}")
             if isinstance(debug_info, str) and debug_info:
