@@ -32,12 +32,91 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-st.title("⛪ Church Service Generator")
-st.markdown("Generate beautiful worship presentations in seconds")
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background:
+            radial-gradient(circle at 15% 10%, rgba(189, 225, 255, 0.35), transparent 40%),
+            radial-gradient(circle at 80% 15%, rgba(255, 233, 196, 0.45), transparent 34%),
+            linear-gradient(180deg, #f7f7f2 0%, #eef3f6 100%);
+    }
+    .hero {
+        padding: 1.1rem 1.3rem;
+        border-radius: 14px;
+        background: linear-gradient(120deg, #153042 0%, #26516b 56%, #356f8a 100%);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 10px 26px rgba(20, 37, 48, 0.20);
+        margin-bottom: 0.8rem;
+    }
+    .hero h1 {
+        margin: 0 0 0.15rem 0;
+        font-size: 1.8rem;
+        letter-spacing: 0.2px;
+    }
+    .hero p {
+        margin: 0;
+        font-size: 0.96rem;
+        opacity: 0.92;
+    }
+    .section-heading {
+        margin: 0.35rem 0 0.25rem 0;
+        color: #173c4e;
+        font-size: 1.08rem;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+    }
+    .note-chip {
+        display: inline-block;
+        margin-top: 0.4rem;
+        padding: 0.22rem 0.55rem;
+        border-radius: 999px;
+        border: 1px solid #b6cbd9;
+        background: #f4f9fc;
+        color: #254d62;
+        font-size: 0.8rem;
+    }
+    div[data-testid="stVerticalBlock"] div:has(> div > .section-heading) {
+        border: 1px solid #d6e2ea;
+        border-radius: 12px;
+        padding: 0.55rem 0.85rem 0.75rem 0.85rem;
+        background: rgba(255, 255, 255, 0.66);
+    }
+    @media (max-width: 900px) {
+        .hero h1 {
+            font-size: 1.45rem;
+        }
+    }
+    </style>
+    <div class="hero">
+        <h1>Church Service Generator</h1>
+        <p>Build your worship deck with cleaner planning, auto-pulled data, and manual overrides where needed.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 # Initialize session state
 if 'generated_files' not in st.session_state:
     st.session_state.generated_files = None
+
+
+def should_keep_existing(key, incoming_value, keep_manual):
+    """Return True when manual values should not be overwritten by pulled data."""
+    if not keep_manual:
+        return False
+
+    current_value = st.session_state.get(key)
+    if isinstance(current_value, str):
+        return current_value.strip() != ""
+
+    if isinstance(current_value, (int, float)):
+        if isinstance(incoming_value, (int, float)):
+            return current_value != 0 and current_value != incoming_value
+        return current_value != 0
+
+    return current_value is not None
 
 
 def get_available_templates():
@@ -316,7 +395,7 @@ readings_input = {}
 leader_positions = {}
 
 with col1:
-    st.subheader("📅 Service Details")
+    st.markdown('<div class="section-heading">Service Details</div>', unsafe_allow_html=True)
     service_date = st.date_input("Service Date", value=datetime.now())
     service_time = st.time_input("Service Time", value=datetime.strptime("10:30", "%H:%M").time())
     service_type = st.selectbox("Service Type", SERVICE_TYPE_OPTIONS, index=1)
@@ -339,11 +418,18 @@ if selected_template:
         st.caption(f"Template items: {summary}")
 
 with col2:
-    st.subheader("👥 Leaders")
+    st.markdown('<div class="section-heading">Leaders and Reading Pull</div>', unsafe_allow_html=True)
     if selected_template:
         leader_positions = get_leader_positions(template_items)
+        keep_manual_overrides = st.checkbox(
+            "Keep manual values when pulling",
+            value=True,
+            help="When checked, non-empty fields you already edited will not be overwritten by API results.",
+            key="keep_manual_overrides"
+        )
+        st.markdown('<span class="note-chip">Pulled values are editable after fill</span>', unsafe_allow_html=True)
 
-        if st.button("Pull Assigned Names + Reading", use_container_width=True, key="pull_assignments_btn"):
+        if st.button("Pull Assigned Names and Scripture", use_container_width=True, key="pull_assignments_btn"):
             try:
                 wdate = service_date.strftime("%Y-%m-%d")
                 wtime = service_time.strftime("%H:%M:%S")
@@ -368,8 +454,10 @@ with col2:
 
                 for pos_name in sorted(leader_positions.keys()):
                     if pos_name in fetched_leaders and isinstance(fetched_leaders[pos_name], str):
-                        st.session_state[f"leader_{pos_name}"] = fetched_leaders[pos_name]
-                        filled_leaders += 1
+                        leader_key = f"leader_{pos_name}"
+                        if not should_keep_existing(leader_key, fetched_leaders[pos_name], keep_manual_overrides):
+                            st.session_state[leader_key] = fetched_leaders[pos_name]
+                            filled_leaders += 1
                     else:
                         unmatched_positions.append(pos_name)
 
@@ -390,22 +478,40 @@ with col2:
                         lang = entry.get('lang')
                         if isinstance(lang, list):
                             if len(lang) > 0 and isinstance(lang[0], dict):
-                                st.session_state[f"reading_eng_passage_{item_id}"] = lang[0].get('passage', '')
-                                st.session_state[f"reading_eng_pew_{item_id}"] = lang[0].get('pew', '')
+                                eng_passage = lang[0].get('passage', '')
+                                eng_pew = lang[0].get('pew', '')
+                                eng_passage_key = f"reading_eng_passage_{item_id}"
+                                eng_pew_key = f"reading_eng_pew_{item_id}"
+                                if not should_keep_existing(eng_passage_key, eng_passage, keep_manual_overrides):
+                                    st.session_state[eng_passage_key] = eng_passage
+                                if not should_keep_existing(eng_pew_key, eng_pew, keep_manual_overrides):
+                                    st.session_state[eng_pew_key] = eng_pew
                                 if lang[0].get('passage', ''):
                                     filled_readings += 1
                             if len(lang) > 1 and isinstance(lang[1], dict):
-                                st.session_state[f"reading_esp_passage_{item_id}"] = lang[1].get('passage', '')
+                                esp_passage_key = f"reading_esp_passage_{item_id}"
+                                esp_passage = lang[1].get('passage', '')
+                                if not should_keep_existing(esp_passage_key, esp_passage, keep_manual_overrides):
+                                    st.session_state[esp_passage_key] = esp_passage
                     elif item_type in ['ls-am', 'collection']:
                         reading_index = entry.get('reading')
                         try:
-                            st.session_state[f"reading_index_{item_id}"] = int(reading_index)
-                            filled_readings += 1
+                            parsed_index = int(reading_index)
+                            index_key = f"reading_index_{item_id}"
+                            if not should_keep_existing(index_key, parsed_index, keep_manual_overrides):
+                                st.session_state[index_key] = parsed_index
+                                filled_readings += 1
                         except (TypeError, ValueError):
                             pass
                     elif item_type in ['sermon', 'lesson', 'report']:
-                        st.session_state[f"title_en_{item_id}"] = entry.get('title', '')
-                        st.session_state[f"title_es_{item_id}"] = entry.get('título', '')
+                        title_en_key = f"title_en_{item_id}"
+                        title_es_key = f"title_es_{item_id}"
+                        title_en = entry.get('title', '')
+                        title_es = entry.get('título', '')
+                        if not should_keep_existing(title_en_key, title_en, keep_manual_overrides):
+                            st.session_state[title_en_key] = title_en
+                        if not should_keep_existing(title_es_key, title_es, keep_manual_overrides):
+                            st.session_state[title_es_key] = title_es
                         if entry.get('title', '') or entry.get('título', ''):
                             filled_readings += 1
 
@@ -436,7 +542,7 @@ with col2:
 
 # Song Entry Section
 if selected_template:
-    st.subheader("🎵 Songs")
+    st.markdown('<div class="section-heading">Songs</div>', unsafe_allow_html=True)
     song_positions = get_song_positions(template_items)
     if song_positions:
         num_cols = min(3, max(1, len(song_positions)))
@@ -514,7 +620,7 @@ if selected_template:
         st.info("This template has no songs")
 
     # Dynamic non-song fields driven by template item types
-    st.subheader("🧩 Other Template Items")
+    st.markdown('<div class="section-heading">Reading and Other Items</div>', unsafe_allow_html=True)
     other_items = [it for it in template_items if isinstance(it, dict)]
 
     for idx, item in enumerate(other_items):
@@ -527,15 +633,23 @@ if selected_template:
 
         if item_type == 'reading':
             with st.expander(label, expanded=False):
+                reading_number_str = st.text_input(
+                    "Scripture reading number (optional)",
+                    key=f"reading_number_{item_id}",
+                    help="Optional manual override if you need to track or force a specific reading number."
+                )
                 eng_passage = st.text_input("English passage", key=f"reading_eng_passage_{item_id}")
                 pew = st.text_input("Pew reference (optional)", key=f"reading_eng_pew_{item_id}")
                 esp_passage = st.text_input("Spanish passage (optional)", key=f"reading_esp_passage_{item_id}")
-                readings_input[item_id] = {
+                reading_payload = {
                     "lang": [
                         {"passage": eng_passage, "pew": pew},
                         {"passage": esp_passage}
                     ]
                 }
+                if reading_number_str.strip().isdigit():
+                    reading_payload["reading"] = int(reading_number_str.strip())
+                readings_input[item_id] = reading_payload
         elif item_type in ['ls-am', 'collection']:
             with st.expander(label, expanded=False):
                 reading_index = st.number_input(
