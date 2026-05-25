@@ -30,6 +30,12 @@ SERVICE_TIME_MAP = {
     "5:00 PM": "17:00",
     "7:00 PM": "19:00",
 }
+SONG_BOOK_OPTIONS = {
+    "pftl": "Praise for the Lord",
+    "phss": "Psalms, Hymns, and Spiritual Songs",
+    "eh": "Embry Hills",
+    "shs": "Sumphonia Hymn Supplement",
+}
 
 # Streamlit page config
 st.set_page_config(
@@ -589,19 +595,21 @@ for idx, item in enumerate(template_items):
         except (TypeError, ValueError):
             default_song_num = 1
 
-        st.caption("Song setup")
         song_col1, song_col2, song_col3, song_col4 = st.columns([0.9, 1.1, 2.0, 2.0])
         with song_col1:
-            book_options = ["pftl", "phss", "eh", "shs"]
+            st.caption("Song Book")
+            book_options = list(SONG_BOOK_OPTIONS.keys())
             default_book_index = book_options.index(default_book) if default_book in book_options else 0
             book = st.selectbox(
                 f"Book ({item_id})",
                 book_options,
                 index=default_book_index,
                 key=f"book_{item_id}_{idx}",
-                label_visibility="collapsed"
+                label_visibility="collapsed",
+                format_func=lambda code: SONG_BOOK_OPTIONS.get(code, code)
             )
         with song_col2:
+            st.caption("Song Number")
             song_num = st.number_input(
                 f"Song # ({item_id})",
                 min_value=1,
@@ -616,6 +624,7 @@ for idx, item in enumerate(template_items):
         selected_verses = None
         selected_chorus = None
         with song_col3:
+            st.caption("Verses")
             if available_verses:
                 selected_verses = st.multiselect(
                     f"Verses ({item_id})",
@@ -627,6 +636,7 @@ for idx, item in enumerate(template_items):
             else:
                 st.caption("All verses")
         with song_col4:
+            st.caption("Chorus")
             if available_chorus:
                 selected_chorus = st.multiselect(
                     f"Chorus After Verse ({item_id})",
@@ -701,7 +711,7 @@ for idx, item in enumerate(template_items):
 
 # Generate Button
 st.divider()
-col_generate, col_status = st.columns([1, 2])
+col_left, col_generate, col_right = st.columns([1, 1.2, 1])
 
 with col_generate:
     if st.button("🚀 Generate Presentation", type="primary", use_container_width=True):
