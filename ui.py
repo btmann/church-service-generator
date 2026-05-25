@@ -48,14 +48,29 @@ st.markdown(
             radial-gradient(circle at 84% 12%, rgba(155, 123, 88, 0.22), transparent 38%),
             linear-gradient(180deg, #cfd9e1 0%, #bcc9d4 100%);
     }
+    .block-container {
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        padding-top: 1.0rem;
+    }
+    .hero-wrap {
+        width: 100vw;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
+        padding: 0 0 0.8rem 0;
+    }
     .hero {
+        width: 100%;
+        margin: 0;
         padding: 1.1rem 1.3rem;
-        border-radius: 14px;
+        border-radius: 0;
         background: linear-gradient(120deg, #153042 0%, #26516b 56%, #356f8a 100%);
         color: #ffffff;
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
         box-shadow: 0 10px 26px rgba(20, 37, 48, 0.20);
-        margin-bottom: 0.8rem;
+        margin-bottom: 0.35rem;
     }
     .hero h1 {
         margin: 0 0 0.15rem 0;
@@ -94,15 +109,48 @@ st.markdown(
     div[data-testid="stVerticalBlock"] {
         gap: 0.35rem;
     }
+    div[data-testid="stDateInput"],
+    div[data-testid="stTimeInput"],
+    div[data-testid="stSelectbox"],
+    div[data-testid="stTextInput"],
+    div[data-testid="stNumberInput"],
+    div[data-testid="stMultiSelect"] {
+        display: grid;
+        grid-template-columns: 210px 1fr;
+        align-items: center;
+        column-gap: 0.65rem;
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    div[data-testid="stWidgetLabel"] {
+        margin-bottom: 0;
+    }
+    div[data-testid="stWidgetLabel"] > label {
+        text-align: left;
+        width: 100%;
+        justify-content: flex-start;
+    }
     @media (max-width: 900px) {
         .hero h1 {
             font-size: 1.45rem;
         }
+        div[data-testid="stDateInput"],
+        div[data-testid="stTimeInput"],
+        div[data-testid="stSelectbox"],
+        div[data-testid="stTextInput"],
+        div[data-testid="stNumberInput"],
+        div[data-testid="stMultiSelect"] {
+            grid-template-columns: 1fr;
+            row-gap: 0.2rem;
+        }
     }
     </style>
-    <div class="hero">
-        <h1>Church Service Generator</h1>
-        <p>Build your worship deck with cleaner planning, auto-pulled data, and manual overrides where needed.</p>
+    <div class="hero-wrap">
+      <div class="hero">
+          <h1>Church Service Generator</h1>
+          <p>Build your worship deck with cleaner planning, auto-pulled data, and manual overrides where needed.</p>
+      </div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -395,7 +443,6 @@ def generate_presentation(date, time, template, songs_data, leaders_data, readin
 
 
 # Main UI layout
-setup_col, pull_col = st.columns([1, 1])
 
 templates = get_available_templates()
 selected_template = None
@@ -404,22 +451,21 @@ songs_input = {}
 leaders_input = {}
 readings_input = {}
 
-with setup_col:
-    st.markdown('<div class="section-heading">Service Setup</div>', unsafe_allow_html=True)
-    service_date = st.date_input("Service Date", value=datetime.now())
-    service_time_label = st.selectbox("Service Time", SERVICE_TIME_OPTIONS, index=0)
-    service_time = datetime.strptime(SERVICE_TIME_MAP[service_time_label], "%H:%M").time()
-    service_type = st.selectbox("Service Type", SERVICE_TYPE_OPTIONS, index=1)
+st.markdown('<div class="section-heading">Service Setup</div>', unsafe_allow_html=True)
+service_date = st.date_input("Service Date", value=datetime.now())
+service_time_label = st.selectbox("Service Time", SERVICE_TIME_OPTIONS, index=0)
+service_time = datetime.strptime(SERVICE_TIME_MAP[service_time_label], "%H:%M").time()
+service_type = st.selectbox("Service Type", SERVICE_TYPE_OPTIONS, index=1)
 
-    if templates:
-        template_choices = ["-- Select Template --"] + templates
-        if "template_select" in st.session_state and st.session_state["template_select"] not in template_choices:
-            st.session_state["template_select"] = "-- Select Template --"
-        selected_template_choice = st.selectbox("Template", template_choices, index=0, key="template_select")
-        if selected_template_choice in templates:
-            selected_template = selected_template_choice
-    else:
-        st.error("No templates found in worship/templates")
+if templates:
+    template_choices = ["-- Select Template --"] + templates
+    if "template_select" in st.session_state and st.session_state["template_select"] not in template_choices:
+        st.session_state["template_select"] = "-- Select Template --"
+    selected_template_choice = st.selectbox("Template", template_choices, index=0, key="template_select")
+    if selected_template_choice in templates:
+        selected_template = selected_template_choice
+else:
+    st.error("No templates found in worship/templates")
 
 if not selected_template:
     st.info("Select template and date first. The rest of the form will appear after template selection.")
@@ -438,125 +484,81 @@ if counts:
     summary = ", ".join([f"{k}: {v}" for k, v in sorted(counts.items())])
     st.caption(f"Template items: {summary}")
 
-with pull_col:
-    st.markdown('<div class="section-heading">Auto Fill</div>', unsafe_allow_html=True)
-    keep_manual_overrides = st.checkbox(
-        "Keep manual values when pulling",
-        value=True,
-        help="When checked, non-empty fields you already edited will not be overwritten by API results.",
-        key="keep_manual_overrides"
-    )
-    st.markdown('<span class="note-chip">Auto pull runs when template/date/time/type changes</span>', unsafe_allow_html=True)
+keep_manual_overrides = True
+wdate = service_date.strftime("%Y-%m-%d")
+wtime = service_time.strftime("%H:%M:%S")
+autofill_signature = f"{selected_template}|{wdate}|{wtime}|{service_type}|{int(keep_manual_overrides)}"
+autofill_ran_for = st.session_state.get("autofill_ran_for")
 
-    wdate = service_date.strftime("%Y-%m-%d")
-    wtime = service_time.strftime("%H:%M:%S")
-    autofill_signature = f"{selected_template}|{wdate}|{wtime}|{service_type}|{int(keep_manual_overrides)}"
-    autofill_ran_for = st.session_state.get("autofill_ran_for")
+if autofill_ran_for != autofill_signature:
+    try:
+        fetched_leaders_data = worship.fetch_leaders(wdate, wtime, service_type)
+        fetched_leaders = fetched_leaders_data.get('leaders', {}) if isinstance(fetched_leaders_data, dict) else {}
+        if not isinstance(fetched_leaders, dict):
+            fetched_leaders = {}
 
-    if autofill_ran_for != autofill_signature:
-        try:
-            fetched_leaders_data = worship.fetch_leaders(wdate, wtime, service_type)
-            fetched_leaders = fetched_leaders_data.get('leaders', {}) if isinstance(fetched_leaders_data, dict) else {}
-            if not isinstance(fetched_leaders, dict):
-                fetched_leaders = {}
-            leaders_error = fetched_leaders_data.get('_error') if isinstance(fetched_leaders_data, dict) else None
-            leaders_warning = fetched_leaders_data.get('_warning') if isinstance(fetched_leaders_data, dict) else None
+        fetched_readings_seed = build_default_readings(template_items)
+        fetched_readings_data = worship.fetch_readings(wdate, fetched_readings_seed, service_type)
+        fetched_readings = fetched_readings_data.get('readings', {}) if isinstance(fetched_readings_data, dict) else {}
+        if not isinstance(fetched_readings, dict):
+            fetched_readings = {}
 
-            fetched_readings_seed = build_default_readings(template_items)
-            fetched_readings_data = worship.fetch_readings(wdate, fetched_readings_seed, service_type)
-            fetched_readings = fetched_readings_data.get('readings', {}) if isinstance(fetched_readings_data, dict) else {}
-            if not isinstance(fetched_readings, dict):
-                fetched_readings = {}
-            readings_error = fetched_readings_data.get('_error') if isinstance(fetched_readings_data, dict) else None
-            readings_warning = fetched_readings_data.get('_warning') if isinstance(fetched_readings_data, dict) else None
+        for pos_name in sorted(leader_positions.keys()):
+            if pos_name in fetched_leaders and isinstance(fetched_leaders[pos_name], str):
+                for idx, item in enumerate(template_items):
+                    if isinstance(item, dict) and item.get('position') == pos_name:
+                        leader_key = f"leader_{pos_name}_{idx}"
+                        if not should_keep_existing(leader_key, fetched_leaders[pos_name], keep_manual_overrides):
+                            st.session_state[leader_key] = fetched_leaders[pos_name]
 
-            filled_leaders = 0
-            unmatched_positions = []
+        for item in template_items:
+            if not isinstance(item, dict):
+                continue
+            item_id = item.get('id')
+            item_type = item.get('type')
+            if not item_id or item_id not in fetched_readings:
+                continue
 
-            for pos_name in sorted(leader_positions.keys()):
-                if pos_name in fetched_leaders and isinstance(fetched_leaders[pos_name], str):
-                    updated_any = False
-                    for idx, item in enumerate(template_items):
-                        if isinstance(item, dict) and item.get('position') == pos_name:
-                            leader_key = f"leader_{pos_name}_{idx}"
-                            if not should_keep_existing(leader_key, fetched_leaders[pos_name], keep_manual_overrides):
-                                st.session_state[leader_key] = fetched_leaders[pos_name]
-                                updated_any = True
-                    if updated_any:
-                        filled_leaders += 1
-                else:
-                    unmatched_positions.append(pos_name)
+            entry = fetched_readings[item_id]
+            if not isinstance(entry, dict):
+                continue
 
-            filled_readings = 0
-            for item in template_items:
-                if not isinstance(item, dict):
-                    continue
-                item_id = item.get('id')
-                item_type = item.get('type')
-                if not item_id or item_id not in fetched_readings:
-                    continue
+            if item_type == 'reading':
+                lang = entry.get('lang')
+                if isinstance(lang, list):
+                    if len(lang) > 0 and isinstance(lang[0], dict):
+                        eng_passage = lang[0].get('passage', '')
+                        eng_passage_key = f"reading_eng_passage_{item_id}"
+                        if not should_keep_existing(eng_passage_key, eng_passage, keep_manual_overrides):
+                            st.session_state[eng_passage_key] = eng_passage
+                    if len(lang) > 1 and isinstance(lang[1], dict):
+                        esp_passage_key = f"reading_esp_passage_{item_id}"
+                        esp_passage = lang[1].get('passage', '')
+                        if not should_keep_existing(esp_passage_key, esp_passage, keep_manual_overrides):
+                            st.session_state[esp_passage_key] = esp_passage
+            elif item_type in ['ls-am', 'collection']:
+                reading_index = entry.get('reading')
+                try:
+                    parsed_index = int(reading_index)
+                    index_key = f"reading_index_{item_id}"
+                    if not should_keep_existing(index_key, parsed_index, keep_manual_overrides):
+                        st.session_state[index_key] = parsed_index
+                except (TypeError, ValueError):
+                    pass
+            elif item_type in ['sermon', 'lesson', 'report']:
+                title_en_key = f"title_en_{item_id}"
+                title_es_key = f"title_es_{item_id}"
+                title_en = entry.get('title', '')
+                title_es = entry.get('título', '')
+                if not should_keep_existing(title_en_key, title_en, keep_manual_overrides):
+                    st.session_state[title_en_key] = title_en
+                if not should_keep_existing(title_es_key, title_es, keep_manual_overrides):
+                    st.session_state[title_es_key] = title_es
 
-                entry = fetched_readings[item_id]
-                if not isinstance(entry, dict):
-                    continue
-
-                if item_type == 'reading':
-                    lang = entry.get('lang')
-                    if isinstance(lang, list):
-                        if len(lang) > 0 and isinstance(lang[0], dict):
-                            eng_passage = lang[0].get('passage', '')
-                            eng_passage_key = f"reading_eng_passage_{item_id}"
-                            if not should_keep_existing(eng_passage_key, eng_passage, keep_manual_overrides):
-                                st.session_state[eng_passage_key] = eng_passage
-                            if lang[0].get('passage', ''):
-                                filled_readings += 1
-                        if len(lang) > 1 and isinstance(lang[1], dict):
-                            esp_passage_key = f"reading_esp_passage_{item_id}"
-                            esp_passage = lang[1].get('passage', '')
-                            if not should_keep_existing(esp_passage_key, esp_passage, keep_manual_overrides):
-                                st.session_state[esp_passage_key] = esp_passage
-                elif item_type in ['ls-am', 'collection']:
-                    reading_index = entry.get('reading')
-                    try:
-                        parsed_index = int(reading_index)
-                        index_key = f"reading_index_{item_id}"
-                        if not should_keep_existing(index_key, parsed_index, keep_manual_overrides):
-                            st.session_state[index_key] = parsed_index
-                            filled_readings += 1
-                    except (TypeError, ValueError):
-                        pass
-                elif item_type in ['sermon', 'lesson', 'report']:
-                    title_en_key = f"title_en_{item_id}"
-                    title_es_key = f"title_es_{item_id}"
-                    title_en = entry.get('title', '')
-                    title_es = entry.get('título', '')
-                    if not should_keep_existing(title_en_key, title_en, keep_manual_overrides):
-                        st.session_state[title_en_key] = title_en
-                    if not should_keep_existing(title_es_key, title_es, keep_manual_overrides):
-                        st.session_state[title_es_key] = title_es
-                    if entry.get('title', '') or entry.get('título', ''):
-                        filled_readings += 1
-
-            if leaders_error:
-                st.warning(f"Leader pull issue: {leaders_error}")
-            if leaders_warning:
-                st.info(f"Leader pull note: {leaders_warning}")
-            if readings_error:
-                st.warning(f"Reading pull issue: {readings_error}")
-            if readings_warning:
-                st.info(f"Reading pull note: {readings_warning}")
-
-            if unmatched_positions and len(unmatched_positions) == len(leader_positions):
-                st.info("No leader names matched this template's position labels. You can still enter names manually.")
-            elif unmatched_positions:
-                st.info("Some leader positions were not returned: " + ", ".join(unmatched_positions))
-
-            st.session_state["autofill_ran_for"] = autofill_signature
-            st.caption(f"Auto pull complete. Leaders filled: {filled_leaders}. Reading fields filled: {filled_readings}.")
-        except Exception as e:
-            # Non-breaking behavior: keep form usable even if pull API fails.
-            st.session_state["autofill_ran_for"] = autofill_signature
-            st.warning(f"Auto pull could not complete ({e}). You can still fill everything manually.")
+        st.session_state["autofill_ran_for"] = autofill_signature
+    except Exception:
+        # Non-breaking behavior: keep form usable even if pull API fails.
+        st.session_state["autofill_ran_for"] = autofill_signature
 
 st.markdown('<div class="section-heading">Service Flow Inputs (PowerPoint Order)</div>', unsafe_allow_html=True)
 
