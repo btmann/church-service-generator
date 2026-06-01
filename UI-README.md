@@ -157,6 +157,26 @@ streamlit run ui.py --server.port 8502
 - Verify song exists in `ehsf/{book}/{number}/` directory
 - Check book code: pftl, phss, eh, shs
 
+### Rebuild Song Search Lookup (Recommended for Large Data Pulls)
+
+The UI search tab can use a prebuilt lookup file for faster and more complete title search.
+
+Run this after pulling new song data:
+
+```bash
+python tools/build_song_lookup.py --root ehsf
+```
+
+This generates:
+- `ehsf/song-search-index.json`
+
+The index includes:
+- Song title
+- Book and number
+- Source labels showing where the song came from (example: `pftl`, `phss`, `esp/pftl`)
+
+If the file is missing, the UI falls back to live scanning.
+
 ### Template Not Found
 - Verify template JSON exists in `worship/templates/{template}.json`
 - Check template name in dropdown
