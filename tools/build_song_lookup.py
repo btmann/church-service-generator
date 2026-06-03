@@ -128,12 +128,21 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    root = Path(args.root).resolve()
+    project_root = Path(__file__).resolve().parent.parent
+
+    root_arg = Path(args.root)
+    root = root_arg if root_arg.is_absolute() else (project_root / root_arg)
+    root = root.resolve()
     if not root.exists() or not root.is_dir():
         print(f"Error: root folder not found: {root}")
         return 1
 
-    output = Path(args.output).resolve() if args.output else root / "song-search-index.json"
+    if args.output:
+        output_arg = Path(args.output)
+        output = output_arg if output_arg.is_absolute() else (project_root / output_arg)
+        output = output.resolve()
+    else:
+        output = root / "song-search-index.json"
     output.parent.mkdir(parents=True, exist_ok=True)
 
     lookup = build_lookup(root)
