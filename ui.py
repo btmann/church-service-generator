@@ -336,6 +336,18 @@ def build_song_search_index():
     return results
 
 
+def song_source_group(entry):
+    """Normalize an indexed entry into a user-facing source group label."""
+    source_folder = str(entry.get("source_folder", "")).strip("/")
+    if not source_folder:
+        return "ehsf"
+
+    parts = source_folder.split("/")
+    if len(parts) >= 2 and parts[0] == "esp":
+        return f"ehsf/{parts[0]}/{parts[1]}"
+    return f"ehsf/{parts[0]}"
+
+
 def create_worship_files(date, time, template, songs_data, leaders_data, readings_data=None, service_type='Sun - AM'):
     """Create initial worship files (spec, songs, leaders, readings)"""
     # Parse date/time
@@ -411,12 +423,18 @@ def load_json_safe(path):
             return json.load(f)
 
 
-def get_song_structure(book, song_num):
-    """Return available verses and chorus slots for a song."""
+def get_song_structure(book, song_num, source_folder=""):
+    """Return available verses and chorus slots for a song.
+    Verse/chorus structure always comes from the English (engbase) JSON;
+    the ESP JSON only carries translation text (title, credits).
+    """
     try:
         _, paths = slides.get_song_paths_new(book, int(song_num))
-        meta = load_json_safe(paths['engbase'] + ".json")
-        custom = paths['engbase'] + "-custom.json"
+
+        # Always use engbase for structure — ESP json has no verses/chorus keys
+        meta_base = paths['engbase']
+        meta = load_json_safe(meta_base + ".json")
+        custom = meta_base + "-custom.json"
         if os.path.exists(custom):
             custom_data = load_json_safe(custom)
             if isinstance(custom_data, dict):
@@ -668,7 +686,25 @@ flow_tab, search_tab = st.tabs(["Service Flow", "Song Search"])
 with search_tab:
     if song_search_index:
         st.caption(f"Search by title, then apply to a song slot. Indexed songs: {len(song_search_index)}")
-        search_titles = sorted({entry["title"] for entry in song_search_index})
+
+        source_groups = sorted({song_source_group(entry) for entry in song_search_index})
+        source_options = ["All sources"] + source_groups
+        default_source_index = source_options.index("ehsf/esp/pftl") if "ehsf/esp/pftl" in source_options else 0
+        selected_source_group = st.selectbox(
+            "Song Source",
+            options=source_options,
+            index=default_source_index,
+            key="song_search_source_group"
+        )
+
+        filtered_index = song_search_index
+        if selected_source_group != "All sources":
+            filtered_index = [
+                entry for entry in song_search_index
+                if song_source_group(entry) == selected_source_group
+            ]
+
+        search_titles = sorted({entry["title"] for entry in filtered_index})
         searched_song = st.selectbox(
             "Find song by title",
             ["-- Search by title --"] + search_titles,
@@ -679,7 +715,7 @@ with search_tab:
         if searched_song != "-- Search by title --":
             matches = [
                 entry
-                for entry in song_search_index
+                for entry in filtered_index
                 if entry.get("title", "").lower() == searched_song.lower()
             ]
             if matches:
@@ -719,6 +755,7 @@ with search_tab:
                             except (TypeError, ValueError):
                                 applied_song_num = 1
                             st.session_state[f"song_{target['item_id']}_{target['idx']}"] = applied_song_num
+                            st.session_state[f"song_source_{target['item_id']}_{target['idx']}"] = source_folder
                             st.session_state["song_search_applied_message"] = (
                                 f"Applied {book_code.upper()}-{song_num} ({source_folder or 'unknown source'}) to {target_label}."
                             )
@@ -761,7 +798,7 @@ with flow_tab:
             except (TypeError, ValueError):
                 default_song_num = 1
 
-            song_col1, song_col2, song_col3, song_col4 = st.columns([0.9, 1.1, 2.0, 2.0])
+            song_col1, song_col2, song_col3, song_col4, song_col5 = st.columns([0.9, 1.1, 1.2, 2.0, 2.0])
             with song_col1:
                 st.caption("Song Book")
                 book_options = list(SONG_BOOK_OPTIONS.keys())
@@ -787,11 +824,35 @@ with flow_tab:
                     label_visibility="collapsed"
                 )
 
-            available_verses, available_chorus, song_error = get_song_structure(book, int(song_num))
+            with song_col3:
+                st.caption("Song Source")
+                existing_source_folder = str(
+                    st.session_state.get(
+                        f"song_source_{item_id}_{idx}",
+                        item.get("source_folder", "") if isinstance(item, dict) else ""
+                    )
+                ).strip().lower()
+                default_source_key = "esp" if existing_source_folder.startswith("esp") else "eng"
+                source_choice = st.selectbox(
+                    f"Source ({item_id})",
+                    ["eng", "esp"],
+                    index=1 if default_source_key == "esp" else 0,
+                    key=f"song_source_choice_{item_id}_{idx}",
+                    label_visibility="collapsed",
+                    format_func=lambda code: "English (ehsf)" if code == "eng" else "Spanish (ehsf/esp)"
+                )
+
+                if source_choice == "esp":
+                    source_folder = f"esp/{book}"
+                else:
+                    source_folder = book
+                st.session_state[f"song_source_{item_id}_{idx}"] = source_folder
+
+            available_verses, available_chorus, song_error = get_song_structure(book, int(song_num), source_folder)
 
             selected_verses = None
             selected_chorus = None
-            with song_col3:
+            with song_col4:
                 st.caption("Verses")
                 if available_verses:
                     selected_verses = st.multiselect(
@@ -803,7 +864,7 @@ with flow_tab:
                     )
                 else:
                     st.caption("All verses")
-            with song_col4:
+            with song_col5:
                 st.caption("Chorus")
                 if available_chorus:
                     selected_chorus = st.multiselect(
@@ -824,6 +885,10 @@ with flow_tab:
                 "song": str(song_num),
                 "coda": 0
             }
+
+            selected_source_folder = source_folder or st.session_state.get(f"song_source_{item_id}_{idx}", "")
+            if selected_source_folder:
+                song_payload["source_folder"] = str(selected_source_folder)
 
             if available_verses and selected_verses is not None:
                 if len(selected_verses) == 0:

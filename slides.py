@@ -149,31 +149,9 @@ def analyze_image(picture):
 	if img.mode != "1":
 		img = img.convert(mode="1")
 	print(img.mode, img.size)
-	pixels = list(img.getdata())
 	width, height = img.size
-	top = -1
-	bot = height + 1
-	left = width + 1
-	right = -1
-	staff = -1
-	for ny in range(height):
-		row = pixels[(ny * width):(ny * width)+width]
-		np = row.count(255)
-		if np != width:
-			if top == -1:
-				top = ny
-			bot = ny
-			if np < width / 2:
-				if staff == -1:
-					staff = ny
-			tl = row.index(0)
-			if tl < left:
-				left = tl
-			rt = width - row[::-1].index(0)
-			if rt > right:
-				right = rt
-	print(top, bot, staff, left, right)
-	return dict(width=width, height=height, top=top/height, bot=bot/height, staff=staff/height, left=left/width, right=right/width)
+	# Return full image bounds (no cropping)
+	return dict(width=width, height=height, top=0, bot=1, staff=-1, left=0, right=1)
 
 
 
@@ -253,7 +231,7 @@ def set_crop_window(crop, meta):
 		iar = cr["width"] / cr["height"]
 
 	window = [ mtop, ml, mr - ml, mbot - mtop]
-	padding = 1.05
+	padding = 0.95
 
 	meta['window_orientation'], meta['window'] = set_window(window, padding, iar)
 	return window, padding
@@ -267,25 +245,8 @@ def size_image_to_window(picture, crop, window, padding, basename, rawname, ndx)
 		img.save(rawname + "-" + f"{ndx:02d}" + ".png")	# save the raw image
 	if img.mode != "RGB":
 		img = img.convert(mode="RGB")
-# window = [ mtop, ml, mr - ml, mbot - mtop]
-	mw = int((window[2] * crop["width"]) + 0.5)
-	mh = int((window[3] * crop["height"]) + 0.5)
-	left = window[1] * crop["width"]
-	upper = window[0] * crop["height"]
-	right = left + mw
-	lower = upper + mh
-	box = (left, upper, right, lower)
-	print(box)
-	img = img.crop(box)
-
-	pw = mw * padding
-	ph = mh * padding
-	dx = (pw - mw) / 2
-	dy = (ph - mh) / 2
-
-	out = PIL.Image.new("RGB", (int(pw + 0.5), int(ph + 0.5)), color="white")
-	out.paste(img, box=(int(dx), int(dy)))
-	out.save(filename)
+	# Save the full image without cropping to preserve complete content
+	img.save(filename)
 
 
 
@@ -1203,7 +1164,7 @@ def add_song_title_slide(outp, language, item, navitems, ndi, verses=None, choru
 	if language == "bil" or language == "eng" or espm is None:
 		eng = dict()
 		eng[LAYOUT_TITLE_TITLE] = dict(text=str(displaySong), max_size=60, step_size=6, bold=True, size=[0.675, 4.6, 2.5, 1])
-		eng[LAYOUT_TITLE_DETAIL] = dict(text=meta['title'].upper(), max_size=54, step_size=6, bold=True, size=[1.675, 3.75, 4.2, 1.8])
+		eng[LAYOUT_TITLE_DETAIL] = dict(text=meta['title'].upper(), max_size=36, step_size=6, bold=True, size=[1.675, 3.75, 4.2, 1.8])
 		eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CSINGING...TO THE LORD\u201D\nCOLOSSIANS 3:16", max_size=24, step_size=2, size=[4.325, 4.1, 3.5, 0.7])
 		eng[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(meta['credits'].splitlines()), max_size=12, step_size=2)
 		if bubble:
@@ -1213,7 +1174,7 @@ def add_song_title_slide(outp, language, item, navitems, ndi, verses=None, choru
 		if espm:
 			esp = dict()
 			esp[LAYOUT_TITLE_TITLE] = dict(text=str(displaySong), fonts=eng_fonts, max_size=60, step_size=6, bold=True, size=[0.675, 4.6, 2.5, 1])
-			esp[LAYOUT_TITLE_DETAIL] = dict(text=espm['title'].upper(), max_size=56, step_size=6, bold=True, size=[1.62, 3.75, 4.2, 1.8])
+			esp[LAYOUT_TITLE_DETAIL] = dict(text=espm['title'].upper(), max_size=36, step_size=6, bold=True, size=[1.62, 3.75, 4.2, 1.8])
 			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CCANTANDO...AL SE�OR\u201D\nCOLOSENSES 3:16", max_size=22, step_size=2, size=[4.280, 4.1, 3.5, 0.9])
 			esp[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(espm['credits'].splitlines()), max_size=13, step_size=1)
 			if bubble:
@@ -1690,7 +1651,30 @@ def add_verse_to_deck(outp, displayBook, displaySong, basename, ndx, meta, esp, 
 	# insert music image and adjust size & position
 	filename = basename + "-" + f"{ndx:02d}" + ".png"
 	v = get_placeholder(slide, LAYOUT_SONG_MUSIC)
-	set_placeholder_pic(v, filename, window[0], mw + window[1], window[2], window[3])
+	
+	# Load image to get actual dimensions and preserve full content
+	if os.path.exists(filename):
+		img = PIL.Image.open(filename)
+		img_width, img_height = img.size
+		img_aspect = img_width / img_height
+		
+		# Use window height/width as max constraints
+		max_width = window[2]
+		max_height = window[3]
+		
+		# Calculate dimensions that preserve aspect ratio and fit within constraints
+		if img_aspect > (max_width / max_height):
+			# Image is wider - constrain by width
+			display_width = max_width
+			display_height = max_width / img_aspect
+		else:
+			# Image is taller - constrain by height
+			display_height = max_height
+			display_width = max_height * img_aspect
+		
+		set_placeholder_pic(v, filename, window[0], mw + window[1], display_width, display_height)
+	else:
+		set_placeholder_pic(v, filename, window[0], mw + window[1], window[2], window[3])
 
 	# insert song background image
 	v = get_placeholder(slide, LAYOUT_SONG_BACKGROUND)
@@ -2883,7 +2867,17 @@ def make_worship_deck(jsonfile):
 			custom = paths['engbase'] + "-custom.json"
 			if os.path.exists(custom):
 				item['meta'].update(load_json_safe(custom))
-			item['esp'], item['basename'] = set_esp(paths, language)
+			# If the song was selected from the ESP folder and that folder has
+			# its own PNG images, use those images (bilingual slides).
+			# The English title is always preserved (language stays 'eng').
+			source_folder = str(item.get('source_folder', '')).strip().lower()
+			use_esp_images = (
+				(source_folder.startswith('esp/') or source_folder == 'esp')
+				and os.path.exists(paths['espbase'] + "-01.png")
+			)
+			item['basename'] = paths['espbase'] if use_esp_images else paths['engbase']
+			# Load ESP metadata (Spanish title/credits) as overlay if it exists
+			item['esp'], _ = set_esp(paths, language)
 		elif 'medley' in item['type']:
 			for songi in item['songs']:
 				song, paths = get_song_paths_new(songi['book'], int(songi['song']))
@@ -2891,7 +2885,13 @@ def make_worship_deck(jsonfile):
 				custom = paths['engbase'] + "-custom.json"
 				if os.path.exists(custom):
 					songi['meta'].update(load_json_safe(custom))
-				songi['esp'], songi['basename'] = set_esp(paths, language)
+				source_folder = str(songi.get('source_folder', '')).strip().lower()
+				use_esp_images = (
+					(source_folder.startswith('esp/') or source_folder == 'esp')
+					and os.path.exists(paths['espbase'] + "-01.png")
+				)
+				songi['basename'] = paths['espbase'] if use_esp_images else paths['engbase']
+				songi['esp'], _ = set_esp(paths, language)
 
 	outp = Presentation(assetRoot + "template-2020.pptx")
 
