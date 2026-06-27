@@ -1,0 +1,54 @@
+{
+    "lyrics": {
+        "1": [
+            "1.\nWhen I survey the wondrous cross\nOn which the Prince of glory died,\nMy richest gain I count but loss\nAnd pour contempt on all my pride."
+        ],
+        "2": [
+            "2.\nForbid it, Lord, that I should boast,\nSave in the death of Christ, my Lord;  \nAll the vain things that charm me most\nI sacrifice them to His blood."
+        ],
+        "3": [
+            "3.\nSee, from His head, His hands, His feet,\nSorrow and love flow mingled down;  \nDid e'er such love and sorrow meet,\nOr thorns compose so rich a crown?"
+        ],
+        "4": [
+            "4.\nHis dying crimson, like a robe,\nSpreads o'er His body on the tree;\nThen am I dead to all the globe,\nAnd all the globe is dead to me."
+        ],
+        "5": [
+            "5.\nWere the whole realm of nature mine,\nThat were a present far too small;  \nLove so amazing, so divine,\nDemands my soul, my life, my all."
+        ]
+    },
+    "verses": {
+        "1": [
+            1,
+            2
+        ],
+        "2": [
+            3,
+            4
+        ],
+        "3": [
+            5,
+            6
+        ],
+        "4": [
+            7,
+            8
+        ],
+        "5": [
+            9,
+            10
+        ]
+    },
+    "chorus": {},
+    "codas": {},
+    "title": "When I Survey the Wondrous Cross",
+    "copyright": "© 2001 The Paperless Hymnal™",
+    "number": "742",
+    "credits": "Words by: Isaac Watts\nMusic by: Gregorian Chant, Arrangement by: Lowell Mason",
+    "window_orientation": "wide",
+    "window": [
+        0.47954545454545405,
+        0.8,
+        9.0,
+        4.690909090909092
+    ]
+}
