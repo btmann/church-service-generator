@@ -1,0 +1,110 @@
+{
+    "isodate": "2026-06-28T10:30:00",
+    "template": "sunday-am",
+    "language": "eng",
+    "type": "Sun - AM",
+    "items": [
+        {
+            "type": "welcome",
+            "desc": "Announcements",
+            "esp": "Bienvenida",
+            "position": "Announcements"
+        },
+        {
+            "type": "collection",
+            "id": "coll-1",
+            "style": "zelle",
+            "reading": 0
+        },
+        {
+            "type": "reading",
+            "id": "reading-1",
+            "position": "Scripture Reading",
+            "lang": [
+                {
+                    "passage": "Luke 1:46-55"
+                },
+                {
+                    "passage": "Lucas 1:46-55"
+                }
+            ]
+        },
+        {
+            "type": "prayer",
+            "id": "prayer-1",
+            "position": "First Prayer"
+        },
+        {
+            "type": "song",
+            "id": "song-1",
+            "position": "Song Leader",
+            "leader": "Alex Cruttenden",
+            "book": "pftl",
+            "song": "25",
+            "coda": 0,
+            "source_folder": "esp/pftl"
+        },
+        {
+            "type": "song",
+            "id": "song-2",
+            "book": "pftl",
+            "song": "742",
+            "coda": 0,
+            "source_folder": "esp/pftl"
+        },
+        {
+            "type": "ls-am",
+            "id": "ls-1",
+            "position": "Lord's Supper",
+            "leader": "Jeff Dutra",
+            "reading": 0
+        },
+        {
+            "type": "song",
+            "id": "song-3",
+            "book": "eh",
+            "song": "103",
+            "coda": 0,
+            "source_folder": "esp/eh"
+        },
+        {
+            "type": "song-title",
+            "id": "song-5",
+            "bubble": "Invitation Song",
+            "book": "pftl",
+            "song": "613",
+            "coda": 0,
+            "source_folder": "esp/pftl"
+        },
+        {
+            "type": "song",
+            "id": "song-4",
+            "book": "phss",
+            "song": "277",
+            "coda": 0,
+            "source_folder": "esp/phss"
+        },
+        {
+            "type": "sermon",
+            "id": "sermon-1",
+            "position": "Preach",
+            "leader": "",
+            "title": "",
+            "título": ""
+        },
+        {
+            "type": "song-music",
+            "id": "song-5",
+            "fade": "out",
+            "book": "pftl",
+            "song": "613",
+            "coda": 0,
+            "source_folder": "esp/pftl"
+        },
+        {
+            "type": "prayer",
+            "id": "prayer-2",
+            "position": "Last Prayer"
+        }
+    ]
+}
