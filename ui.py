@@ -23,8 +23,9 @@ WORSHIP_ROOT = "worship/"
 TEMPLATES_ROOT = WORSHIP_ROOT + "templates/"
 SPECS_ROOT = WORSHIP_ROOT + "specs/"
 SERVICE_TYPE_OPTIONS = ['Sun - EarlyAM', 'Sun - AM', 'Sun - PM', 'Wed', 'Gospel Meeting']
-SERVICE_TIME_OPTIONS = ["10:30 AM", "4:00 PM", "5:00 PM", "7:00 PM"]
+SERVICE_TIME_OPTIONS = ["10:00 AM", "10:30 AM", "4:00 PM", "5:00 PM", "7:00 PM"]
 SERVICE_TIME_MAP = {
+    "10:00 AM": "10:00",
     "10:30 AM": "10:30",
     "4:00 PM": "16:00",
     "5:00 PM": "17:00",
@@ -377,7 +378,7 @@ def create_worship_files(date, time, template, songs_data, leaders_data, reading
     spec = {
         'isodate': isodate,
         'template': template,
-        'language': 'eng',
+        'language': 'bil',
         'type': service_type
     }
     with open(specbase + "-spec.json", 'w', encoding='utf-8') as f:
