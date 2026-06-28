@@ -2121,10 +2121,10 @@ def add_sermon(outp, language, item, navitems, ndi):
 
 	if item['type'] == 'lesson':
 		engt = 'LESSON'
-		espt = 'LECCI�N'
+		espt = 'LECCI\u00d3N'
 	else:
 		engt = 'SERMON'
-		espt = 'SERM�N'
+		espt = 'SERM\u00d3N'
 
 	if language == "bil" or language == "eng":
 		eng = dict()
@@ -2135,7 +2135,7 @@ def add_sermon(outp, language, item, navitems, ndi):
 	if language == "bil" or language == "esp":
 		esp = dict()
 		esp[LAYOUT_TITLE_DETAIL] = dict(text=espt, max_size=80, step_size=6, bold=True, size=[1.59, 3.35, 5.0, 1.8])
-		esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CNOS MAND� QUE PREDIC�SEMOS AL PUEBLO\u201D", max_size=26, step_size=2, size=[3.29, 3.47, 4.78, 1.0])
+		esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CNOS MAND\u00d3 QUE PREDIC\u00c1SEMOS AL PUEBLO\u201D", max_size=26, step_size=2, size=[3.29, 3.47, 4.78, 1.0])
 		esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"HECHOS 10:42", max_size=24, step_size=2, size=[4.2, 3.6, 4.52, 1.0])
 
 	slide = add_title_slide(outp, item, navitems, ndi, language, eng, esp, "sermon-notes")
@@ -2488,7 +2488,7 @@ def getDisplayNumber(item):
 
 
 tags_eng = dict(desc="desc", sermon="Sermon", lesson="Lesson", report="Report", title="title", reading="Scripture Reading", prayer="Prayer", announcements="Announcements", supper=u"Lord\u2019s Supper", collection="Collection from Members", invitation="Invitation", medley="Song Medley")
-tags_esp = dict(desc="esp", sermon="Serm�n", lesson="Lecci�n", report="Reporte", title="t�tulo", reading="Lectura", prayer="Oraci�n", announcements="Anuncios", supper="La Cena del Se�or", collection="Ofrenda de los Miembros", invitation="Invitaci�n", medley="Popurr� de canciones")
+tags_esp = dict(desc="esp", sermon="Serm\u00f3n", lesson="Lecci\u00f3n", report="Reporte", title="t\u00edtulo", reading="Lectura", prayer="Oraci\u00f3n", announcements="Anuncios", supper="La Cena del Se\u00f1or", collection="Ofrenda de los Miembros", invitation="Invitaci\u00f3n", medley="Popurr\u00ed de canciones")
 
 
 ##########################################################################
@@ -2825,10 +2825,10 @@ def get_navbar(worship, language):
 			espitems.append([ndi, "reading", "Lectura"])
 		elif item['type'] == 'sermon':
 			engitems.append([ndi, "sermon", "Sermon"])
-			espitems.append([ndi, "sermon", "Serm�n"])
+			espitems.append([ndi, "sermon", "Serm\u00f3n"])
 		elif item['type'] == 'lesson':
 			engitems.append([ndi, "lesson", "Lesson"])
-			espitems.append([ndi, "lesson", "Lecci�n"])
+			espitems.append([ndi, "lesson", "Lecci\u00f3n"])
 		elif item['type'] == 'report':
 			engitems.append([ndi, "report", "Report"])
 			espitems.append([ndi, "report", "Reporte"])

@@ -833,7 +833,7 @@ with flow_tab:
                         item.get("source_folder", "") if isinstance(item, dict) else ""
                     )
                 ).strip().lower()
-                default_source_key = "esp" if existing_source_folder.startswith("esp") else "eng"
+                default_source_key = "eng" if (existing_source_folder and not existing_source_folder.startswith("esp")) else "esp"
                 source_choice = st.selectbox(
                     f"Source ({item_id})",
                     ["eng", "esp"],
