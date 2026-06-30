@@ -40,7 +40,11 @@ def _find_open_port(start_port: int = 8501, max_tries: int = 20) -> int:
 
 def _write_log(script_dir: str, message: str) -> None:
     """Append launcher diagnostics to a local log file for windowed builds."""
-    log_path = os.path.join(script_dir, "church-service-ui.log")
+    if getattr(sys, "frozen", False):
+        log_dir = os.path.dirname(sys.executable)
+    else:
+        log_dir = script_dir
+    log_path = os.path.join(log_dir, "church-service-ui.log")
     with open(log_path, "a", encoding="utf-8") as handle:
         handle.write(message + "\n")
 
