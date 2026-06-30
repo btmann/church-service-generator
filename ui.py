@@ -62,9 +62,50 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+    :root {
+        --ui-text-strong: #0e3346;
+        --ui-text-body: #143f56;
+        --ui-text-muted: #34586a;
+    }
+
     .stApp {
         font-family: Georgia, 'Times New Roman', serif;
         background: linear-gradient(180deg, #cfe2ee 0%, #bfd7e6 100%);
+        color: var(--ui-text-body);
+    }
+
+    .stApp p,
+    .stApp li,
+    .stApp span,
+    .stApp label,
+    .stApp div,
+    .stMarkdown,
+    .stMarkdown p,
+    .stMarkdown li,
+    .stText,
+    .stCaption,
+    div[data-testid="stMarkdownContainer"] * {
+        color: var(--ui-text-body);
+    }
+
+    .stApp h1,
+    .stApp h2,
+    .stApp h3,
+    .stApp h4,
+    .stApp h5,
+    .stApp h6,
+    div[data-testid="stWidgetLabel"] > label,
+    div[data-testid="stExpander"] summary,
+    div[data-testid="stFileUploaderDropzoneInstructions"] {
+        color: var(--ui-text-strong) !important;
+    }
+
+    div[data-testid="stCaptionContainer"],
+    div[data-testid="stCaptionContainer"] *,
+    div[data-testid="stForm"] small,
+    div[data-testid="stForm"] [data-testid="stMarkdownContainer"] small,
+    div[data-testid="stWidgetLabel"] [data-testid="stMarkdownContainer"] p {
+        color: var(--ui-text-muted) !important;
     }
 
     .block-container {

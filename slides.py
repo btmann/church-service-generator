@@ -19,6 +19,7 @@ import io
 import os
 import PIL
 from PIL import ImageOps
+from PIL import ImageEnhance
 from PIL import ImageDraw, ImageFont
 import argparse
 import json
@@ -947,6 +948,35 @@ def get_background(default, item=None, blur=False, zoom=False):
 			fn = get_background_fn(default, item, False, False)
 	return fn
 
+
+def get_dimmed_background(bg_fn, brightness=0.62):
+	"""Return a cached dimmed copy of a background image for better text contrast."""
+	if not os.path.exists(bg_fn):
+		return bg_fn
+
+	cache_dir = os.path.join("build", "background-cache")
+	os.makedirs(cache_dir, exist_ok=True)
+
+	base_name = os.path.splitext(os.path.basename(bg_fn))[0]
+	cache_name = f"{base_name}-dim{int(brightness * 100)}.jpg"
+	cache_fn = os.path.join(cache_dir, cache_name)
+
+	if os.path.exists(cache_fn):
+		try:
+			if os.path.getmtime(cache_fn) >= os.path.getmtime(bg_fn):
+				return cache_fn
+		except OSError:
+			pass
+
+	try:
+		with PIL.Image.open(bg_fn) as img:
+			dimmed = ImageEnhance.Brightness(img.convert("RGB")).enhance(brightness)
+			dimmed.save(cache_fn, format="JPEG", quality=90)
+		return cache_fn
+	except Exception as e:
+		print(f"Warning: could not dim background {bg_fn}: {e}")
+		return bg_fn
+
 def get_song_bubbles(meta, verses, chorus, coda):
 	wp = []
 	for verse, pngs in meta['verses'].items():
@@ -1742,6 +1772,7 @@ def add_song_to_deck(outp, item, verses=None, chorus=None, repeat=None, coda=Tru
 	esp = item['esp']	# could be None?
 
 	bg_fn = get_background("song-beige", item, blur=True)
+	bg_fn = get_dimmed_background(bg_fn)
 
 	navinfo = get_navigation(meta, verses, chorus, coda)
 	pprint.pprint(meta)
@@ -1785,6 +1816,7 @@ def add_medley_to_deck(outp, item, sfv=True):
 #	navinfo = get_navigation(item['songs'][0]['meta'], [1,2], None, None)
 	slide = sfv
 	bg_fn = get_background("song-beige", item, blur=True)		# drw: tbd: revisit?
+	bg_fn = get_dimmed_background(bg_fn)
 	for vx, verse in enumerate(item['nav']):
 		si = item['songs'][verse[0]]
 		if verse[1] == 'chorus':
