@@ -23,10 +23,9 @@ WORSHIP_ROOT = "worship/"
 TEMPLATES_ROOT = WORSHIP_ROOT + "templates/"
 SPECS_ROOT = WORSHIP_ROOT + "specs/"
 SERVICE_TYPE_OPTIONS = ['Sun - EarlyAM', 'Sun - AM', 'Sun - PM', 'Wed', 'Gospel Meeting']
-SERVICE_TIME_OPTIONS = ["10:00 AM", "10:30 AM", "4:00 PM", "5:00 PM", "7:00 PM"]
+SERVICE_TIME_OPTIONS = ["10:00 AM", "4:00 PM", "5:00 PM", "7:00 PM"]
 SERVICE_TIME_MAP = {
     "10:00 AM": "10:00",
-    "10:30 AM": "10:30",
     "4:00 PM": "16:00",
     "5:00 PM": "17:00",
     "7:00 PM": "19:00",
@@ -37,6 +36,20 @@ SONG_BOOK_OPTIONS = {
     "eh": "Embry Hills",
     "shs": "Sumphonia Hymn Supplement",
 }
+CUSTOM_TEMPLATE_KEY = "__custom__"
+CUSTOM_TEMPLATE_LABEL = "Custom Template (Build Order)"
+CUSTOM_ITEM_TYPE_OPTIONS = [
+    "welcome",
+    "song",
+    "reading",
+    "prayer",
+    "ls-am",
+    "collection",
+    "sermon",
+    "lesson",
+    "report",
+    "invitation",
+]
 
 # Streamlit page config
 st.set_page_config(
@@ -50,113 +63,158 @@ st.markdown(
     """
     <style>
     .stApp {
-        background:
-            radial-gradient(circle at 12% 8%, rgba(71, 128, 166, 0.28), transparent 42%),
-            radial-gradient(circle at 84% 12%, rgba(155, 123, 88, 0.22), transparent 38%),
-            linear-gradient(180deg, #cfd9e1 0%, #bcc9d4 100%);
+        font-family: Georgia, 'Times New Roman', serif;
+        background: linear-gradient(180deg, #cfe2ee 0%, #bfd7e6 100%);
     }
+
     .block-container {
-        max-width: 100%;
-        margin-left: 0;
-        margin-right: 0;
-        padding-top: 1.0rem;
+        max-width: 1420px;
+        padding-top: 1.35rem;
+        padding-bottom: 1.2rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
+
     .hero-wrap {
-        width: 100vw;
-        margin-left: calc(50% - 50vw);
-        margin-right: calc(50% - 50vw);
-        padding: 0 0 0.8rem 0;
+        width: 100%;
+        margin: 0;
+        padding: 0.2rem 0 0.7rem 0;
     }
+
     .hero {
         width: 100%;
         margin: 0;
-        padding: 1.1rem 1.3rem;
-        border-radius: 0;
-        background: linear-gradient(120deg, #153042 0%, #26516b 56%, #356f8a 100%);
-        color: #ffffff;
-        border-top: 1px solid rgba(255, 255, 255, 0.15);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: 0 10px 26px rgba(20, 37, 48, 0.20);
-        margin-bottom: 0.35rem;
+        padding: 1.1rem 1.1rem;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #123449 0%, #1d516f 100%);
+        color: #f8f5ed;
+        border: 1px solid #113346;
+        box-shadow: none;
+        margin-bottom: 0.25rem;
+        overflow: visible;
     }
+
     .hero h1 {
+        font-family: Georgia, 'Times New Roman', serif;
         margin: 0 0 0.15rem 0;
-        font-size: 1.8rem;
-        letter-spacing: 0.2px;
+        font-size: 1.55rem;
+        line-height: 1.3;
+        letter-spacing: 0;
+        font-weight: 700;
     }
+
     .hero p {
         margin: 0;
-        font-size: 0.96rem;
-        opacity: 0.92;
+        font-size: 0.94rem;
+        opacity: 0.96;
     }
+
     .section-heading {
-        margin: 0.35rem 0 0.25rem 0;
-        color: #173c4e;
-        font-size: 1.08rem;
+        margin: 0.45rem 0 0.35rem 0;
+        color: #143f56;
+        font-size: 0.88rem;
         font-weight: 700;
-        letter-spacing: 0.2px;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
     }
-    .note-chip {
-        display: inline-block;
-        margin-top: 0.4rem;
-        padding: 0.22rem 0.55rem;
-        border-radius: 999px;
-        border: 1px solid #b6cbd9;
-        background: #f4f9fc;
-        color: #254d62;
-        font-size: 0.8rem;
+
+    .flow-item {
+        margin: 0.5rem 0 0.35rem 0;
+        padding: 0.35rem 0.45rem;
+        border-left: 4px solid #0f3f5a;
+        background: linear-gradient(90deg, #1c5f84 0%, #174f6f 100%);
+        color: #f4fbff;
+        border-radius: 4px;
+        font-weight: 700;
+        letter-spacing: 0;
+        box-shadow: inset 0 0 0 1px #2b759f;
     }
+
     div[data-testid="stVerticalBlock"] div:has(> div > .section-heading) {
-        border: 1px solid #9fb2c2;
-        border-radius: 12px;
-        padding: 0.35rem 0.65rem 0.5rem 0.65rem;
-        background: rgba(255, 255, 255, 0.86);
-        box-shadow: 0 6px 16px rgba(28, 53, 70, 0.12);
+        border: 1px solid #7eaac0;
+        border-radius: 8px;
+        padding: 0.45rem 0.65rem 0.55rem 0.65rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f7fcff 100%);
+        box-shadow: none;
     }
+
     div[data-testid="stVerticalBlock"] {
         gap: 0.35rem;
     }
-    div[data-testid="stDateInput"],
-    div[data-testid="stTimeInput"],
-    div[data-testid="stSelectbox"],
-    div[data-testid="stTextInput"],
-    div[data-testid="stNumberInput"],
-    div[data-testid="stMultiSelect"] {
-        display: grid;
-        grid-template-columns: 210px 1fr;
-        align-items: center;
-        column-gap: 0.65rem;
-        max-width: 900px;
-        margin-left: auto;
-        margin-right: auto;
+
+    div[data-baseweb="select"] > div,
+    div[data-baseweb="input"] > div {
+        border-radius: 4px;
+        border: 1px solid #88adc1;
+        background: #ffffff;
+        box-shadow: none;
     }
-    div[data-testid="stWidgetLabel"] {
-        margin-bottom: 0;
+
+    div[data-baseweb="select"] > div:hover,
+    div[data-baseweb="input"] > div:hover {
+        border-color: #3f7493;
     }
+
+    div[data-baseweb="select"] > div:focus-within,
+    div[data-baseweb="input"] > div:focus-within {
+        border-color: #1c5e82;
+        box-shadow: 0 0 0 1px #1c5e82;
+    }
+
     div[data-testid="stWidgetLabel"] > label {
-        text-align: left;
-        width: 100%;
-        justify-content: flex-start;
+        color: #133f56;
+        font-weight: 600;
     }
+
+    div[data-testid="stTabs"] [data-baseweb="tab-list"] {
+        background: #edf6fb;
+        border: 1px solid #88adc1;
+        border-radius: 6px;
+        padding: 0.12rem;
+    }
+
+    div[data-testid="stTabs"] [data-baseweb="tab"] {
+        border-radius: 4px;
+        color: #12435a;
+        font-weight: 600;
+    }
+
+    div[data-testid="stTabs"] [aria-selected="true"] {
+        background: #2f7ea4;
+        color: #ffffff !important;
+    }
+
+    .stButton > button {
+        border-radius: 5px;
+        border: 1px solid #174f6a;
+        background: #1f6d90;
+        color: #ffffff;
+        font-weight: 700;
+        letter-spacing: 0;
+        box-shadow: none;
+    }
+
+    .stButton > button:hover {
+        border-color: #123f55;
+        background: #165974;
+    }
+
+    div[data-testid="stAlert"] {
+        border-radius: 6px;
+        border: 1px solid #88adc1;
+        background: #f4fbff;
+    }
+
     @media (max-width: 900px) {
         .hero h1 {
-            font-size: 1.45rem;
-        }
-        div[data-testid="stDateInput"],
-        div[data-testid="stTimeInput"],
-        div[data-testid="stSelectbox"],
-        div[data-testid="stTextInput"],
-        div[data-testid="stNumberInput"],
-        div[data-testid="stMultiSelect"] {
-            grid-template-columns: 1fr;
-            row-gap: 0.2rem;
+            font-size: 1.3rem;
         }
     }
     </style>
     <div class="hero-wrap">
       <div class="hero">
           <h1>Church Service Generator</h1>
-          <p>Build your worship deck with cleaner planning, auto-pulled data, and manual overrides where needed.</p>
+          <p>Prepare each service in a clear, simple bulletin-style workflow.</p>
       </div>
     </div>
     """,
@@ -210,6 +268,62 @@ def load_template(template_name):
         raise ValueError(f"Template 'order' must be a list, got {type(items).__name__}")
     
     return items
+
+
+def make_custom_template_item(item_type, seq):
+    """Create one custom order item with sensible defaults."""
+    if item_type == "welcome":
+        return {
+            "type": "welcome",
+            "id": f"welcome-{seq}",
+            "desc": "Announcements",
+            "esp": "Bienvenida",
+            "position": "Announcements",
+        }
+    if item_type == "song":
+        return {
+            "type": "song",
+            "id": f"song-{seq}",
+            "position": "Song Leader",
+        }
+    if item_type == "reading":
+        return {
+            "type": "reading",
+            "id": f"reading-{seq}",
+            "position": "Scripture Reading",
+        }
+    if item_type == "prayer":
+        return {
+            "type": "prayer",
+            "id": f"prayer-{seq}",
+            "position": "Prayer",
+        }
+    if item_type == "ls-am":
+        return {
+            "type": "ls-am",
+            "id": f"ls-{seq}",
+            "position": "Lord's Supper",
+            "reading": 0,
+        }
+    if item_type == "collection":
+        return {
+            "type": "collection",
+            "id": f"coll-{seq}",
+            "style": "zelle",
+            "reading": 0,
+        }
+    if item_type in ["sermon", "lesson", "report"]:
+        return {
+            "type": item_type,
+            "id": f"{item_type}-{seq}",
+            "position": "Preach",
+        }
+    if item_type == "invitation":
+        return {
+            "type": "invitation",
+            "id": f"invitation-{seq}",
+        }
+    return {"type": item_type, "id": f"{item_type}-{seq}"}
 
 
 def get_song_positions(template_items):
@@ -349,7 +463,7 @@ def song_source_group(entry):
     return f"ehsf/{parts[0]}"
 
 
-def create_worship_files(date, time, template, songs_data, leaders_data, readings_data=None, service_type='Sun - AM'):
+def create_worship_files(date, time, template, songs_data, leaders_data, readings_data=None, service_type='Sun - AM', template_items_override=None):
     """Create initial worship files (spec, songs, leaders, readings)"""
     # Parse date/time
     wdate = date.strftime("%Y-%m-%d")
@@ -377,7 +491,7 @@ def create_worship_files(date, time, template, songs_data, leaders_data, reading
     # Create spec.json
     spec = {
         'isodate': isodate,
-        'template': template,
+        'template': 'custom' if template == CUSTOM_TEMPLATE_KEY else template,
         'language': 'bil',
         'type': service_type
     }
@@ -394,7 +508,8 @@ def create_worship_files(date, time, template, songs_data, leaders_data, reading
     
     # Create readings.json
     readings = {}
-    for item in load_template(template):
+    source_template_items = template_items_override if template_items_override is not None else load_template(template)
+    for item in source_template_items:
         if not isinstance(item, dict):
             continue
         if item.get('type') == 'reading' and 'id' in item:
@@ -461,11 +576,20 @@ def get_song_structure(book, song_num, source_folder=""):
         return [], [], str(e)
 
 
-def generate_presentation(date, time, template, songs_data, leaders_data, readings_data=None, service_type='Sun - AM'):
+def generate_presentation(date, time, template, songs_data, leaders_data, readings_data=None, service_type='Sun - AM', template_items_override=None):
     """Generate the complete presentation"""
     try:
         # Step 1: Create worship files
-        specbase, jsonbase = create_worship_files(date, time, template, songs_data, leaders_data, readings_data, service_type)
+        specbase, jsonbase = create_worship_files(
+            date,
+            time,
+            template,
+            songs_data,
+            leaders_data,
+            readings_data,
+            service_type,
+            template_items_override=template_items_override,
+        )
         
         # Step 2: Generate JSON (mimics worship.py generate_json)
         spec = load_json_safe(specbase + "-spec.json")
@@ -497,7 +621,10 @@ def generate_presentation(date, time, template, songs_data, leaders_data, readin
             raise ValueError(f"readings.json['readings'] should be dict, got {type(readings).__name__}")
         
         # Load template and merge data
-        template_items = load_template(template)
+        if template_items_override is not None:
+            template_items = json.loads(json.dumps(template_items_override))
+        else:
+            template_items = load_template(template)
         
         # Ensure template_items is a list
         if not isinstance(template_items, list):
@@ -565,12 +692,14 @@ service_time = datetime.strptime(SERVICE_TIME_MAP[service_time_label], "%H:%M").
 service_type = st.selectbox("Service Type", SERVICE_TYPE_OPTIONS, index=1)
 
 if templates:
-    template_choices = ["-- Select Template --"] + templates
+    template_choices = ["-- Select Template --", CUSTOM_TEMPLATE_LABEL] + templates
     if "template_select" in st.session_state and st.session_state["template_select"] not in template_choices:
         st.session_state["template_select"] = "-- Select Template --"
     selected_template_choice = st.selectbox("Template", template_choices, index=0, key="template_select")
     if selected_template_choice in templates:
         selected_template = selected_template_choice
+    elif selected_template_choice == CUSTOM_TEMPLATE_LABEL:
+        selected_template = CUSTOM_TEMPLATE_KEY
 else:
     st.error("No templates found in worship/templates")
 
@@ -578,7 +707,54 @@ if not selected_template:
     st.info("Select template and date first. The rest of the form will appear after template selection.")
     st.stop()
 
-template_items = load_template(selected_template)
+if selected_template == CUSTOM_TEMPLATE_KEY:
+    if "custom_template_items" not in st.session_state:
+        st.session_state.custom_template_items = []
+
+    st.markdown('<div class="section-heading">Custom Template Builder</div>', unsafe_allow_html=True)
+    builder_col1, builder_col2 = st.columns([2.2, 1])
+    with builder_col1:
+        custom_item_type = st.selectbox(
+            "Add service item",
+            CUSTOM_ITEM_TYPE_OPTIONS,
+            key="custom_item_type_select",
+            format_func=lambda t: t.replace("-", " ").title(),
+        )
+    with builder_col2:
+        st.write("")
+        if st.button("Add Item", key="custom_add_item", use_container_width=True):
+            current_items = list(st.session_state.custom_template_items)
+            seq = 1 + sum(1 for item in current_items if isinstance(item, dict) and item.get("type") == custom_item_type)
+            current_items.append(make_custom_template_item(custom_item_type, seq))
+            st.session_state.custom_template_items = current_items
+            st.rerun()
+
+    custom_items = list(st.session_state.custom_template_items)
+    if custom_items:
+        st.caption("Arrange the order using Up/Down, then fill details below in Service Flow.")
+        for ndx, citem in enumerate(custom_items):
+            ccols = st.columns([7, 1, 1, 1])
+            item_desc = f"{ndx + 1}. {citem.get('type', 'item')} ({citem.get('id', 'no-id')})"
+            ccols[0].markdown(item_desc)
+            if ccols[1].button("↑", key=f"custom_up_{ndx}", disabled=(ndx == 0)):
+                custom_items[ndx - 1], custom_items[ndx] = custom_items[ndx], custom_items[ndx - 1]
+                st.session_state.custom_template_items = custom_items
+                st.rerun()
+            if ccols[2].button("↓", key=f"custom_down_{ndx}", disabled=(ndx == len(custom_items) - 1)):
+                custom_items[ndx + 1], custom_items[ndx] = custom_items[ndx], custom_items[ndx + 1]
+                st.session_state.custom_template_items = custom_items
+                st.rerun()
+            if ccols[3].button("✕", key=f"custom_remove_{ndx}"):
+                del custom_items[ndx]
+                st.session_state.custom_template_items = custom_items
+                st.rerun()
+    else:
+        st.info("Add at least one item to start building a custom service flow.")
+
+    template_items = st.session_state.custom_template_items
+else:
+    template_items = load_template(selected_template)
+
 leader_positions = get_leader_positions(template_items)
 
 counts = {}
@@ -597,7 +773,7 @@ wtime = service_time.strftime("%H:%M:%S")
 autofill_signature = f"{selected_template}|{wdate}|{wtime}|{service_type}|{int(keep_manual_overrides)}"
 autofill_ran_for = st.session_state.get("autofill_ran_for")
 
-if autofill_ran_for != autofill_signature:
+if selected_template != CUSTOM_TEMPLATE_KEY and autofill_ran_for != autofill_signature:
     try:
         fetched_leaders_data = worship.fetch_leaders(wdate, wtime, service_type)
         fetched_leaders = fetched_leaders_data.get('leaders', {}) if isinstance(fetched_leaders_data, dict) else {}
@@ -772,6 +948,8 @@ with flow_tab:
     if "song_search_applied_message" in st.session_state:
         st.info(st.session_state["song_search_applied_message"])
 
+    missing_song_slots = []
+
     for idx, item in enumerate(template_items):
         if not isinstance(item, dict):
             continue
@@ -783,7 +961,7 @@ with flow_tab:
         if item_id:
             item_label += f" ({item_id})"
 
-        st.markdown(f"**{item_label}**")
+        st.markdown(f'<div class="flow-item">{item_label}</div>', unsafe_allow_html=True)
 
         if position_name and "prayer for" not in position_name.lower() and "reading" not in position_name.lower() and item_type not in ['prayer', 'reading', 'welcome']:
             leaders_input[position_name] = st.text_input(
@@ -793,11 +971,11 @@ with flow_tab:
 
         if 'song' in item_type and item_id:
             default_book = item.get("book", "pftl") if isinstance(item, dict) else "pftl"
-            default_song = item.get("song", "1") if isinstance(item, dict) else "1"
+            default_song = item.get("song", "") if isinstance(item, dict) else ""
             try:
                 default_song_num = int(default_song)
             except (TypeError, ValueError):
-                default_song_num = 1
+                default_song_num = 0
 
             song_col1, song_col2, song_col3, song_col4, song_col5 = st.columns([0.9, 1.1, 1.2, 2.0, 2.0])
             with song_col1:
@@ -818,7 +996,7 @@ with flow_tab:
                 
                 song_num = st.number_input(
                     f"Song # ({item_id})",
-                    min_value=1,
+                    min_value=0,
                     max_value=1000,
                     key=f"song_{item_id}_{idx}",
                     value=default_song_num,
@@ -849,7 +1027,14 @@ with flow_tab:
                     source_folder = book
                 st.session_state[f"song_source_{item_id}_{idx}"] = source_folder
 
-            available_verses, available_chorus, song_error = get_song_structure(book, int(song_num), source_folder)
+            available_verses = []
+            available_chorus = []
+            song_error = None
+            has_song_selected = int(song_num) > 0
+            if has_song_selected:
+                available_verses, available_chorus, song_error = get_song_structure(book, int(song_num), source_folder)
+            else:
+                missing_song_slots.append(item_label)
 
             selected_verses = None
             selected_chorus = None
@@ -864,7 +1049,7 @@ with flow_tab:
                         label_visibility="collapsed"
                     )
                 else:
-                    st.caption("All verses")
+                    st.caption("Select song number to load verses")
             with song_col5:
                 st.caption("Chorus")
                 if available_chorus:
@@ -876,34 +1061,35 @@ with flow_tab:
                         label_visibility="collapsed"
                     )
                 else:
-                    st.caption("Default chorus")
+                    st.caption("Select song number to load chorus")
 
-            if song_error:
+            if song_error and has_song_selected:
                 st.caption(f"Could not load verses/chorus for {book}-{int(song_num):03d}: {song_error}")
 
-            song_payload = {
-                "book": book,
-                "song": str(song_num),
-                "coda": 0
-            }
+            if has_song_selected:
+                song_payload = {
+                    "book": book,
+                    "song": str(song_num),
+                    "coda": 0
+                }
 
-            selected_source_folder = source_folder or st.session_state.get(f"song_source_{item_id}_{idx}", "")
-            if selected_source_folder:
-                song_payload["source_folder"] = str(selected_source_folder)
+                selected_source_folder = source_folder or st.session_state.get(f"song_source_{item_id}_{idx}", "")
+                if selected_source_folder:
+                    song_payload["source_folder"] = str(selected_source_folder)
 
-            if available_verses and selected_verses is not None:
-                if len(selected_verses) == 0:
-                    st.warning(f"{item_id}: No verses selected. Using all verses.")
-                elif selected_verses != available_verses:
-                    song_payload["verses"] = selected_verses
+                if available_verses and selected_verses is not None:
+                    if len(selected_verses) == 0:
+                        st.warning(f"{item_id}: No verses selected. Using all verses.")
+                    elif selected_verses != available_verses:
+                        song_payload["verses"] = selected_verses
 
-            if available_chorus and selected_chorus is not None:
-                if len(selected_chorus) == 0:
-                    song_payload["chorus"] = [0]
-                elif selected_chorus != available_chorus:
-                    song_payload["chorus"] = selected_chorus
+                if available_chorus and selected_chorus is not None:
+                    if len(selected_chorus) == 0:
+                        song_payload["chorus"] = [0]
+                    elif selected_chorus != available_chorus:
+                        song_payload["chorus"] = selected_chorus
 
-            songs_input[item_id] = song_payload
+                songs_input[item_id] = song_payload
 
         if item_type == 'reading' and item_id:
             reading_number_str = st.text_input(
@@ -945,10 +1131,14 @@ with flow_tab:
 
 # Generate Button
 st.divider()
+missing_song_slots = [slot for slot in locals().get("missing_song_slots", []) if slot]
+if missing_song_slots:
+    st.warning("Select a song number for each song item before generating the presentation.")
+
 col_left, col_generate, col_right = st.columns([1, 1.2, 1])
 
 with col_generate:
-    if st.button("🚀 Generate Presentation", type="primary", use_container_width=True):
+    if st.button("🚀 Generate Presentation", type="primary", use_container_width=True, disabled=len(missing_song_slots) > 0):
         with st.spinner("🔄 Generating presentation..."):
             success, result, debug_info = generate_presentation(
                 service_date,
@@ -957,7 +1147,8 @@ with col_generate:
                 songs_input if 'songs_input' in locals() else {},
                 leaders_input if 'leaders_input' in locals() else {},
                 readings_input if 'readings_input' in locals() else {},
-                service_type
+                service_type,
+                template_items_override=template_items if selected_template == CUSTOM_TEMPLATE_KEY else None,
             )
         
         if success:
