@@ -18,10 +18,54 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import worship
 import slides
 
+
+def _runtime_base_candidates():
+    """Return likely base directories for app resources in dev and packaged runs."""
+    candidates = []
+
+    def add(path_obj):
+        if not path_obj:
+            return
+        try:
+            resolved = path_obj.resolve()
+        except Exception:
+            return
+        if resolved not in candidates:
+            candidates.append(resolved)
+
+    add(Path.cwd())
+    add(Path(__file__).resolve().parent)
+    try:
+        add(Path(sys.executable).resolve().parent)
+    except Exception:
+        pass
+
+    expanded = []
+    for base in candidates:
+        if base not in expanded:
+            expanded.append(base)
+        parent = base.parent
+        if parent and parent not in expanded:
+            expanded.append(parent)
+    return expanded
+
+
+def _resolve_resource_dir(folder_name):
+    """Find a resource directory across common runtime locations."""
+    for base in _runtime_base_candidates():
+        candidate = base / folder_name
+        if candidate.exists() and candidate.is_dir():
+            return candidate
+    return Path(folder_name)
+
 # Configuration
 WORSHIP_ROOT = "worship/"
 TEMPLATES_ROOT = WORSHIP_ROOT + "templates/"
 SPECS_ROOT = WORSHIP_ROOT + "specs/"
+EHSF_ROOT_PATH = _resolve_resource_dir("ehsf")
+os.environ["CHURCH_SERVICE_EHSF_ROOT"] = str(EHSF_ROOT_PATH)
+if hasattr(slides, "set_ehsf_root"):
+    slides.set_ehsf_root(str(EHSF_ROOT_PATH))
 SERVICE_TYPE_OPTIONS = ['Sun - EarlyAM', 'Sun - AM', 'Sun - PM', 'Wed', 'Gospel Meeting']
 SERVICE_TIME_OPTIONS = ["10:00 AM", "4:00 PM", "5:00 PM", "7:00 PM"]
 SERVICE_TIME_MAP = {
@@ -358,6 +402,7 @@ with theme_col_right:
     )
 
 st.markdown(build_ui_style(ui_theme_name), unsafe_allow_html=True)
+st.caption(f"Song library path: {EHSF_ROOT_PATH}")
 
 # Initialize session state
 if 'generated_files' not in st.session_state:
@@ -514,7 +559,7 @@ def build_song_search_index():
     tools/build_song_lookup.py. Falls back to live scanning when the file
     is missing.
     """
-    ehsf_root = Path("ehsf")
+    ehsf_root = EHSF_ROOT_PATH
     lookup_file = ehsf_root / "song-search-index.json"
 
     if lookup_file.exists():

@@ -39,6 +39,21 @@ import sqlite3
 import dateutil.parser as parser
 
 
+EHSF_ROOT = os.environ.get("CHURCH_SERVICE_EHSF_ROOT", "ehsf")
+
+
+def set_ehsf_root(path):
+	"""Allow callers (like packaged UI) to override where song assets live."""
+	global EHSF_ROOT
+	if path:
+		EHSF_ROOT = path
+
+
+def ehsf_join(*parts):
+	"""Build portable paths under the current EHSF root."""
+	return os.path.join(EHSF_ROOT, *parts).replace("\\", "/")
+
+
 # If you don't have tesseract executable in your PATH, include the following:
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
 
@@ -73,7 +88,7 @@ def get_song_paths(book, number):
 			number = shs2phss[str(number)]
 			book = "phss"
 	song = f"{number:03d}"
-	pathname = '/'.join(['ehsf', book, song])
+	pathname = ehsf_join(book, song)
 	basename = pathname + "/" + book + "-" + song
 	rawname = pathname + "/raw/" + book + "-" + song
 	return song, pathname, basename, rawname
@@ -90,10 +105,10 @@ def get_song_paths_new(book, number):
 			number = shs2phss[str(number)]
 			book = "phss"
 	song = f"{number:03d}"
-	paths['engpath'] = '/'.join(['ehsf', book, song])
+	paths['engpath'] = ehsf_join(book, song)
 	paths['engbase'] = paths['engpath'] + "/" + book + "-" + song
 	paths['raw'] = paths['engpath'] + "/raw/" + book + "-" + song
-	paths['esppath'] = '/'.join(['ehsf', 'esp', book, song])
+	paths['esppath'] = ehsf_join('esp', book, song)
 	paths['espbase'] = paths['esppath'] + "/" + book + "-" + song
 	return song, paths
 
