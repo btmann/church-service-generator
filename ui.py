@@ -59,34 +59,88 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-st.markdown(
-    """
-    <style>
-    :root {
-        --ui-text-strong: #0e3346;
-        --ui-text-body: #143f56;
-        --ui-text-muted: #34586a;
-    }
+THEME_PRESETS = {
+    "Follow Streamlit Theme": {
+        "bg": "var(--background-color, #f2f6fa)",
+        "surface": "var(--secondary-background-color, #ffffff)",
+        "text": "var(--text-color, #102a3a)",
+        "muted": "var(--text-color, #102a3a)",
+        "accent": "var(--primary-color, #1f6d90)",
+        "hero_start": "var(--primary-color, #1f6d90)",
+        "hero_end": "#12445e",
+        "hero_text": "#ffffff",
+        "field_bg": "var(--secondary-background-color, #ffffff)",
+    },
+    "Harbor Light": {
+        "bg": "#dcebf5",
+        "surface": "#f7fbff",
+        "text": "#102f42",
+        "muted": "#35576a",
+        "accent": "#1c6f96",
+        "hero_start": "#0f4461",
+        "hero_end": "#1b6387",
+        "hero_text": "#ffffff",
+        "field_bg": "#ffffff",
+    },
+    "Olive Paper": {
+        "bg": "#ecebd9",
+        "surface": "#fbf9ec",
+        "text": "#29382e",
+        "muted": "#4a5b4f",
+        "accent": "#5a7446",
+        "hero_start": "#4a6438",
+        "hero_end": "#6f8a58",
+        "hero_text": "#ffffff",
+        "field_bg": "#fffffb",
+    },
+    "Slate Night": {
+        "bg": "#132028",
+        "surface": "#1b2e38",
+        "text": "#e8f2f7",
+        "muted": "#bfd1dc",
+        "accent": "#63b4d8",
+        "hero_start": "#1f6f96",
+        "hero_end": "#2a8bb8",
+        "hero_text": "#ffffff",
+        "field_bg": "#213744",
+    },
+}
 
-    .stApp {
+
+def build_ui_style(theme_name):
+    theme = THEME_PRESETS.get(theme_name, THEME_PRESETS["Follow Streamlit Theme"])
+
+    return f"""
+    <style>
+    :root {{
+        --ui-bg: {theme['bg']};
+        --ui-surface: {theme['surface']};
+        --ui-text: {theme['text']};
+        --ui-muted: {theme['muted']};
+        --ui-accent: {theme['accent']};
+        --ui-hero-start: {theme['hero_start']};
+        --ui-hero-end: {theme['hero_end']};
+        --ui-hero-text: {theme['hero_text']};
+        --ui-field-bg: {theme['field_bg']};
+        --ui-border: var(--ui-accent);
+    }}
+
+    .stApp {{
         font-family: Georgia, 'Times New Roman', serif;
-        background: linear-gradient(180deg, #cfe2ee 0%, #bfd7e6 100%);
-        color: var(--ui-text-body);
-    }
+        background: var(--ui-bg);
+        color: var(--ui-text);
+    }}
 
     .stApp p,
     .stApp li,
-    .stApp span,
-    .stApp label,
-    .stApp div,
     .stMarkdown,
     .stMarkdown p,
     .stMarkdown li,
     .stText,
     .stCaption,
-    div[data-testid="stMarkdownContainer"] * {
-        color: var(--ui-text-body);
-    }
+    div[data-testid="stMarkdownContainer"] p {{
+        color: var(--ui-text);
+    }}
 
     .stApp h1,
     .stApp h2,
@@ -96,113 +150,117 @@ st.markdown(
     .stApp h6,
     div[data-testid="stWidgetLabel"] > label,
     div[data-testid="stExpander"] summary,
-    div[data-testid="stFileUploaderDropzoneInstructions"] {
-        color: var(--ui-text-strong) !important;
-    }
+    div[data-testid="stFileUploaderDropzoneInstructions"] {{
+        color: var(--ui-text) !important;
+    }}
 
     div[data-testid="stCaptionContainer"],
     div[data-testid="stCaptionContainer"] *,
     div[data-testid="stForm"] small,
     div[data-testid="stForm"] [data-testid="stMarkdownContainer"] small,
-    div[data-testid="stWidgetLabel"] [data-testid="stMarkdownContainer"] p {
-        color: var(--ui-text-muted) !important;
-    }
+    div[data-testid="stWidgetLabel"] [data-testid="stMarkdownContainer"] p {{
+        color: var(--ui-muted) !important;
+    }}
 
-    .block-container {
+    .block-container {{
         max-width: 1420px;
         padding-top: 1.35rem;
         padding-bottom: 1.2rem;
         padding-left: 1rem;
         padding-right: 1rem;
-    }
+    }}
 
-    .hero-wrap {
+    .hero-wrap {{
         width: 100%;
         margin: 0;
         padding: 0.2rem 0 0.7rem 0;
-    }
+    }}
 
-    .hero {
+    .hero {{
         width: 100%;
         margin: 0;
         padding: 1.1rem 1.1rem;
         border-radius: 8px;
-        background: linear-gradient(135deg, #123449 0%, #1d516f 100%);
-        color: #f8f5ed;
-        border: 1px solid #113346;
+        background: linear-gradient(135deg, var(--ui-hero-start) 0%, var(--ui-hero-end) 100%);
+        color: var(--ui-hero-text) !important;
+        border: 1px solid var(--ui-border);
         box-shadow: none;
         margin-bottom: 0.25rem;
         overflow: visible;
-    }
+    }}
 
-    .hero h1 {
+    .hero h1,
+    .hero p {{
+        color: var(--ui-hero-text) !important;
+    }}
+
+    .hero h1 {{
         font-family: Georgia, 'Times New Roman', serif;
         margin: 0 0 0.15rem 0;
         font-size: 1.55rem;
         line-height: 1.3;
         letter-spacing: 0;
         font-weight: 700;
-    }
+    }}
 
-    .hero p {
+    .hero p {{
         margin: 0;
         font-size: 0.94rem;
         opacity: 0.96;
-    }
+    }}
 
-    .section-heading {
+    .section-heading {{
         margin: 0.45rem 0 0.35rem 0;
-        color: #143f56;
+        color: var(--ui-text);
         font-size: 0.88rem;
         font-weight: 700;
         letter-spacing: 0.8px;
         text-transform: uppercase;
-    }
+    }}
 
-    .flow-item {
+    .flow-item {{
         margin: 0.5rem 0 0.35rem 0;
         padding: 0.35rem 0.45rem;
-        border-left: 4px solid #0f3f5a;
-        background: linear-gradient(90deg, #1c5f84 0%, #174f6f 100%);
-        color: #f4fbff;
+        border-left: 4px solid var(--ui-accent);
+        background: linear-gradient(90deg, var(--ui-hero-start) 0%, var(--ui-hero-end) 100%);
+        color: var(--ui-hero-text) !important;
         border-radius: 4px;
         font-weight: 700;
         letter-spacing: 0;
-        box-shadow: inset 0 0 0 1px #2b759f;
-    }
+        box-shadow: inset 0 0 0 1px var(--ui-border);
+    }}
 
-    div[data-testid="stVerticalBlock"] div:has(> div > .section-heading) {
-        border: 1px solid #7eaac0;
+    div[data-testid="stVerticalBlock"] div:has(> div > .section-heading) {{
+        border: 1px solid var(--ui-border);
         border-radius: 8px;
         padding: 0.45rem 0.65rem 0.55rem 0.65rem;
-        background: linear-gradient(180deg, #ffffff 0%, #f7fcff 100%);
+        background: var(--ui-surface);
         box-shadow: none;
-    }
+    }}
 
-    div[data-testid="stVerticalBlock"] {
+    div[data-testid="stVerticalBlock"] {{
         gap: 0.35rem;
-    }
+    }}
 
     div[data-baseweb="select"] > div,
-    div[data-baseweb="input"] > div {
+    div[data-baseweb="input"] > div {{
         border-radius: 4px;
-        border: 1px solid #88adc1;
-        background: #ffffff;
+        border: 1px solid var(--ui-border);
+        background: var(--ui-field-bg);
         box-shadow: none;
-    }
+    }}
 
     div[data-baseweb="select"] > div:hover,
-    div[data-baseweb="input"] > div:hover {
-        border-color: #3f7493;
-    }
+    div[data-baseweb="input"] > div:hover {{
+        border-color: var(--ui-accent);
+    }}
 
     div[data-baseweb="select"] > div:focus-within,
-    div[data-baseweb="input"] > div:focus-within {
-        border-color: #1c5e82;
-        box-shadow: 0 0 0 1px #1c5e82;
-    }
+    div[data-baseweb="input"] > div:focus-within {{
+        border-color: var(--ui-accent);
+        box-shadow: 0 0 0 1px var(--ui-accent);
+    }}
 
-    /* Ensure form values stay dark on Windows packaged Chromium/WebView */
     div[data-baseweb="input"] input,
     div[data-baseweb="input"] input[type="number"],
     div[data-baseweb="select"] input,
@@ -210,67 +268,68 @@ st.markdown(
     div[data-baseweb="select"] span,
     div[data-baseweb="tag"] span,
     div[data-baseweb="select"] [role="combobox"],
-    div[data-baseweb="popover"] [role="option"] {
-        color: #10384d !important;
-        -webkit-text-fill-color: #10384d !important;
-    }
+    div[data-baseweb="popover"] [role="option"] {{
+        color: var(--ui-text) !important;
+        -webkit-text-fill-color: var(--ui-text) !important;
+    }}
 
     div[data-baseweb="input"] input::placeholder,
-    div[data-baseweb="select"] input::placeholder {
-        color: #4a6a7c !important;
-        -webkit-text-fill-color: #4a6a7c !important;
+    div[data-baseweb="select"] input::placeholder {{
+        color: var(--ui-muted) !important;
+        -webkit-text-fill-color: var(--ui-muted) !important;
         opacity: 1;
-    }
+    }}
 
-    div[data-testid="stWidgetLabel"] > label {
-        color: #133f56;
+    div[data-testid="stWidgetLabel"] > label {{
+        color: var(--ui-text) !important;
         font-weight: 600;
-    }
+    }}
 
-    div[data-testid="stTabs"] [data-baseweb="tab-list"] {
-        background: #edf6fb;
-        border: 1px solid #88adc1;
+    div[data-testid="stTabs"] [data-baseweb="tab-list"] {{
+        background: var(--ui-surface);
+        border: 1px solid var(--ui-border);
         border-radius: 6px;
         padding: 0.12rem;
-    }
+    }}
 
-    div[data-testid="stTabs"] [data-baseweb="tab"] {
+    div[data-testid="stTabs"] [data-baseweb="tab"] {{
         border-radius: 4px;
-        color: #12435a;
+        color: var(--ui-text) !important;
         font-weight: 600;
-    }
+    }}
 
-    div[data-testid="stTabs"] [aria-selected="true"] {
-        background: #2f7ea4;
-        color: #ffffff !important;
-    }
+    div[data-testid="stTabs"] [aria-selected="true"] {{
+        background: var(--ui-accent);
+        color: var(--ui-hero-text) !important;
+    }}
 
-    .stButton > button {
+    .stButton > button {{
         border-radius: 5px;
-        border: 1px solid #174f6a;
-        background: #1f6d90;
-        color: #ffffff;
+        border: 1px solid var(--ui-accent);
+        background: var(--ui-accent);
+        color: var(--ui-hero-text);
         font-weight: 700;
         letter-spacing: 0;
         box-shadow: none;
-    }
+    }}
 
-    .stButton > button:hover {
-        border-color: #123f55;
-        background: #165974;
-    }
+    .stButton > button:hover {{
+        filter: brightness(0.9);
+        border-color: var(--ui-accent);
+        background: var(--ui-accent);
+    }}
 
-    div[data-testid="stAlert"] {
+    div[data-testid="stAlert"] {{
         border-radius: 6px;
-        border: 1px solid #88adc1;
-        background: #f4fbff;
-    }
+        border: 1px solid var(--ui-border);
+        background: var(--ui-surface);
+    }}
 
-    @media (max-width: 900px) {
-        .hero h1 {
+    @media (max-width: 900px) {{
+        .hero h1 {{
             font-size: 1.3rem;
-        }
-    }
+        }}
+    }}
     </style>
     <div class="hero-wrap">
       <div class="hero">
@@ -278,9 +337,27 @@ st.markdown(
           <p>Prepare each service in a clear, simple bulletin-style workflow.</p>
       </div>
     </div>
-    """,
-    unsafe_allow_html=True,
-)
+    """
+
+
+# initialize theme preset before first render
+if "ui_theme_preset" not in st.session_state:
+    st.session_state.ui_theme_preset = "Follow Streamlit Theme"
+
+theme_col_left, theme_col_right = st.columns([1.35, 2.65])
+with theme_col_left:
+    ui_theme_name = st.selectbox(
+        "App Theme Preset",
+        options=list(THEME_PRESETS.keys()),
+        key="ui_theme_preset",
+    )
+with theme_col_right:
+    st.caption(
+        "Use Follow Streamlit Theme to respect the top-right Streamlit theme switcher. "
+        "Pick a preset when you want stronger fixed contrast."
+    )
+
+st.markdown(build_ui_style(ui_theme_name), unsafe_allow_html=True)
 
 # Initialize session state
 if 'generated_files' not in st.session_state:
