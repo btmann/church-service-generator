@@ -28,6 +28,13 @@ def _resolve_ui_script() -> str:
     raise FileNotFoundError(f"Could not locate ui.py in {script_dir} or {bundle_dir}")
 
 
+def _runtime_dir() -> str:
+    """Directory where diagnostics should be written."""
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
+
 def _find_open_port(start_port: int = 8501, max_tries: int = 20) -> int:
     """Return the first available localhost TCP port starting at start_port."""
     for port in range(start_port, start_port + max_tries):
@@ -40,16 +47,32 @@ def _find_open_port(start_port: int = 8501, max_tries: int = 20) -> int:
 
 def _write_log(script_dir: str, message: str) -> None:
     """Append launcher diagnostics to a local log file for windowed builds."""
-    if getattr(sys, "frozen", False):
-        log_dir = os.path.dirname(sys.executable)
-    else:
-        log_dir = script_dir
+    log_dir = _runtime_dir() if getattr(sys, "frozen", False) else script_dir
     log_path = os.path.join(log_dir, "church-service-ui.log")
-    with open(log_path, "a", encoding="utf-8") as handle:
-        handle.write(message + "\n")
+    try:
+        with open(log_path, "a", encoding="utf-8") as handle:
+            handle.write(message + "\n")
+    except Exception:
+        # Avoid masking the real startup failure if logging itself fails.
+        pass
+
+
+def _show_error_dialog(message: str) -> None:
+    """Show a visible error dialog on Windows windowed builds."""
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+
+        ctypes.windll.user32.MessageBoxW(0, message, "Church Service UI Error", 0x10)
+    except Exception:
+        pass
 
 
 def main() -> None:
+    runtime_dir = _runtime_dir()
+    _write_log(runtime_dir, "Launcher starting")
+
     ui_script = _resolve_ui_script()
     script_dir = os.path.dirname(ui_script)
     os.chdir(script_dir)
@@ -89,4 +112,14 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        error_text = traceback.format_exc()
+        _write_log(_runtime_dir(), "Fatal launcher exception:")
+        _write_log(_runtime_dir(), error_text)
+        _show_error_dialog(
+            "Church Service UI failed to start.\n\n"
+            "See church-service-ui.log in the same folder as the EXE for details."
+        )
+        raise
