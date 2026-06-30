@@ -90,10 +90,15 @@ def main() -> None:
     # Run Streamlit in-process so frozen builds do not rely on spawning python -m.
     from streamlit.web import cli as stcli
 
+    # Some Windows environments carry a global Streamlit dev-mode setting,
+    # which conflicts with an explicit server.port. Force production behavior.
+    os.environ["STREAMLIT_GLOBAL_DEVELOPMENT_MODE"] = "false"
+
     sys.argv = [
         "streamlit",
         "run",
         ui_script,
+        "--global.developmentMode=false",
         "--server.address=127.0.0.1",
         f"--server.port={port}",
         "--server.headless=true",
