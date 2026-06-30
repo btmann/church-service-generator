@@ -161,6 +161,26 @@ st.markdown(
         box-shadow: 0 0 0 1px #1c5e82;
     }
 
+    /* Ensure form values stay dark on Windows packaged Chromium/WebView */
+    div[data-baseweb="input"] input,
+    div[data-baseweb="input"] input[type="number"],
+    div[data-baseweb="select"] input,
+    div[data-baseweb="select"] div,
+    div[data-baseweb="select"] span,
+    div[data-baseweb="tag"] span,
+    div[data-baseweb="select"] [role="combobox"],
+    div[data-baseweb="popover"] [role="option"] {
+        color: #10384d !important;
+        -webkit-text-fill-color: #10384d !important;
+    }
+
+    div[data-baseweb="input"] input::placeholder,
+    div[data-baseweb="select"] input::placeholder {
+        color: #4a6a7c !important;
+        -webkit-text-fill-color: #4a6a7c !important;
+        opacity: 1;
+    }
+
     div[data-testid="stWidgetLabel"] > label {
         color: #133f56;
         font-weight: 600;
