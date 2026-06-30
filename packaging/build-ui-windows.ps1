@@ -12,6 +12,7 @@ python -m PyInstaller `
   --onedir `
   --name church-service-ui `
   --paths "$Root/python-pptx-mods" `
+  --add-data "$Root/ui.py;." `
   --add-data "$Root/assets;assets" `
   --add-data "$Root/backgrounds;backgrounds" `
   --add-data "$Root/worship;worship" `
