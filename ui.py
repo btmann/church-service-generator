@@ -59,10 +59,15 @@ def _resolve_resource_dir(folder_name):
     return Path(folder_name)
 
 # Configuration
-WORSHIP_ROOT = "worship/"
-TEMPLATES_ROOT = WORSHIP_ROOT + "templates/"
-SPECS_ROOT = WORSHIP_ROOT + "specs/"
 EHSF_ROOT_PATH = _resolve_resource_dir("ehsf")
+WORSHIP_RESOURCE_PATH = _resolve_resource_dir("worship")
+
+# Keep templates/styles discovery independent from where generated files are written.
+OUTPUT_WORSHIP_ROOT_PATH = Path(os.environ.get("CHURCH_SERVICE_OUTPUT_ROOT", "")).expanduser() if os.environ.get("CHURCH_SERVICE_OUTPUT_ROOT") else (EHSF_ROOT_PATH.parent / "worship")
+
+WORSHIP_ROOT = str(OUTPUT_WORSHIP_ROOT_PATH).rstrip("/") + "/"
+TEMPLATES_ROOT = str(WORSHIP_RESOURCE_PATH / "templates").rstrip("/") + "/"
+SPECS_ROOT = str(OUTPUT_WORSHIP_ROOT_PATH / "specs").rstrip("/") + "/"
 os.environ["CHURCH_SERVICE_EHSF_ROOT"] = str(EHSF_ROOT_PATH)
 if hasattr(slides, "set_ehsf_root"):
     slides.set_ehsf_root(str(EHSF_ROOT_PATH))
@@ -403,6 +408,8 @@ with theme_col_right:
 
 st.markdown(build_ui_style(ui_theme_name), unsafe_allow_html=True)
 st.caption(f"Song library path: {EHSF_ROOT_PATH}")
+st.caption(f"Template path: {WORSHIP_RESOURCE_PATH / 'templates'}")
+st.caption(f"Output path: {OUTPUT_WORSHIP_ROOT_PATH}")
 
 # Initialize session state
 if 'generated_files' not in st.session_state:
