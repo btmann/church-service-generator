@@ -5,8 +5,10 @@ Allows non-technical users to generate worship presentations easily
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 import json
 import os
+import base64
 from pathlib import Path
 from datetime import datetime
 import sys
@@ -729,6 +731,98 @@ def load_json_safe(path):
             return json.load(f)
 
 
+def read_binary_file(path):
+    """Read a binary file and return bytes, or None if missing/unreadable."""
+    if not path or not isinstance(path, str):
+        return None
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, 'rb') as f:
+            return f.read()
+    except OSError:
+        return None
+
+
+def render_generated_downloads():
+    """Render download buttons for the most recently generated files."""
+    generated = st.session_state.get('generated_files')
+    if not isinstance(generated, dict):
+        return
+
+    json_name = generated.get('json_name')
+    pptx_name = generated.get('pptx_name')
+    json_bytes = generated.get('json_bytes')
+    pptx_bytes = generated.get('pptx_bytes')
+
+    if json_bytes is None:
+        json_path = generated.get('json_path')
+        if isinstance(json_path, str):
+            json_bytes = read_binary_file(json_path)
+            if not json_name:
+                json_name = os.path.basename(json_path)
+
+    if pptx_bytes is None:
+        pptx_path = generated.get('pptx_path')
+        if isinstance(pptx_path, str):
+            pptx_bytes = read_binary_file(pptx_path)
+            if not pptx_name:
+                pptx_name = os.path.basename(pptx_path)
+
+    if not json_name:
+        json_name = "service.json"
+    if not pptx_name:
+        pptx_name = "service.pptx"
+
+    if not json_bytes and not pptx_bytes:
+        st.warning("Generated files are no longer available on this server.")
+        return
+
+    if st.session_state.get("auto_download_pptx") and pptx_bytes:
+        pptx_b64 = base64.b64encode(pptx_bytes).decode("ascii")
+        safe_filename = json.dumps(pptx_name)
+        components.html(
+            f"""
+            <script>
+            const a = document.createElement('a');
+            a.href = 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,{pptx_b64}';
+            a.download = {safe_filename};
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            </script>
+            """,
+            height=0,
+        )
+        st.session_state["auto_download_pptx"] = False
+        st.toast("PowerPoint download started.", icon="⬇️")
+
+    st.markdown('<div class="section-heading">Downloads</div>', unsafe_allow_html=True)
+    col_json, col_pptx = st.columns(2)
+
+    with col_json:
+        st.download_button(
+            label="Download Service JSON",
+            data=json_bytes if json_bytes else b"",
+            file_name=json_name,
+            mime="application/json",
+            use_container_width=True,
+            disabled=json_bytes is None,
+            key="download_service_json",
+        )
+
+    with col_pptx:
+        st.download_button(
+            label="Download PowerPoint",
+            data=pptx_bytes if pptx_bytes else b"",
+            file_name=pptx_name,
+            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            use_container_width=True,
+            disabled=pptx_bytes is None,
+            key="download_pptx",
+        )
+
+
 def get_song_structure(book, song_num, source_folder=""):
     """Return available verses and chorus slots for a song.
     Verse/chorus structure always comes from the English (engbase) JSON;
@@ -1362,7 +1456,7 @@ if missing_song_slots:
 col_left, col_generate, col_right = st.columns([1, 1.2, 1])
 
 with col_generate:
-    if st.button("🚀 Generate Presentation", type="primary", use_container_width=True, disabled=len(missing_song_slots) > 0):
+    if st.button("🚀 Generate & Download PowerPoint", type="primary", use_container_width=True, disabled=len(missing_song_slots) > 0):
         with st.spinner("🔄 Generating presentation..."):
             success, result, debug_info = generate_presentation(
                 service_date,
@@ -1376,15 +1470,23 @@ with col_generate:
             )
         
         if success:
+            json_bytes = read_binary_file(result)
+            pptx_bytes = read_binary_file(debug_info)
             st.session_state.generated_files = {
-                'json': result,
-                'pptx': debug_info
+                'json_path': result,
+                'pptx_path': debug_info,
+                'json_name': os.path.basename(result),
+                'pptx_name': os.path.basename(debug_info),
+                'json_bytes': json_bytes,
+                'pptx_bytes': pptx_bytes,
             }
-            st.toast("It worked. Presentation files were created.", icon="✅")
-            st.success("Presentation generated successfully.")
-            st.info(f"Find your files here:\n- JSON: {result}\n- PPTX: {debug_info}")
+            st.session_state["auto_download_pptx"] = True
+            st.toast("Presentation generated. Starting download...", icon="✅")
+            st.success("Presentation generated successfully. Your browser should start the download automatically.")
         else:
             st.error(f"❌ Error generating presentation: {result}")
             if isinstance(debug_info, str) and debug_info:
                 st.write("**Debug Information:**")
                 st.code(debug_info, language="python")
+
+render_generated_downloads()
