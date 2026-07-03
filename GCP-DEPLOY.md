@@ -1,5 +1,7 @@
 # GCP Deployment Starter (Cheapest Path)
 
+For a full click-by-click setup (GCP UI, domain purchase/mapping, and optional DB), see [GCP-PROJECT-SETUP-GUIDE.md](GCP-PROJECT-SETUP-GUIDE.md).
+
 This project now includes:
 - Docker image build file: Dockerfile
 - Cloud Build config: cloudbuild.yaml

@@ -35,6 +35,11 @@ python3 -m streamlit run ui.py
 
 For OneDrive distribution, see packaging instructions in `UI-README.md`.
 
+## GCP Deployment Guides
+
+- Quick deploy starter: [GCP-DEPLOY.md](GCP-DEPLOY.md)
+- Full step-by-step project/domain/DB guide: [GCP-PROJECT-SETUP-GUIDE.md](GCP-PROJECT-SETUP-GUIDE.md)
+
 ---
 
 ## Advanced: Command-Line Scripts
