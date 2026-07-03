@@ -1139,6 +1139,8 @@ with flow_tab:
         st.info(st.session_state["song_search_applied_message"])
 
     missing_song_slots = []
+    last_song_payload = None
+    last_song_label = None
 
     for idx, item in enumerate(template_items):
         if not isinstance(item, dict):
@@ -1166,6 +1168,33 @@ with flow_tab:
                 default_song_num = int(default_song)
             except (TypeError, ValueError):
                 default_song_num = 0
+
+            # Song title slides should mirror the most recent selected song.
+            if item_type == 'song-title':
+                auto_payload = None
+                if isinstance(last_song_payload, dict):
+                    auto_payload = {
+                        k: (list(v) if isinstance(v, list) else v)
+                        for k, v in last_song_payload.items()
+                    }
+                elif default_song_num > 0:
+                    auto_payload = {
+                        "book": default_book,
+                        "song": str(default_song_num),
+                        "coda": 0,
+                    }
+                    existing_source_folder = str(item.get("source_folder", "")).strip()
+                    if existing_source_folder:
+                        auto_payload["source_folder"] = existing_source_folder
+
+                if auto_payload is not None:
+                    songs_input[item_id] = auto_payload
+                    copied_from = last_song_label if last_song_label else f"{default_book.upper()}-{default_song_num:03d}"
+                    st.caption(f"Auto-filled {item_id} from previous song: {copied_from}")
+                else:
+                    missing_song_slots.append(item_label)
+                    st.caption("Auto-fill waits for a previous song selection.")
+                continue
 
             song_col1, song_col2, song_col3, song_col4, song_col5 = st.columns([0.9, 1.1, 1.2, 2.0, 2.0])
             with song_col1:
@@ -1280,6 +1309,11 @@ with flow_tab:
                         song_payload["chorus"] = selected_chorus
 
                 songs_input[item_id] = song_payload
+                last_song_payload = {
+                    k: (list(v) if isinstance(v, list) else v)
+                    for k, v in song_payload.items()
+                }
+                last_song_label = f"{book.upper()}-{int(song_num):03d}"
 
         if item_type == 'reading' and item_id:
             reading_number_str = st.text_input(

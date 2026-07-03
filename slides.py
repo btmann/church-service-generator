@@ -1089,6 +1089,25 @@ def add_song_details(slide, displayBook, displaySong, meta, verses, chorus, coda
 #
 
 def add_texts(slide, language, texts, mapping, default_fonts):
+	def sanitize_display_text(value):
+		if not isinstance(value, str):
+			return value
+		cleaned = value
+		# Remove mojibake/replacement artifacts that sometimes leak in from mixed encodings.
+		cleaned = cleaned.replace("ï¿½", "").replace("ï¿", "").replace("�", "")
+		replacements = {
+			"SEOR": "SE\u00d1OR",
+			"ORACIN": "ORACI\u00d3N",
+			"INVITACIN": "INVITACI\u00d3N",
+			"TRADUCCIN": "TRADUCCI\u00d3N",
+			"POPURR": "POPURR\u00cd",
+			"LECCIN": "LECCI\u00d3N",
+			"SERMN": "SERM\u00d3N",
+		}
+		for bad, good in replacements.items():
+			cleaned = cleaned.replace(bad, good)
+		return cleaned
+
 	for ph in phlist[language]:
 		v = get_placeholder(slide, mapping[ph])
 		if ph in texts:
@@ -1105,7 +1124,7 @@ def add_texts(slide, language, texts, mapping, default_fonts):
 				run = v.text_frame.paragraphs[0].add_run()
 				run.font.name = font[0]
 				run.font.size = Pt(text['max_size'])
-				run.text = text['text']
+				run.text = sanitize_display_text(text['text'])
 				if 'align' in text:
 					v.text_frame.paragraphs[0].alignment = text['align']
 				fitText(v.text_frame, font_family=font[0], max_size=text['max_size'], bold=bold, step_size=text['step_size'], file=assetRoot + font[1], features=features)
@@ -2149,14 +2168,14 @@ def add_prayer(outp, language, item, navitems, ndi):
 
 	if language == "bil" or language == "eng":
 		eng = dict()
-		eng[LAYOUT_TITLE_DETAIL] = dict(text="PRAYER", max_size=80, step_size=6, bold=True, size=[1.675, 3.35, 5.0, 1.8])
+		eng[LAYOUT_TITLE_DETAIL] = dict(text="PRAYER", max_size=68, step_size=6, bold=True, size=[1.675, 3.35, 5.0, 1.8])
 		eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CDEVOTE YOURSELVES TO PRAYER\u201D", max_size=24, step_size=2, size=[3.325, 3.9, 3.9, 1.0])
 		eng[LAYOUT_TITLE_REFERENCE] = dict(text=u"COLOSSIANS 4:2", max_size=20, step_size=2, size=[4.225, 3.6, 4.52, 1.0])
 
 	if language == "bil" or language == "esp":
 		esp = dict()
-		esp[LAYOUT_TITLE_DETAIL] = dict(text="ORACI�N", max_size=80, step_size=6, bold=True, size=[1.590, 3.35, 5.0, 1.8])
-		esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CPERSEVERAD EN LA ORACI�N\u201D", max_size=28, step_size=2, size=[3.325, 3.9, 3.9, 1.0])
+		esp[LAYOUT_TITLE_DETAIL] = dict(text="ORACI\u00d3N", max_size=68, step_size=6, bold=True, size=[1.590, 3.35, 5.0, 1.8])
+		esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CPERSEVERAD EN LA ORACI\u00d3N\u201D", max_size=28, step_size=2, size=[3.325, 3.9, 3.9, 1.0])
 		esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"COLOSENSES 4:2", max_size=24, step_size=2, size=[4.225, 3.6, 4.52, 1.0])
 
 	add_title_slide(outp, item, navitems, ndi, language, eng, esp, "prayer-wheat")
@@ -2175,13 +2194,13 @@ def add_sermon(outp, language, item, navitems, ndi):
 
 	if language == "bil" or language == "eng":
 		eng = dict()
-		eng[LAYOUT_TITLE_DETAIL] = dict(text=engt, max_size=72, step_size=6, bold=True, size=[1.675, 3.35, 5.0, 1.8])
+		eng[LAYOUT_TITLE_DETAIL] = dict(text=engt, max_size=64, step_size=6, bold=True, size=[1.675, 3.35, 5.0, 1.8])
 		eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CHE COMMANDED US TO PREACH TO THE PEOPLE\u201D", max_size=24, step_size=2, size=[3.33, 3.47, 4.78, 1.0])
 		eng[LAYOUT_TITLE_REFERENCE] = dict(text=u"ACTS 10:42", max_size=20, step_size=2, size=[4.225, 3.6, 4.52, 1.0])
 
 	if language == "bil" or language == "esp":
 		esp = dict()
-		esp[LAYOUT_TITLE_DETAIL] = dict(text=espt, max_size=80, step_size=6, bold=True, size=[1.59, 3.35, 5.0, 1.8])
+		esp[LAYOUT_TITLE_DETAIL] = dict(text=espt, max_size=64, step_size=6, bold=True, size=[1.59, 3.35, 5.0, 1.8])
 		esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CNOS MAND\u00d3 QUE PREDIC\u00c1SEMOS AL PUEBLO\u201D", max_size=26, step_size=2, size=[3.29, 3.47, 4.78, 1.0])
 		esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"HECHOS 10:42", max_size=24, step_size=2, size=[4.2, 3.6, 4.52, 1.0])
 
@@ -2334,14 +2353,14 @@ def add_ls(outp, language, item, navitems, ndi):
 		if language == "bil" or language == "eng":
 			eng = dict()
 			reading = get_supper_reading(rndx, 0)
-			eng[LAYOUT_TITLE_TITLE] = dict(frame=reading[1], max_size=48, step_size=2, size=[0.2, 2.00, 7.75, 5.25], color=RGBColor(255, 255, 255), spacing=5)
-			eng[LAYOUT_TITLE_CREDITS] = dict(frame=reading[0], max_size=18, step_size=2, size=[5.6, 7.2, 2.6, 0.4])
+			eng[LAYOUT_TITLE_TITLE] = dict(frame=reading[1], max_size=56, step_size=2, size=[0.2, 2.00, 7.75, 5.25], color=RGBColor(255, 255, 255), spacing=5)
+			eng[LAYOUT_TITLE_CREDITS] = dict(frame=reading[0], max_size=20, step_size=2, size=[5.6, 7.2, 2.6, 0.4])
 
 		if language == "bil" or language == "esp":
 			esp = dict()
 			reading = get_supper_reading(rndx, 1)
-			esp[LAYOUT_TITLE_TITLE] = dict(frame=reading[1], max_size=48, step_size=2, size=[0.2, 2.00, 7.75, 5.25], color=RGBColor(255, 255, 255), spacing=5)
-			esp[LAYOUT_TITLE_CREDITS] = dict(frame=reading[0], max_size=18, step_size=2, size=[5.6, 7.2, 2.6, 0.4])
+			esp[LAYOUT_TITLE_TITLE] = dict(frame=reading[1], max_size=56, step_size=2, size=[0.2, 2.00, 7.75, 5.25], color=RGBColor(255, 255, 255), spacing=5)
+			esp[LAYOUT_TITLE_CREDITS] = dict(frame=reading[0], max_size=20, step_size=2, size=[5.6, 7.2, 2.6, 0.4])
 
 		add_title_slide(outp, item, navitems, ndi, language, eng, esp, "supper-vial", zoom=True, delete=[LAYOUT_TITLE_CIRCLE_BG], doLeader=False, goSlow=True)
 
@@ -2411,14 +2430,14 @@ def add_coll(outp, language, item, navitems, ndi):
 		if language == "bil" or language == "eng":
 			eng = dict()
 			reading = get_collection_reading(rndx, 0)
-			eng[LAYOUT_TITLE_TITLE] = dict(frame=reading[1], max_size=48, step_size=2, size=[0.2, 2.00, 7.75, 5.25], color=RGBColor(255, 255, 255), spacing=5)
-			eng[LAYOUT_TITLE_CREDITS] = dict(frame=reading[0], max_size=18, step_size=2, size=[5.6, 7.2, 2.6, 0.4])
+			eng[LAYOUT_TITLE_TITLE] = dict(frame=reading[1], max_size=56, step_size=2, size=[0.2, 2.00, 7.75, 5.25], color=RGBColor(255, 255, 255), spacing=5)
+			eng[LAYOUT_TITLE_CREDITS] = dict(frame=reading[0], max_size=20, step_size=2, size=[5.6, 7.2, 2.6, 0.4])
 
 		if language == "bil" or language == "esp":
 			esp = dict()
 			reading = get_collection_reading(rndx, 1)
-			esp[LAYOUT_TITLE_TITLE] = dict(frame=reading[1], max_size=48, step_size=2, size=[0.2, 2.00, 7.75, 5.25], color=RGBColor(255, 255, 255), spacing=5)
-			esp[LAYOUT_TITLE_CREDITS] = dict(frame=reading[0], max_size=18, step_size=2, size=[5.6, 7.2, 2.6, 0.4])
+			esp[LAYOUT_TITLE_TITLE] = dict(frame=reading[1], max_size=56, step_size=2, size=[0.2, 2.00, 7.75, 5.25], color=RGBColor(255, 255, 255), spacing=5)
+			esp[LAYOUT_TITLE_CREDITS] = dict(frame=reading[0], max_size=20, step_size=2, size=[5.6, 7.2, 2.6, 0.4])
 
 		add_title_slide(outp, item, navitems, ndi, language, eng, esp, "giving-map", zoom=True, delete=[LAYOUT_TITLE_CIRCLE_BG], doLeader=False, goSlow=True)
 
