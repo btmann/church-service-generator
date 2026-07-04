@@ -175,6 +175,80 @@ Tips:
 
 Cloud Run provisions TLS certificate automatically after DNS validates.
 
+## 10A. Exact Domain Steps for church-slide-creater-eh.org (Namecheap)
+
+Use this exact plan after your Cloud Run service is deployed.
+
+### Recommended hostname
+
+Use a subdomain for the app:
+- `slides.church-slide-creater-eh.org`
+
+Why:
+- easiest DNS setup
+- easiest TLS setup
+- keeps root domain available for redirects/site later
+
+### Part 1: Add domain mapping in GCP
+
+1. Open Cloud Run.
+2. Click service `church-service-ui`.
+3. Open Manage Custom Domains.
+4. Click Add Mapping.
+5. Enter `slides.church-slide-creater-eh.org`.
+6. Complete ownership verification if Google asks.
+7. Keep this page open; it will show the DNS records you must add.
+
+### Part 2: Add records in Namecheap
+
+1. Sign in to Namecheap.
+2. Domain List > Manage for `church-slide-creater-eh.org`.
+3. Open Advanced DNS.
+4. Add the exact records from Cloud Run mapping.
+
+Common pattern (example only; always trust GCP values):
+- Type: CNAME Record
+- Host: `slides`
+- Value/Target: the `ghs.googlehosted.com` value Cloud Run gives you
+- TTL: Automatic
+
+If verification TXT records are shown in Cloud Run, add those too:
+- Type: TXT Record
+- Host: usually `@` or `_acme-challenge` (exactly as shown)
+- Value: exact token/value from Cloud Run
+- TTL: Automatic
+
+### Part 3: Validate activation
+
+1. Return to Cloud Run domain mapping page.
+2. Wait for status to move to Active/Ready.
+3. Test in browser:
+- `https://slides.church-slide-creater-eh.org`
+
+Notes:
+- DNS may propagate in minutes, but can take up to 24 hours.
+- TLS certificate issuance starts after DNS records are correct.
+
+### Optional root-domain redirect in Namecheap
+
+If you want visitors at the root domain to go to your app:
+
+1. In Namecheap Advanced DNS, add URL Redirect Record.
+2. Host: `@`
+3. Value: `https://slides.church-slide-creater-eh.org`
+4. Redirect type: Permanent (301)
+
+Also add a redirect for `www` if needed.
+
+### Troubleshooting checklist
+
+If mapping is stuck in pending:
+1. Confirm each DNS record exactly matches Cloud Run page (no typos).
+2. Remove conflicting CNAME/A records for host `slides`.
+3. Keep TTL at Automatic.
+4. Wait and recheck after 15-30 minutes.
+5. Verify domain ownership in Search Console if prompted.
+
 ## 11. Database Setup (Optional)
 
 For this app, DB is optional at first.
