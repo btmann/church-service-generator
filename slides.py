@@ -113,6 +113,90 @@ def get_song_paths_new(book, number):
 	return song, paths
 
 
+def load_song_meta_with_fallback(book, number, paths, source_folder=""):
+	"""Load song metadata from ENG/ESP and padded/unpadded paths.
+
+	This allows song numbers entered as either 10 or 010 and avoids hard-coding
+	one folder naming convention.
+	"""
+	try:
+		n = int(number)
+	except (TypeError, ValueError):
+		n = number
+
+	plain = str(n)
+	padded = f"{int(n):03d}" if str(n).isdigit() else str(n)
+
+	eng_candidates = [
+		paths['engbase'],
+		ehsf_join(book, plain, f"{book}-{plain}"),
+		ehsf_join(book, padded, f"{book}-{padded}"),
+	]
+	esp_candidates = [
+		paths['espbase'],
+		ehsf_join('esp', book, plain, f"{book}-{plain}"),
+		ehsf_join('esp', book, padded, f"{book}-{padded}"),
+	]
+
+	prefer_esp = str(source_folder).strip().lower().startswith('esp')
+	candidates = (esp_candidates + eng_candidates) if prefer_esp else (eng_candidates + esp_candidates)
+
+	# preserve order while removing duplicates
+	seen = set()
+	ordered = []
+	for base in candidates:
+		if base not in seen:
+			ordered.append(base)
+			seen.add(base)
+
+	fallback = None
+
+	def hydrate_layout_from_images(meta, base):
+		"""If metadata lacks verse structure, infer it from numbered PNG pages."""
+		meta.setdefault('verses', {})
+		meta.setdefault('chorus', {})
+		meta.setdefault('codas', {})
+		if meta.get('verses') or meta.get('chorus'):
+			return meta
+
+		pages = []
+		for ndx in range(1, 80):
+			filename = base + "-" + f"{ndx:02d}" + ".png"
+			if os.path.exists(filename):
+				pages.append(ndx)
+
+		# Treat each available page as a standalone verse if no explicit layout exists.
+		if pages:
+			meta['verses'] = {str(i): [p] for i, p in enumerate(pages, start=1)}
+
+		return meta
+	for base in ordered:
+		meta_file = base + ".json"
+		if not os.path.exists(meta_file):
+			continue
+		meta = load_json_safe(meta_file)
+		if not isinstance(meta, dict):
+			continue
+		custom = base + "-custom.json"
+		if os.path.exists(custom):
+			custom_data = load_json_safe(custom)
+			if isinstance(custom_data, dict):
+				meta.update(custom_data)
+
+		# Normalize expected keys and infer layout from PNGs when metadata is sparse.
+		meta = hydrate_layout_from_images(meta, base)
+
+		if fallback is None:
+			fallback = meta
+		if meta.get('verses') or meta.get('chorus'):
+			return meta
+
+	if fallback is not None:
+		return fallback
+
+	raise FileNotFoundError(f"Could not find song metadata for {book}-{plain}")
+
+
 def fitText(frame, font_family, max_size, bold, step_size=12, file=None, features=None, spacing=0):
 	while True:
 		try:
@@ -1896,10 +1980,7 @@ def set_esp(paths, language):
 
 def make_deck(book, number, language, outputfn):
 	song, paths = get_song_paths_new(book, number)
-	meta = load_json_safe(paths['engbase'] + ".json")
-	custom = paths['engbase'] + "-custom.json"
-	if os.path.exists(custom):
-		meta.update(load_json_safe(custom))
+	meta = load_song_meta_with_fallback(book, number, paths)
 	pprint.pprint(meta)
 
 	esp, basename = set_esp(paths, language)
@@ -2929,10 +3010,7 @@ def make_worship_deck(jsonfile):
 	for item in worship['items']:
 		if 'song' in item['type']:
 			song, paths = get_song_paths_new(item['book'], int(item['song']))
-			item['meta'] = load_json_safe(paths['engbase'] + ".json")
-			custom = paths['engbase'] + "-custom.json"
-			if os.path.exists(custom):
-				item['meta'].update(load_json_safe(custom))
+			item['meta'] = load_song_meta_with_fallback(item['book'], item['song'], paths, item.get('source_folder', ''))
 			# If the song was selected from the ESP folder and that folder has
 			# its own PNG images, use those images (bilingual slides).
 			# The English title is always preserved (language stays 'eng').
@@ -2947,10 +3025,7 @@ def make_worship_deck(jsonfile):
 		elif 'medley' in item['type']:
 			for songi in item['songs']:
 				song, paths = get_song_paths_new(songi['book'], int(songi['song']))
-				songi['meta'] = load_json_safe(paths['engbase'] + ".json")
-				custom = paths['engbase'] + "-custom.json"
-				if os.path.exists(custom):
-					songi['meta'].update(load_json_safe(custom))
+				songi['meta'] = load_song_meta_with_fallback(songi['book'], songi['song'], paths, songi.get('source_folder', ''))
 				source_folder = str(songi.get('source_folder', '')).strip().lower()
 				use_esp_images = (
 					(source_folder.startswith('esp/') or source_folder == 'esp')

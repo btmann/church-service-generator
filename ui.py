@@ -752,48 +752,13 @@ def render_generated_downloads():
 
 def get_song_structure(book, song_num, source_folder=""):
     """Return available verses and chorus slots for a song.
-    Accept both 10 and 010-style song directories and prefer the user-selected
-    source (ENG/ESP) when probing metadata.
+    Uses the same metadata resolver as slide generation, including fallback
+    layout inference from song PNG images.
     """
     try:
         song_value = int(song_num)
-        song_padded = f"{song_value:03d}"
-        song_plain = str(song_value)
-
         _, paths = slides.get_song_paths_new(book, song_value)
-
-        # Build candidate metadata bases. Some libraries are stored as 010, others as 10.
-        eng_candidates = [
-            paths['engbase'],
-            os.path.join(slides.EHSF_ROOT, book, song_plain, f"{book}-{song_plain}").replace("\\", "/"),
-            os.path.join(slides.EHSF_ROOT, book, song_padded, f"{book}-{song_padded}").replace("\\", "/"),
-        ]
-        esp_candidates = [
-            paths['espbase'],
-            os.path.join(slides.EHSF_ROOT, "esp", book, song_plain, f"{book}-{song_plain}").replace("\\", "/"),
-            os.path.join(slides.EHSF_ROOT, "esp", book, song_padded, f"{book}-{song_padded}").replace("\\", "/"),
-        ]
-
-        prefer_esp = str(source_folder).strip().lower().startswith("esp")
-        candidate_bases = (esp_candidates + eng_candidates) if prefer_esp else (eng_candidates + esp_candidates)
-
-        meta = None
-        for meta_base in candidate_bases:
-            meta_file = meta_base + ".json"
-            if not os.path.exists(meta_file):
-                continue
-            loaded = load_json_safe(meta_file)
-            if isinstance(loaded, dict):
-                meta = loaded
-                custom = meta_base + "-custom.json"
-                if os.path.exists(custom):
-                    custom_data = load_json_safe(custom)
-                    if isinstance(custom_data, dict):
-                        meta.update(custom_data)
-                break
-
-        if not isinstance(meta, dict):
-            return [], [], "song_not_found"
+        meta = slides.load_song_meta_with_fallback(book, song_value, paths, source_folder)
 
         verses = []
         chorus = []
@@ -1278,7 +1243,7 @@ with flow_tab:
                         item.get("source_folder", "") if isinstance(item, dict) else ""
                     )
                 ).strip().lower()
-                default_source_key = "eng" if (existing_source_folder and not existing_source_folder.startswith("esp")) else "esp"
+                default_source_key = "esp" if existing_source_folder.startswith("esp") else "eng"
                 source_choice = st.selectbox(
                     f"Source ({item_id})",
                     ["eng", "esp"],
@@ -1332,6 +1297,8 @@ with flow_tab:
 
             if song_error and has_song_selected:
                 st.caption(f"Can\'t find song {book.upper()}-{int(song_num):03d}.")
+            elif has_song_selected and not available_verses and not available_chorus:
+                st.caption(f"Song {book.upper()}-{int(song_num):03d} was found, but it has no verse/chorus layout data.")
 
             if has_song_selected:
                 song_payload = {
