@@ -110,56 +110,21 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-THEME_PRESETS = {
-    "Follow Streamlit Theme": {
-        "bg": "var(--background-color, #f2f6fa)",
-        "surface": "var(--secondary-background-color, #ffffff)",
-        "text": "var(--text-color, #102a3a)",
-        "muted": "var(--text-color, #102a3a)",
-        "accent": "var(--primary-color, #1f6d90)",
-        "hero_start": "var(--primary-color, #1f6d90)",
-        "hero_end": "#12445e",
-        "hero_text": "#ffffff",
-        "field_bg": "var(--secondary-background-color, #ffffff)",
-    },
-    "Harbor Light": {
-        "bg": "#dcebf5",
-        "surface": "#f7fbff",
-        "text": "#102f42",
-        "muted": "#35576a",
-        "accent": "#1c6f96",
-        "hero_start": "#0f4461",
-        "hero_end": "#1b6387",
-        "hero_text": "#ffffff",
-        "field_bg": "#ffffff",
-    },
-    "Olive Paper": {
-        "bg": "#ecebd9",
-        "surface": "#fbf9ec",
-        "text": "#29382e",
-        "muted": "#4a5b4f",
-        "accent": "#5a7446",
-        "hero_start": "#4a6438",
-        "hero_end": "#6f8a58",
-        "hero_text": "#ffffff",
-        "field_bg": "#fffffb",
-    },
-    "Slate Night": {
-        "bg": "#132028",
-        "surface": "#1b2e38",
-        "text": "#e8f2f7",
-        "muted": "#bfd1dc",
-        "accent": "#63b4d8",
-        "hero_start": "#1f6f96",
-        "hero_end": "#2a8bb8",
-        "hero_text": "#ffffff",
-        "field_bg": "#213744",
-    },
+HARBOR_BLUE_THEME = {
+    "bg": "#dcebf5",
+    "surface": "#f7fbff",
+    "text": "#102f42",
+    "muted": "#35576a",
+    "accent": "#1c6f96",
+    "hero_start": "#0f4461",
+    "hero_end": "#1b6387",
+    "hero_text": "#ffffff",
+    "field_bg": "#ffffff",
 }
 
 
-def build_ui_style(theme_name):
-    theme = THEME_PRESETS.get(theme_name, THEME_PRESETS["Follow Streamlit Theme"])
+def build_ui_style():
+    theme = HARBOR_BLUE_THEME
 
     return f"""
     <style>
@@ -177,7 +142,7 @@ def build_ui_style(theme_name):
     }}
 
     .stApp {{
-        font-family: Georgia, 'Times New Roman', serif;
+        font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
         background: var(--ui-bg);
         color: var(--ui-text);
     }}
@@ -215,10 +180,10 @@ def build_ui_style(theme_name):
 
     .block-container {{
         max-width: 1420px;
-        padding-top: 1.35rem;
-        padding-bottom: 1.2rem;
-        padding-left: 1rem;
-        padding-right: 1rem;
+        padding-top: 1.1rem;
+        padding-bottom: 1.6rem;
+        padding-left: 1.1rem;
+        padding-right: 1.1rem;
     }}
 
     .hero-wrap {{
@@ -230,12 +195,12 @@ def build_ui_style(theme_name):
     .hero {{
         width: 100%;
         margin: 0;
-        padding: 1.1rem 1.1rem;
-        border-radius: 8px;
+        padding: 1.3rem 1.25rem;
+        border-radius: 14px;
         background: linear-gradient(135deg, var(--ui-hero-start) 0%, var(--ui-hero-end) 100%);
         color: var(--ui-hero-text) !important;
         border: 1px solid var(--ui-border);
-        box-shadow: none;
+        box-shadow: 0 10px 22px rgba(15, 68, 97, 0.18);
         margin-bottom: 0.25rem;
         overflow: visible;
     }}
@@ -246,59 +211,63 @@ def build_ui_style(theme_name):
     }}
 
     .hero h1 {{
-        font-family: Georgia, 'Times New Roman', serif;
+        font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
         margin: 0 0 0.15rem 0;
-        font-size: 1.55rem;
-        line-height: 1.3;
+        font-size: 1.6rem;
+        line-height: 1.35;
         letter-spacing: 0;
         font-weight: 700;
     }}
 
     .hero p {{
         margin: 0;
-        font-size: 0.94rem;
+        font-size: 0.98rem;
+        line-height: 1.45;
         opacity: 0.96;
     }}
 
     .section-heading {{
-        margin: 0.45rem 0 0.35rem 0;
+        margin: 0.6rem 0 0.45rem 0;
         color: var(--ui-text);
-        font-size: 0.88rem;
+        font-size: 0.92rem;
         font-weight: 700;
-        letter-spacing: 0.8px;
+        letter-spacing: 0.55px;
         text-transform: uppercase;
     }}
 
     .flow-item {{
-        margin: 0.5rem 0 0.35rem 0;
-        padding: 0.35rem 0.45rem;
+        margin: 0.65rem 0 0.45rem 0;
+        padding: 0.5rem 0.6rem;
         border-left: 4px solid var(--ui-accent);
         background: linear-gradient(90deg, var(--ui-hero-start) 0%, var(--ui-hero-end) 100%);
         color: var(--ui-hero-text) !important;
-        border-radius: 4px;
+        border-radius: 8px;
         font-weight: 700;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
         letter-spacing: 0;
-        box-shadow: inset 0 0 0 1px var(--ui-border);
+        box-shadow: inset 0 0 0 1px var(--ui-border), 0 3px 10px rgba(15, 68, 97, 0.12);
     }}
 
     div[data-testid="stVerticalBlock"] div:has(> div > .section-heading) {{
         border: 1px solid var(--ui-border);
-        border-radius: 8px;
-        padding: 0.45rem 0.65rem 0.55rem 0.65rem;
+        border-radius: 12px;
+        padding: 0.65rem 0.8rem 0.75rem 0.8rem;
         background: var(--ui-surface);
-        box-shadow: none;
+        box-shadow: 0 4px 14px rgba(16, 47, 66, 0.08);
     }}
 
     div[data-testid="stVerticalBlock"] {{
-        gap: 0.35rem;
+        gap: 0.6rem;
     }}
 
     div[data-baseweb="select"] > div,
     div[data-baseweb="input"] > div {{
-        border-radius: 4px;
+        border-radius: 8px;
         border: 1px solid var(--ui-border);
         background: var(--ui-field-bg);
         box-shadow: none;
+        min-height: 2.5rem;
     }}
 
     div[data-baseweb="select"] > div:hover,
@@ -334,6 +303,14 @@ def build_ui_style(theme_name):
     div[data-testid="stWidgetLabel"] > label {{
         color: var(--ui-text) !important;
         font-weight: 600;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+    }}
+
+    div[data-testid="stCaptionContainer"],
+    div[data-testid="stCaptionContainer"] p,
+    .stCaption {{
+        line-height: 1.45;
     }}
 
     div[data-testid="stTabs"] [data-baseweb="tab-list"] {{
@@ -355,13 +332,14 @@ def build_ui_style(theme_name):
     }}
 
     .stButton > button {{
-        border-radius: 5px;
+        border-radius: 8px;
         border: 1px solid var(--ui-accent);
         background: var(--ui-accent);
         color: var(--ui-hero-text);
         font-weight: 700;
         letter-spacing: 0;
-        box-shadow: none;
+        min-height: 2.6rem;
+        box-shadow: 0 5px 14px rgba(28, 111, 150, 0.24);
     }}
 
     .stButton > button:hover {{
@@ -380,6 +358,11 @@ def build_ui_style(theme_name):
         .hero h1 {{
             font-size: 1.3rem;
         }}
+
+        .block-container {{
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }}
     }}
     </style>
     <div class="hero-wrap">
@@ -391,27 +374,7 @@ def build_ui_style(theme_name):
     """
 
 
-# initialize theme preset before first render
-if "ui_theme_preset" not in st.session_state:
-    st.session_state.ui_theme_preset = "Follow Streamlit Theme"
-
-theme_col_left, theme_col_right = st.columns([1.35, 2.65])
-with theme_col_left:
-    ui_theme_name = st.selectbox(
-        "App Theme Preset",
-        options=list(THEME_PRESETS.keys()),
-        key="ui_theme_preset",
-    )
-with theme_col_right:
-    st.caption(
-        "Use Follow Streamlit Theme to respect the top-right Streamlit theme switcher. "
-        "Pick a preset when you want stronger fixed contrast."
-    )
-
-st.markdown(build_ui_style(ui_theme_name), unsafe_allow_html=True)
-st.caption(f"Song library path: {EHSF_ROOT_PATH}")
-st.caption(f"Template path: {WORSHIP_RESOURCE_PATH / 'templates'}")
-st.caption(f"Output path: {OUTPUT_WORSHIP_ROOT_PATH}")
+st.markdown(build_ui_style(), unsafe_allow_html=True)
 
 # Initialize session state
 if 'generated_files' not in st.session_state:
@@ -745,22 +708,13 @@ def read_binary_file(path):
 
 
 def render_generated_downloads():
-    """Render download buttons for the most recently generated files."""
+    """Trigger PowerPoint auto-download for the most recently generated file."""
     generated = st.session_state.get('generated_files')
     if not isinstance(generated, dict):
         return
 
-    json_name = generated.get('json_name')
     pptx_name = generated.get('pptx_name')
-    json_bytes = generated.get('json_bytes')
     pptx_bytes = generated.get('pptx_bytes')
-
-    if json_bytes is None:
-        json_path = generated.get('json_path')
-        if isinstance(json_path, str):
-            json_bytes = read_binary_file(json_path)
-            if not json_name:
-                json_name = os.path.basename(json_path)
 
     if pptx_bytes is None:
         pptx_path = generated.get('pptx_path')
@@ -769,13 +723,11 @@ def render_generated_downloads():
             if not pptx_name:
                 pptx_name = os.path.basename(pptx_path)
 
-    if not json_name:
-        json_name = "service.json"
     if not pptx_name:
         pptx_name = "service.pptx"
 
-    if not json_bytes and not pptx_bytes:
-        st.warning("Generated files are no longer available on this server.")
+    if not pptx_bytes:
+        st.warning("Generated file is no longer available on this server.")
         return
 
     if st.session_state.get("auto_download_pptx") and pptx_bytes:
@@ -797,63 +749,65 @@ def render_generated_downloads():
         st.session_state["auto_download_pptx"] = False
         st.toast("PowerPoint download started.", icon="⬇️")
 
-    st.markdown('<div class="section-heading">Downloads</div>', unsafe_allow_html=True)
-    col_json, col_pptx = st.columns(2)
-
-    with col_json:
-        st.download_button(
-            label="Download Service JSON",
-            data=json_bytes if json_bytes else b"",
-            file_name=json_name,
-            mime="application/json",
-            use_container_width=True,
-            disabled=json_bytes is None,
-            key="download_service_json",
-        )
-
-    with col_pptx:
-        st.download_button(
-            label="Download PowerPoint",
-            data=pptx_bytes if pptx_bytes else b"",
-            file_name=pptx_name,
-            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            use_container_width=True,
-            disabled=pptx_bytes is None,
-            key="download_pptx",
-        )
-
 
 def get_song_structure(book, song_num, source_folder=""):
     """Return available verses and chorus slots for a song.
-    Verse/chorus structure always comes from the English (engbase) JSON;
-    the ESP JSON only carries translation text (title, credits).
+    Accept both 10 and 010-style song directories and prefer the user-selected
+    source (ENG/ESP) when probing metadata.
     """
     try:
-        _, paths = slides.get_song_paths_new(book, int(song_num))
+        song_value = int(song_num)
+        song_padded = f"{song_value:03d}"
+        song_plain = str(song_value)
 
-        # Always use engbase for structure — ESP json has no verses/chorus keys
-        meta_base = paths['engbase']
-        meta = load_json_safe(meta_base + ".json")
-        custom = meta_base + "-custom.json"
-        if os.path.exists(custom):
-            custom_data = load_json_safe(custom)
-            if isinstance(custom_data, dict):
-                meta.update(custom_data)
+        _, paths = slides.get_song_paths_new(book, song_value)
+
+        # Build candidate metadata bases. Some libraries are stored as 010, others as 10.
+        eng_candidates = [
+            paths['engbase'],
+            os.path.join(slides.EHSF_ROOT, book, song_plain, f"{book}-{song_plain}").replace("\\", "/"),
+            os.path.join(slides.EHSF_ROOT, book, song_padded, f"{book}-{song_padded}").replace("\\", "/"),
+        ]
+        esp_candidates = [
+            paths['espbase'],
+            os.path.join(slides.EHSF_ROOT, "esp", book, song_plain, f"{book}-{song_plain}").replace("\\", "/"),
+            os.path.join(slides.EHSF_ROOT, "esp", book, song_padded, f"{book}-{song_padded}").replace("\\", "/"),
+        ]
+
+        prefer_esp = str(source_folder).strip().lower().startswith("esp")
+        candidate_bases = (esp_candidates + eng_candidates) if prefer_esp else (eng_candidates + esp_candidates)
+
+        meta = None
+        for meta_base in candidate_bases:
+            meta_file = meta_base + ".json"
+            if not os.path.exists(meta_file):
+                continue
+            loaded = load_json_safe(meta_file)
+            if isinstance(loaded, dict):
+                meta = loaded
+                custom = meta_base + "-custom.json"
+                if os.path.exists(custom):
+                    custom_data = load_json_safe(custom)
+                    if isinstance(custom_data, dict):
+                        meta.update(custom_data)
+                break
+
+        if not isinstance(meta, dict):
+            return [], [], "song_not_found"
 
         verses = []
         chorus = []
 
-        if isinstance(meta, dict):
-            verses = sorted([
-                int(v)
-                for v in meta.get('verses', {}).keys()
-                if str(v).isdigit()
-            ])
-            chorus = sorted([
-                int(v)
-                for v in meta.get('chorus', {}).keys()
-                if str(v).isdigit()
-            ])
+        verses = sorted([
+            int(v)
+            for v in meta.get('verses', {}).keys()
+            if str(v).isdigit()
+        ])
+        chorus = sorted([
+            int(v)
+            for v in meta.get('chorus', {}).keys()
+            if str(v).isdigit()
+        ])
 
         return verses, chorus, None
     except Exception as e:
@@ -1377,7 +1331,7 @@ with flow_tab:
                     st.caption("Select song number to load chorus")
 
             if song_error and has_song_selected:
-                st.caption(f"Could not load verses/chorus for {book}-{int(song_num):03d}: {song_error}")
+                st.caption(f"Can\'t find song {book.upper()}-{int(song_num):03d}.")
 
             if has_song_selected:
                 song_payload = {
@@ -1470,14 +1424,10 @@ with col_generate:
             )
         
         if success:
-            json_bytes = read_binary_file(result)
             pptx_bytes = read_binary_file(debug_info)
             st.session_state.generated_files = {
-                'json_path': result,
                 'pptx_path': debug_info,
-                'json_name': os.path.basename(result),
                 'pptx_name': os.path.basename(debug_info),
-                'json_bytes': json_bytes,
                 'pptx_bytes': pptx_bytes,
             }
             st.session_state["auto_download_pptx"] = True
