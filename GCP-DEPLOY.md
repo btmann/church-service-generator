@@ -39,6 +39,36 @@ gcloud builds submit --config cloudbuild.yaml \
   --substitutions _IMAGE_URI=us-central1-docker.pkg.dev/YOUR_PROJECT_ID/church-service/church-service-ui:latest
 ```
 
+Option B: Windows PC local Docker build + push (PowerShell)
+
+Prerequisites:
+- Docker Desktop installed and running
+- Google Cloud CLI installed
+- You are signed in to gcloud (`gcloud auth login`)
+
+PowerShell commands:
+
+```powershell
+$PROJECT_ID="YOUR_PROJECT_ID"
+$REGION="us-central1"
+$REPO="church-service"
+$IMAGE="church-service-ui"
+$TAG="latest"
+$IMAGE_URI="$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/$IMAGE`:$TAG"
+
+gcloud config set project $PROJECT_ID
+gcloud auth configure-docker "$REGION-docker.pkg.dev"
+
+docker build -t $IMAGE_URI .
+docker push $IMAGE_URI
+```
+
+Quick verify that image exists:
+
+```powershell
+gcloud artifacts docker images list "$REGION-docker.pkg.dev/$PROJECT_ID/$REPO"
+```
+
 ## 3) Deploy to Cloud Run (low-cost defaults)
 
 ```bash

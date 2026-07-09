@@ -117,13 +117,101 @@ Use the files already in this repo:
 - [Dockerfile](Dockerfile)
 - [cloudbuild.yaml](cloudbuild.yaml)
 
-From your local machine:
+Option A (works on any OS): Cloud Build
 
 ```bash
 gcloud config set project YOUR_PROJECT_ID
 gcloud builds submit --config cloudbuild.yaml \
   --substitutions _IMAGE_URI=us-central1-docker.pkg.dev/YOUR_PROJECT_ID/church-service/church-service-ui:latest
 ```
+
+### 7A. Windows PC local Docker build + push (PowerShell)
+
+Use this when you want to build and push directly from your Windows machine.
+
+Step 1: Install prerequisites on Windows
+1. Install Docker Desktop and open it.
+2. Confirm Docker Desktop is running.
+3. Install Google Cloud CLI.
+4. Open PowerShell.
+
+Step 2: Authenticate
+
+```powershell
+gcloud auth login
+gcloud auth application-default login
+```
+
+Step 3: Set deployment variables
+
+```powershell
+$PROJECT_ID="YOUR_PROJECT_ID"
+$REGION="us-central1"
+$REPO="church-service"
+$IMAGE="church-service-ui"
+$TAG="latest"
+$IMAGE_URI="$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/$IMAGE`:$TAG"
+```
+
+Step 4: Point gcloud to your project
+
+```powershell
+gcloud config set project $PROJECT_ID
+```
+
+Step 5: Allow Docker to push to Artifact Registry
+
+```powershell
+gcloud auth configure-docker "$REGION-docker.pkg.dev"
+```
+
+Step 6: Build image locally
+
+Run this from the repository root (where Dockerfile exists):
+
+```powershell
+docker build -t $IMAGE_URI .
+```
+
+Step 7: Push image
+
+```powershell
+docker push $IMAGE_URI
+```
+
+Step 8: Verify image uploaded
+
+```powershell
+gcloud artifacts docker images list "$REGION-docker.pkg.dev/$PROJECT_ID/$REPO"
+```
+
+Step 9: Deploy Cloud Run using the pushed image
+
+```powershell
+gcloud run deploy church-service-ui \
+  --image $IMAGE_URI \
+  --region $REGION \
+  --platform managed \
+  --allow-unauthenticated \
+  --port 8080 \
+  --min-instances 0 \
+  --max-instances 2 \
+  --cpu 1 \
+  --memory 2Gi \
+  --concurrency 1 \
+  --timeout 900
+```
+
+### 7B. Common Windows issues
+
+1. Error: cannot connect to Docker daemon.
+Fix: Start Docker Desktop and wait until it says Engine running.
+
+2. Push denied to Artifact Registry.
+Fix: Run `gcloud auth configure-docker "$REGION-docker.pkg.dev"` again.
+
+3. Build fails from wrong folder.
+Fix: `cd` to project root before `docker build`.
 
 ## 8. Deploy Cloud Run (Cheapest Baseline)
 
