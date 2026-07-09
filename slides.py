@@ -153,6 +153,12 @@ def load_song_meta_with_fallback(book, number, paths, source_folder=""):
 
 	def hydrate_layout_from_images(meta, base):
 		"""If metadata lacks verse structure, infer it from numbered PNG pages."""
+		# Normalize fields expected by rendering code.
+		meta.setdefault('title', f"{book}-{plain}")
+		meta.setdefault('credits', "")
+		meta.setdefault('copyright', "")
+		meta.setdefault('number', plain)
+		meta.setdefault('lyrics', {})
 		meta.setdefault('verses', {})
 		meta.setdefault('chorus', {})
 		meta.setdefault('codas', {})
@@ -1312,7 +1318,7 @@ def add_song_title_slide(outp, language, item, navitems, ndi, verses=None, choru
 	if language == "bil" or language == "eng" or espm is None:
 		eng = dict()
 		eng[LAYOUT_TITLE_TITLE] = dict(text=str(displaySong), max_size=60, step_size=6, bold=True, size=[0.675, 4.6, 2.5, 1])
-		eng[LAYOUT_TITLE_DETAIL] = dict(text=meta['title'].upper(), max_size=48, step_size=6, bold=True, size=[1.675, 3.75, 4.2, 1.8])
+		eng[LAYOUT_TITLE_DETAIL] = dict(text=meta['title'].upper(), max_size=40, step_size=4, bold=True, size=[1.675, 3.75, 4.2, 1.8])
 		eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CSINGING...TO THE LORD\u201D\nCOLOSSIANS 3:16", max_size=24, step_size=2, size=[4.325, 4.1, 3.5, 0.7])
 		eng[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(meta['credits'].splitlines()), max_size=12, step_size=2)
 		if bubble:
@@ -1322,7 +1328,7 @@ def add_song_title_slide(outp, language, item, navitems, ndi, verses=None, choru
 		if espm:
 			esp = dict()
 			esp[LAYOUT_TITLE_TITLE] = dict(text=str(displaySong), fonts=eng_fonts, max_size=60, step_size=6, bold=True, size=[0.675, 4.6, 2.5, 1])
-			esp[LAYOUT_TITLE_DETAIL] = dict(text=espm['title'].upper(), max_size=48, step_size=6, bold=True, size=[1.62, 3.75, 4.2, 1.8])
+			esp[LAYOUT_TITLE_DETAIL] = dict(text=espm['title'].upper(), max_size=40, step_size=4, bold=True, size=[1.62, 3.75, 4.2, 1.8])
 			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CCANTANDO...AL SE�OR\u201D\nCOLOSENSES 3:16", max_size=22, step_size=2, size=[4.280, 4.1, 3.5, 0.9])
 			esp[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(espm['credits'].splitlines()), max_size=13, step_size=1)
 			if bubble:
@@ -1587,7 +1593,7 @@ def add_verse_to_deck_tall(slide, displayBook, displaySong, basename, ndx, meta,
 	height = v.height.inches
 	set_placeholder_size(v, top, left, width, height)
 	v.text = meta['title'].upper()
-	fitText(v.text_frame, font_family=None, max_size=16, bold=True, step_size=1, file=assetRoot + "AvenirNextLTPro-Regular.ttf", features=('smcp', 'kern', 'liga', 'ordn', 'dlig'))
+	fitText(v.text_frame, font_family=None, max_size=13, bold=True, step_size=1, file=assetRoot + "AvenirNextLTPro-Regular.ttf", features=('smcp', 'kern', 'liga', 'ordn', 'dlig'))
 
 	tall_top = tall_top + height + 0.1
 
@@ -1602,7 +1608,7 @@ def add_verse_to_deck_tall(slide, displayBook, displaySong, basename, ndx, meta,
 		height = v.height.inches
 		set_placeholder_size(v, top, left, width, height)
 		v.text = esp['title'].upper()
-		fitText(v.text_frame, font_family=None, max_size=18, bold=True, step_size=1, file=assetRoot + "AlegreyaSans-ExtraBold.ttf")
+		fitText(v.text_frame, font_family=None, max_size=15, bold=True, step_size=1, file=assetRoot + "AlegreyaSans-ExtraBold.ttf")
 
 		tall_top = tall_top + height + 0.1
 
@@ -1665,14 +1671,14 @@ def add_wide_title(v, meta, esp):
 	maxwidth = v.width
 	engtitle = meta['title'].upper()
 	if esp is None:
-		add_text_run(v.text_frame, engtitle, 'Avenir Next LT Pro', 16, False)
+		add_text_run(v.text_frame, engtitle, 'Avenir Next LT Pro', 13, False)
 	else:
 		esptitle = esp['title'].upper()
-		fontsize = 16
+		fontsize = 13
 		engfontfile = assetRoot + "AvenirNextLTPro-Bold.otf"
 		espfontfile = assetRoot + "AlegreyaSans-ExtraBold.ttf"
 
-		while fontsize > 9:
+		while fontsize > 8:
 			engw = _rendered_size(engtitle, fontsize, engfontfile)
 			espw = _rendered_size(esptitle, fontsize + 2, espfontfile)
 			if engw[0] + espw[0] < maxwidth:

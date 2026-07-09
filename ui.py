@@ -749,6 +749,16 @@ def render_generated_downloads():
         st.session_state["auto_download_pptx"] = False
         st.toast("PowerPoint download started.", icon="⬇️")
 
+    # Keep a manual backup button for browsers that block auto-download.
+    st.download_button(
+        label="Download PowerPoint",
+        data=pptx_bytes,
+        file_name=pptx_name,
+        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        use_container_width=True,
+        key="download_pptx_manual",
+    )
+
 
 def get_song_structure(book, song_num, source_folder=""):
     """Return available verses and chorus slots for a song.
