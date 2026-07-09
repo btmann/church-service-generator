@@ -138,8 +138,10 @@ def load_song_meta_with_fallback(book, number, paths, source_folder=""):
 		ehsf_join('esp', book, padded, f"{book}-{padded}"),
 	]
 
-	prefer_esp = str(source_folder).strip().lower().startswith('esp')
-	candidates = (esp_candidates + eng_candidates) if prefer_esp else (eng_candidates + esp_candidates)
+	# Always prefer ENG metadata for canonical title/verse layout so bilingual
+	# rendering keeps English in the primary title slot. Fall back to ESP when
+	# ENG metadata is unavailable.
+	candidates = eng_candidates + esp_candidates
 
 	# preserve order while removing duplicates
 	seen = set()
