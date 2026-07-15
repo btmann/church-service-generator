@@ -59,6 +59,10 @@ Song workflow (when adding/updating songs):
 2. Optionally generate bilingual (Spanish) variants.
 3. Build standalone song decks or include songs in a worship deck.
 
+The Streamlit song-processing page now accepts both legacy `.ppt` files and modern
+`.pptx` files. Legacy `.ppt` uploads are converted to `.pptx` automatically before
+being processed.
+
 ## Repository Layout (Key Paths)
 
 - `worship/`
@@ -83,6 +87,24 @@ Notes from project history:
 
 - Windows workflows may require extra native build tools for some optional packages.
 - If you run into OCR/path issues, verify your Tesseract installation and executable path.
+
+### Windows setup for source runs
+
+If you are running the app directly on Windows instead of using the packaged executable,
+install the two native tools used by song processing:
+
+```powershell
+winget install -e --id TheDocumentFoundation.LibreOffice
+winget install -e --id UB-Mannheim.TesseractOCR
+```
+
+If `winget` is not available, install the same apps manually and make sure these paths
+are available in `PATH`:
+
+- LibreOffice: `C:\Program Files\LibreOffice\program\soffice.exe`
+- Tesseract: `C:\Program Files\Tesseract-OCR\tesseract.exe`
+
+The app also honors `TESSERACT_CMD` if you need to point it at a custom OCR binary.
 
 ## Setup
 
@@ -194,6 +216,12 @@ python slides.py -b pftl -s 123
 python slides.py -b phss -s 88
 python slides.py -b pftl -s 123 --ppt -lang bil -output pftl-123-bil.pptx
 ```
+
+Song processing UI notes:
+
+- The upload form accepts `.ppt` and `.pptx` source files.
+- Legacy `.ppt` files are converted with LibreOffice before processing.
+- Song template output is written to `ehsf/esp/<book>/eng/<book>-<song>-eng.pptx`.
 
 Bilingual conversion helpers:
 

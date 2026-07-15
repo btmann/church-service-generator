@@ -38,6 +38,18 @@ python -m streamlit run ui.py
 
 The app will open in your browser at `http://localhost:8501`
 
+If you use the song-processing page on Windows from source, install the native tools
+used for song uploads and OCR:
+
+```powershell
+winget install -e --id TheDocumentFoundation.LibreOffice
+winget install -e --id UB-Mannheim.TesseractOCR
+```
+
+If `winget` is unavailable, install LibreOffice and Tesseract manually and ensure both
+executables are on `PATH`. The app also respects `TESSERACT_CMD` if you need to point
+to a custom OCR binary.
+
 ### Option 2: Standalone Executable (OneDrive Distribution)
 
 See **Packaging for Distribution** section below.
