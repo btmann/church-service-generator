@@ -91,7 +91,21 @@ Notes:
 - concurrency=1 is safer for heavy PPTX generation jobs.
 - Increase max-instances later if Sunday traffic grows.
 
-## 4) Use the web app
+## 4) Streamlit Cloud Run Compatibility (Required)
+
+The project includes a `.streamlit/config.toml` file that fixes known compatibility issues between Streamlit and Cloud Run:
+- Disables CORS and XSRF protection (safe behind Cloud Run's authentication layer).
+- **Disables websocket compression** — Cloud Run's HTTP/2 layer can double-compress frames, corrupting Streamlit's dynamic JS imports.
+- Disables usage stats gathering.
+
+These settings are also encoded as Docker environment variables in the `Dockerfile` as a fallback if config parsing fails.
+
+**No additional GCP configuration is needed** — the Docker image automatically includes these fixes. If you see `TypeError: error loading dynamically imported module` errors in the browser console, verify that:
+1. The `.streamlit/config.toml` file exists in the repo root.
+2. The Dockerfile contains the `STREAMLIT_SERVER_ENABLE_WEBSOCKET_COMPRESSION=false` environment variable.
+3. Your Cloud Run service has been redeployed after these files were committed.
+
+## 5) Use the web app
 
 When a service is generated, users can click:
 - Download Service JSON
@@ -99,7 +113,9 @@ When a service is generated, users can click:
 
 No manual file browsing is required.
 
-## 5) Next cost-saving improvements
+Users can also access the **Song Processing** page (sidebar navigation) to add new songs or Spanish translations to the library.
+
+## 6) Next cost-saving improvements
 
 1. Add Cloud Storage uploads and signed links (avoid local-only files).
 2. Add lifecycle auto-delete (for example 7-14 days) to control storage costs.

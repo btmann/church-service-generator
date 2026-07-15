@@ -1320,7 +1320,8 @@ def add_song_title_slide(outp, language, item, navitems, ndi, verses=None, choru
 	if language == "bil" or language == "eng" or espm is None:
 		eng = dict()
 		eng[LAYOUT_TITLE_TITLE] = dict(text=str(displaySong), max_size=60, step_size=6, bold=True, size=[0.675, 4.6, 2.5, 1])
-		eng[LAYOUT_TITLE_DETAIL] = dict(text=meta['title'].upper(), max_size=40, step_size=4, bold=True, size=[1.675, 3.75, 4.2, 1.8])
+		eng_title_text = item.get('eng_title') or 'No song format found'
+		eng[LAYOUT_TITLE_DETAIL] = dict(text=eng_title_text.upper(), max_size=40, step_size=4, bold=True, size=[1.675, 3.75, 4.2, 1.8])
 		eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CSINGING...TO THE LORD\u201D\nCOLOSSIANS 3:16", max_size=24, step_size=2, size=[4.325, 4.1, 3.5, 0.7])
 		eng[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(meta['credits'].splitlines()), max_size=12, step_size=2)
 		if bubble:
@@ -1480,6 +1481,9 @@ def add_circle(slide, slotndx, numslots, text, color, dw, dh):
 
 	shapes = slide.shapes
 	shape = get_placeholder(slide, LAYOUT_SONG_BUBBLE + slotndx)
+
+	if shape is None:
+		return
 
 	if text == "arrow":
 		add_arrow(slide, left, top)
@@ -2006,6 +2010,13 @@ def make_deck(book, number, language, outputfn):
 	item['meta'] = meta
 	item['esp'] = esp
 	item['basename'] = basename
+	# Load strictly-English title
+	eng_json = paths['engbase'] + ".json"
+	if os.path.exists(eng_json):
+		eng_data = load_json_safe(eng_json)
+		item['eng_title'] = eng_data.get('title', '') if isinstance(eng_data, dict) else ''
+	else:
+		item['eng_title'] = None
 
 	add_song_title_slide(outp, language, item, None, 0, verses, chorus, coda, repeat)
 	add_song_to_deck(outp, item, verses, chorus, repeat, coda, True)
@@ -3030,6 +3041,13 @@ def make_worship_deck(jsonfile):
 			item['basename'] = paths['espbase'] if use_esp_images else paths['engbase']
 			# Load ESP metadata (Spanish title/credits) as overlay if it exists
 			item['esp'], _ = set_esp(paths, language)
+			# Load strictly-English title (None if no ENG json exists)
+			eng_json = paths['engbase'] + ".json"
+			if os.path.exists(eng_json):
+				eng_data = load_json_safe(eng_json)
+				item['eng_title'] = eng_data.get('title', '') if isinstance(eng_data, dict) else ''
+			else:
+				item['eng_title'] = None
 		elif 'medley' in item['type']:
 			for songi in item['songs']:
 				song, paths = get_song_paths_new(songi['book'], int(songi['song']))

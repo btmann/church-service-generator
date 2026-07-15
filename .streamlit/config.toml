@@ -1,0 +1,16 @@
+[server]
+headless = true
+enableCORS = false
+enableXsrfProtection = false
+maxUploadSize = 200
+# Do not compress websocket messages — Cloud Run's HTTP/2 layer can
+# double-compress them and corrupt dynamically-imported JS modules.
+enableWebsocketCompression = false
+
+[browser]
+gatherUsageStats = false
+serverAddress = "0.0.0.0"
+
+[runner]
+# Prevents random re-runs when Cloud Run health-checks touch the socket.
+fastReruns = false

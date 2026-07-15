@@ -1,0 +1,380 @@
+#!/usr/bin/env python3
+"""Song Processing page — add new songs to the EHSF library."""
+
+import base64
+import contextlib
+import io
+import json
+import os
+import sys
+import traceback
+import zipfile
+from pathlib import Path
+
+import streamlit as st
+
+# ── Path bootstrap ────────────────────────────────────────────────────────────
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+import slides as _slides
+
+# Mirror the resource-resolution logic from ui.py so the same EHSF root is used.
+def _resolve_resource_dir(folder_name):
+    for base in [_ROOT, Path.cwd()]:
+        candidate = base / folder_name
+        if candidate.exists() and candidate.is_dir():
+            return candidate
+    return _ROOT / folder_name
+
+EHSF_ROOT_PATH = _resolve_resource_dir("ehsf")
+os.environ["CHURCH_SERVICE_EHSF_ROOT"] = str(EHSF_ROOT_PATH)
+if hasattr(_slides, "set_ehsf_root"):
+    _slides.set_ehsf_root(str(EHSF_ROOT_PATH))
+
+# Change CWD to project root so the hardcoded relative paths in slides.py resolve.
+os.chdir(str(_ROOT))
+
+SONG_BOOK_LABELS = {
+    "pftl": "Praise for the Lord (PFTL)",
+    "phss": "Psalms, Hymns, and Spiritual Songs (PHSS)",
+}
+
+# ── Page config ───────────────────────────────────────────────────────────────
+st.set_page_config(
+    page_title="Song Processing — Church Service Generator",
+    page_icon="🎵",
+    layout="wide",
+)
+
+# ── Top navigation dropdown menu ───────────────────────────────────────────────
+st.error("TEST: Menu Navigation Code Is Running!")
+nav_selection = st.selectbox(
+    "Choose page:",
+    ["🎵 Song Processing", "← Back to Service Setup"],
+    key="top_menu",
+)
+
+if nav_selection == "← Back to Service Setup":
+    st.switch_page("ui.py")
+
+st.title("🎵 Song Library Processing")
+
+st.caption(
+    "Use these tools to add new songs or Spanish translations to the song library. "
+    "Each processed song produces slide images and a JSON structure file that the "
+    "Service Builder uses when generating presentations."
+)
+
+# ── Helper utilities ──────────────────────────────────────────────────────────
+
+def _capture(fn, *args, **kwargs):
+    """Call *fn* and return (return_value, captured_stdout, error_or_None)."""
+    buf = io.StringIO()
+    err = None
+    result = None
+    try:
+        with contextlib.redirect_stdout(buf):
+            result = fn(*args, **kwargs)
+    except Exception:
+        err = traceback.format_exc()
+    return result, buf.getvalue(), err
+
+
+def _song_str(number: int) -> str:
+    return f"{number:03d}"
+
+
+def _pptx_input_path(book: str, number: int) -> Path:
+    """Where process_pftl/phss_song_ppt expects the source PPTX."""
+    return EHSF_ROOT_PATH / book / "pptx" / (_song_str(number) + ".pptx")
+
+
+def _esp_blank_output(book: str, number: int) -> Path:
+    """Where make_esp_blank saves the generated English/blank deck."""
+    song = _song_str(number)
+    return EHSF_ROOT_PATH / "esp" / book / "eng" / f"{book}-{song}-eng.pptx"
+
+
+def _esp_bil_pptx_path(book: str, number: int) -> Path:
+    """Where make_esp_trans expects the completed bilingual PPTX."""
+    song = _song_str(number)
+    return EHSF_ROOT_PATH / "esp" / book / "bil" / f"{book}-{song}-bil.pptx"
+
+
+def _esp_bil_png_dir(book: str, number: int) -> Path:
+    """Where make_esp_trans expects exported PNG slides."""
+    song = _song_str(number)
+    return EHSF_ROOT_PATH / "esp" / book / "bil" / song
+
+
+def _eng_song_exists(book: str, number: int) -> bool:
+    song = _song_str(number)
+    return (EHSF_ROOT_PATH / book / song / f"{book}-{song}.json").exists()
+
+
+def _download_button(label: str, file_path: Path, mime: str, key: str):
+    if file_path.exists():
+        data = file_path.read_bytes()
+        st.download_button(label=label, data=data, file_name=file_path.name, mime=mime, key=key)
+    else:
+        st.warning(f"Output file not found: {file_path}")
+
+
+# ── Tabs for workflow ──────────────────────────────────────────────────────────
+eng_tab, esp_tab = st.tabs(["Process New English Song", "Add Spanish Translation"])
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# TAB 1 — Process new English song
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+with eng_tab:
+    st.markdown("### Add a New Song")
+    st.markdown(
+        "Upload the source PowerPoint file for a song and click **Process** to extract "
+        "slide images and build the verse/chorus JSON used by the presentation generator."
+    )
+
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        eng_book = st.selectbox(
+            "Song Book",
+            options=list(SONG_BOOK_LABELS.keys()),
+            format_func=lambda c: SONG_BOOK_LABELS[c],
+            key="eng_book",
+        )
+    with col2:
+        eng_num = st.number_input(
+            "Song Number", min_value=1, max_value=9999, value=1, step=1, key="eng_num"
+        )
+
+    eng_upload = st.file_uploader(
+        "Upload source PPTX file",
+        type=["pptx"],
+        key="eng_upload",
+        help="The PowerPoint file exported from the songbook app (one song per file).",
+    )
+
+    already_exists = _eng_song_exists(eng_book, int(eng_num))
+    if already_exists:
+        st.info(
+            f"{eng_book.upper()}-{_song_str(int(eng_num))} already exists in the library. "
+            "Processing again will overwrite the existing images and JSON."
+        )
+
+    if st.button("⚙️ Process Song", key="eng_process", type="primary", disabled=eng_upload is None):
+        number = int(eng_num)
+        song = _song_str(number)
+
+        # Save uploaded file to expected location
+        pptx_path = _pptx_input_path(eng_book, number)
+        pptx_path.parent.mkdir(parents=True, exist_ok=True)
+        pptx_path.write_bytes(eng_upload.read())
+
+        with st.spinner(f"Processing {eng_book.upper()}-{song}…"):
+            if eng_book == "pftl":
+                _, log, err = _capture(_slides.process_pftl_song, number)
+            elif eng_book == "phss":
+                _, log, err = _capture(_slides.process_phss_song_ppt, number)
+            else:
+                err = f"Processing for book '{eng_book}' is not yet supported in the UI."
+                log = ""
+
+        if err:
+            st.error("Processing failed.")
+            st.code(err, language="python")
+        else:
+            song_dir = EHSF_ROOT_PATH / eng_book / song
+            json_path = song_dir / f"{eng_book}-{song}.json"
+            pngs = list(song_dir.glob("*.png"))
+
+            st.success(
+                f"✅ Processed {eng_book.upper()}-{song}: "
+                f"{len(pngs)} slide image(s) created."
+            )
+
+            if json_path.exists():
+                with open(json_path, encoding="utf-8") as f:
+                    meta = json.load(f)
+                with st.expander("View generated JSON metadata"):
+                    st.json(meta)
+
+        if log:
+            with st.expander("Processing log"):
+                st.code(log)
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# TAB 2 — Spanish translation
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+with esp_tab:
+    st.markdown("### Spanish Translation Workflow")
+    st.markdown(
+        "Follow the two steps below to add a Spanish version of an existing English song. "
+        "The Spanish slides will appear on the right-hand column of bilingual services."
+    )
+
+    # ── Step 1: Generate blank template ──────────────────────────────────────
+    with st.expander("📋 **Step 1** — Generate Translation Template", expanded=True):
+        st.markdown(
+            """
+**What this does:**  
+Generates a PowerPoint file that shows each song slide with extra space at the bottom for
+Spanish subtitle text. Open the file in PowerPoint, type the Spanish lyrics into the text
+boxes, then come back to **Step 2** to process your completed translation.
+"""
+        )
+
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            s1_book = st.selectbox(
+                "Song Book",
+                options=list(SONG_BOOK_LABELS.keys()),
+                format_func=lambda c: SONG_BOOK_LABELS[c],
+                key="s1_book",
+            )
+        with col2:
+            s1_num = st.number_input(
+                "Song Number", min_value=1, max_value=9999, value=1, step=1, key="s1_num"
+            )
+
+        s1_song = _song_str(int(s1_num))
+        s1_eng_exists = _eng_song_exists(s1_book, int(s1_num))
+
+        if not s1_eng_exists:
+            st.warning(
+                f"{s1_book.upper()}-{s1_song} has not been processed yet. "
+                "Process the English song first before generating a translation template."
+            )
+
+        if st.button(
+            "📄 Generate Template",
+            key="s1_go",
+            type="primary",
+            disabled=not s1_eng_exists,
+        ):
+            with st.spinner(f"Generating translation template for {s1_book.upper()}-{s1_song}…"):
+                _, log, err = _capture(_slides.make_esp_blank, s1_book, int(s1_num), None)
+
+            if err:
+                st.error("Template generation failed.")
+                st.code(err, language="python")
+            else:
+                out_path = _esp_blank_output(s1_book, int(s1_num))
+                st.success("✅ Template generated.")
+                _download_button(
+                    f"⬇️ Download {out_path.name}",
+                    out_path,
+                    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                    key="s1_download",
+                )
+                st.info(
+                    "**Next steps:**\n"
+                    "1. Open the downloaded file in PowerPoint.\n"
+                    "2. Type the Spanish lyrics into each text box.\n"
+                    "3. Export the slides as PNG images (File → Export → PNG, one per slide).\n"
+                    "4. Come back to **Step 2** with the completed PPTX and the exported PNG files."
+                )
+
+            if log:
+                with st.expander("Processing log"):
+                    st.code(log)
+
+    # ── Step 2: Process translated file ──────────────────────────────────────
+    with st.expander("✅ **Step 2** — Process Translated File", expanded=False):
+        st.markdown(
+            """
+**What this does:**  
+Takes the bilingual PPTX (with Spanish text you added) and the slide PNG images exported
+from PowerPoint, then builds the Spanish version of the song into the library.
+
+**Before you start:**
+- You must have completed **Step 1** and added Spanish text to the template in PowerPoint.
+- Export the slides as PNG images from within PowerPoint (File → Export → Export to Image → PNG).
+  Save all the PNGs into a folder, then zip them and upload below.
+"""
+        )
+
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            s2_book = st.selectbox(
+                "Song Book",
+                options=list(SONG_BOOK_LABELS.keys()),
+                format_func=lambda c: SONG_BOOK_LABELS[c],
+                key="s2_book",
+            )
+        with col2:
+            s2_num = st.number_input(
+                "Song Number", min_value=1, max_value=9999, value=1, step=1, key="s2_num"
+            )
+
+        s2_pptx_upload = st.file_uploader(
+            "Upload completed bilingual PPTX",
+            type=["pptx"],
+            key="s2_pptx",
+            help="The PPTX file from Step 1 with Spanish text filled in.",
+        )
+
+        s2_png_upload = st.file_uploader(
+            "Upload exported slide PNGs (ZIP file)",
+            type=["zip"],
+            key="s2_pngs",
+            help=(
+                "A ZIP file containing all slide PNG images exported from PowerPoint. "
+                "File names must sort in slide order (PowerPoint names them Slide1.PNG, Slide2.PNG, etc.)."
+            ),
+        )
+
+        s2_ready = s2_pptx_upload is not None and s2_png_upload is not None
+
+        if st.button(
+            "⚙️ Process Translation",
+            key="s2_go",
+            type="primary",
+            disabled=not s2_ready,
+        ):
+            number = int(s2_num)
+            song = _song_str(number)
+
+            # Save bilingual PPTX
+            bil_pptx_path = _esp_bil_pptx_path(s2_book, number)
+            bil_pptx_path.parent.mkdir(parents=True, exist_ok=True)
+            bil_pptx_path.write_bytes(s2_pptx_upload.read())
+
+            # Extract PNGs from ZIP
+            png_dir = _esp_bil_png_dir(s2_book, number)
+            png_dir.mkdir(parents=True, exist_ok=True)
+            zip_data = io.BytesIO(s2_png_upload.read())
+            with zipfile.ZipFile(zip_data) as zf:
+                png_names = sorted(
+                    [n for n in zf.namelist() if n.lower().endswith(".png")],
+                    key=lambda n: Path(n).name,
+                )
+                if not png_names:
+                    st.error("No PNG files found inside the ZIP. Make sure you exported slides as PNG.")
+                    st.stop()
+                # Rename to sequential format (book-song-01.png, etc.)
+                for ndx, name in enumerate(png_names, start=1):
+                    dest = png_dir / f"{s2_book}-{song}-{ndx:03d}.png"
+                    dest.write_bytes(zf.read(name))
+
+            with st.spinner(f"Processing Spanish translation for {s2_book.upper()}-{song}…"):
+                _, log, err = _capture(_slides.make_esp_trans, s2_book, number)
+
+            if err:
+                st.error("Processing failed.")
+                st.code(err, language="python")
+            else:
+                esp_json = EHSF_ROOT_PATH / "esp" / s2_book / song / f"{s2_book}-{song}.json"
+                esp_pngs = list((EHSF_ROOT_PATH / "esp" / s2_book / song).glob("*.png"))
+                st.success(
+                    f"✅ Spanish translation processed for {s2_book.upper()}-{song}: "
+                    f"{len(esp_pngs)} slide image(s) created."
+                )
+                if esp_json.exists():
+                    with open(esp_json, encoding="utf-8") as f:
+                        meta = json.load(f)
+                    with st.expander("View generated Spanish JSON metadata"):
+                        st.json(meta)
+
+            if log:
+                with st.expander("Processing log"):
+                    st.code(log)
