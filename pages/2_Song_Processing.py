@@ -6,7 +6,10 @@ import contextlib
 import io
 import json
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
 import traceback
 import zipfile
 from pathlib import Path
@@ -16,6 +19,17 @@ import streamlit as st
 # ── Path bootstrap ────────────────────────────────────────────────────────────
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
+
+# Ensure OCR binary is discoverable before slides.py imports pytesseract.
+if not os.environ.get("TESSERACT_CMD"):
+    for _cmd in (
+        shutil.which("tesseract"),
+        "/opt/homebrew/bin/tesseract",
+        "/usr/local/bin/tesseract",
+    ):
+        if _cmd and os.path.exists(_cmd):
+            os.environ["TESSERACT_CMD"] = _cmd
+            break
 
 import slides as _slides
 
@@ -90,6 +104,49 @@ def _pptx_input_path(book: str, number: int) -> Path:
     return EHSF_ROOT_PATH / book / "pptx" / (_song_str(number) + ".pptx")
 
 
+def _ppt_input_path(book: str, number: int) -> Path:
+    """Where the raw legacy PPT upload is stored before conversion."""
+    return EHSF_ROOT_PATH / book / "pptx" / (_song_str(number) + ".ppt")
+
+
+def _find_ppt_converter() -> str | None:
+    """Return an available CLI converter for legacy .ppt files."""
+    for cmd in ("soffice", "libreoffice", "unoconv"):
+        path = shutil.which(cmd)
+        if path:
+            return path
+    return None
+
+
+def _convert_legacy_ppt_to_pptx(ppt_path: Path, pptx_path: Path) -> tuple[bool, str]:
+    """Convert a binary .ppt to .pptx via LibreOffice-compatible CLI."""
+    converter = _find_ppt_converter()
+    if not converter:
+        return False, (
+            "Legacy .ppt conversion requires LibreOffice. Install it and retry: "
+            "brew install --cask libreoffice"
+        )
+
+    with tempfile.TemporaryDirectory(prefix="ppt-convert-") as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        if Path(converter).name == "unoconv":
+            cmd = [converter, "-f", "pptx", "-o", str(tmpdir_path), str(ppt_path)]
+        else:
+            cmd = [converter, "--headless", "--convert-to", "pptx", "--outdir", str(tmpdir_path), str(ppt_path)]
+
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if proc.returncode != 0:
+            details = (proc.stderr or proc.stdout or "unknown error").strip()
+            return False, f"Conversion failed ({Path(converter).name}): {details}"
+
+        converted_files = list(tmpdir_path.glob("*.pptx"))
+        if not converted_files:
+            return False, "Conversion did not produce a .pptx file."
+
+        pptx_path.write_bytes(converted_files[0].read_bytes())
+        return True, ""
+
+
 def _esp_blank_output(book: str, number: int) -> Path:
     """Where make_esp_blank saves the generated English/blank deck."""
     song = _song_str(number)
@@ -148,10 +205,13 @@ with eng_tab:
         )
 
     eng_upload = st.file_uploader(
-        "Upload source PPTX file",
-        type=["pptx"],
+        "Upload source PowerPoint file (.ppt or .pptx)",
+        type=["ppt", "pptx"],
         key="eng_upload",
-        help="The PowerPoint file exported from the songbook app (one song per file).",
+        help=(
+            "Upload one song per file. Legacy .ppt files are auto-converted to .pptx "
+            "when LibreOffice is installed."
+        ),
     )
 
     already_exists = _eng_song_exists(eng_book, int(eng_num))
@@ -165,10 +225,30 @@ with eng_tab:
         number = int(eng_num)
         song = _song_str(number)
 
-        # Save uploaded file to expected location
+        upload_bytes = eng_upload.read()
+        upload_ext = Path(eng_upload.name).suffix.lower()
+
+        # Save uploaded file to expected location and convert if needed.
         pptx_path = _pptx_input_path(eng_book, number)
         pptx_path.parent.mkdir(parents=True, exist_ok=True)
-        pptx_path.write_bytes(eng_upload.read())
+
+        if upload_ext == ".pptx":
+            pptx_path.write_bytes(upload_bytes)
+        elif upload_ext == ".ppt":
+            # Some sources label OOXML data as .ppt. If so, keep it as .pptx directly.
+            if upload_bytes.startswith(b"PK"):
+                pptx_path.write_bytes(upload_bytes)
+            else:
+                ppt_path = _ppt_input_path(eng_book, number)
+                ppt_path.write_bytes(upload_bytes)
+                ok, msg = _convert_legacy_ppt_to_pptx(ppt_path, pptx_path)
+                if not ok:
+                    st.error(msg)
+                    st.stop()
+                st.info("Converted legacy .ppt upload to .pptx.")
+        else:
+            st.error("Unsupported file type. Please upload a .ppt or .pptx file.")
+            st.stop()
 
         with st.spinner(f"Processing {eng_book.upper()}-{song}…"):
             if eng_book == "pftl":

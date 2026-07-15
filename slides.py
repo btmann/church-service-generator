@@ -24,6 +24,7 @@ from PIL import ImageDraw, ImageFont
 import argparse
 import json
 import glob
+import shutil
 import pytesseract
 from datetime import datetime
 import locale
@@ -54,8 +55,16 @@ def ehsf_join(*parts):
 	return os.path.join(EHSF_ROOT, *parts).replace("\\", "/")
 
 
-# If you don't have tesseract executable in your PATH, include the following:
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
+# Configure tesseract path in a cross-platform way.
+# Optional override: set TESSERACT_CMD to a full executable path.
+_tesseract_cmd = os.environ.get("TESSERACT_CMD")
+if _tesseract_cmd:
+	pytesseract.pytesseract.tesseract_cmd = _tesseract_cmd
+else:
+	for _cmd in ("tesseract", "/opt/homebrew/bin/tesseract", "/usr/local/bin/tesseract"):
+		if _cmd == "tesseract" or os.path.exists(_cmd):
+			pytesseract.pytesseract.tesseract_cmd = _cmd
+			break
 
 #
 # Globals
@@ -3538,13 +3547,15 @@ def make_esp_blank(book, number, target):
 	# esp/pftl/xyz/ -- json and pngs
 
 	# Create a directory to hold our output
-	bilpath = '/'.join(['ehsf', 'esp', book, 'bil', song])
+	bilpath = ehsf_join('esp', book, 'bil', song)
 	os.makedirs(bilpath, exist_ok=True)
-	esppath = '/'.join(['ehsf', 'esp', book, song])
+	esppath = ehsf_join('esp', book, song)
 	os.makedirs(esppath, exist_ok=True)
+	engpath = ehsf_join('esp', book, 'eng')
+	os.makedirs(engpath, exist_ok=True)
 
 	# Generate output file names and hint fine name
-	ofbase = "ehsf/esp/" + book + "/eng/" + book + "-" + song
+	ofbase = engpath + "/" + book + "-" + song
 	ofpptx = ofbase + "-eng.pptx"
 	ofhint = ofbase + "-hints.json"
 
