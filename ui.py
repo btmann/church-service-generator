@@ -73,13 +73,12 @@ SPECS_ROOT = str(OUTPUT_WORSHIP_ROOT_PATH / "specs").rstrip("/") + "/"
 os.environ["CHURCH_SERVICE_EHSF_ROOT"] = str(EHSF_ROOT_PATH)
 if hasattr(slides, "set_ehsf_root"):
     slides.set_ehsf_root(str(EHSF_ROOT_PATH))
-SERVICE_TYPE_OPTIONS = ['Sun - EarlyAM', 'Sun - AM', 'Sun - PM', 'Wed', 'Gospel Meeting']
-SERVICE_TIME_OPTIONS = ["10:00 AM", "4:00 PM", "5:00 PM", "7:00 PM"]
-SERVICE_TIME_MAP = {
-    "10:00 AM": "10:00",
-    "4:00 PM": "16:00",
-    "5:00 PM": "17:00",
-    "7:00 PM": "19:00",
+SERVICE_TYPE_OPTIONS = ['Sun - AM', 'Sun - PM', 'Wed', 'Gospel Meeting']
+SERVICE_TYPE_TIME_MAP = {
+    "Sun - AM": "10:00",
+    "Sun - PM": "17:00",
+    "Wed": "19:00",
+    "Gospel Meeting": "19:00",
 }
 SONG_BOOK_OPTIONS = {
     "pftl": "Praise for the Lord",
@@ -900,9 +899,8 @@ readings_input = {}
 
 st.markdown('<div class="section-heading">Service Setup</div>', unsafe_allow_html=True)
 service_date = st.date_input("Service Date", value=datetime.now())
-service_time_label = st.selectbox("Service Time", SERVICE_TIME_OPTIONS, index=0)
-service_time = datetime.strptime(SERVICE_TIME_MAP[service_time_label], "%H:%M").time()
-service_type = st.selectbox("Service Type", SERVICE_TYPE_OPTIONS, index=1)
+service_type = st.selectbox("Service Type", SERVICE_TYPE_OPTIONS, index=0)
+service_time = datetime.strptime(SERVICE_TYPE_TIME_MAP[service_type], "%H:%M").time()
 
 if templates:
     template_choices = ["-- Select Template --", CUSTOM_TEMPLATE_LABEL] + templates

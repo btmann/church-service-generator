@@ -61,17 +61,6 @@ st.set_page_config(
     layout="wide",
 )
 
-# ── Top navigation dropdown menu ───────────────────────────────────────────────
-st.error("TEST: Menu Navigation Code Is Running!")
-nav_selection = st.selectbox(
-    "Choose page:",
-    ["🎵 Song Processing", "← Back to Service Setup"],
-    key="top_menu",
-)
-
-if nav_selection == "← Back to Service Setup":
-    st.switch_page("ui.py")
-
 st.title("🎵 Song Library Processing")
 
 st.caption(
