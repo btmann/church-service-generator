@@ -2,8 +2,10 @@
 helpers, extracted the same way as test_ui_helpers.py (see that file's
 docstring): this page also calls st.* at module scope.
 """
+import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -17,8 +19,10 @@ EHSF_ROOT_PATH = Path("/fake/ehsf")
 
 def load(names, extra_globals=None):
     base_globals = {
+        "os": os,
         "shutil": shutil,
         "subprocess": subprocess,
+        "sys": sys,
         "tempfile": tempfile,
         "Path": Path,
         "EHSF_ROOT_PATH": EHSF_ROOT_PATH,
@@ -81,6 +85,15 @@ class TestFindPptConverter:
         monkeypatch.setattr(shutil, "which", lambda cmd: None)
         assert fn() is None
 
+    def test_falls_back_to_windows_install_path_when_not_on_path(self, monkeypatch):
+        # winget-installed LibreOffice/Tesseract aren't always added to PATH;
+        # this covers the fallback to the default Windows install location.
+        fn = load(["_find_ppt_converter"])["_find_ppt_converter"]
+        monkeypatch.setattr(shutil, "which", lambda cmd: None)
+        windows_path = r"C:\Program Files\LibreOffice\program\soffice.exe"
+        monkeypatch.setattr(os.path, "exists", lambda p: p == windows_path)
+        assert fn() == windows_path
+
 
 class TestConvertLegacyPptToPptx:
     def test_no_converter_available_returns_helpful_error(self, monkeypatch, tmp_path):
@@ -89,6 +102,14 @@ class TestConvertLegacyPptToPptx:
         ok, message = fns["_convert_legacy_ppt_to_pptx"](tmp_path / "in.ppt", tmp_path / "out.pptx")
         assert ok is False
         assert "LibreOffice" in message
+
+    def test_no_converter_error_suggests_winget_on_windows(self, monkeypatch, tmp_path):
+        fns = load(["_find_ppt_converter", "_convert_legacy_ppt_to_pptx"], {"sys": sys})
+        monkeypatch.setattr(shutil, "which", lambda cmd: None)
+        monkeypatch.setattr(sys, "platform", "win32")
+        ok, message = fns["_convert_legacy_ppt_to_pptx"](tmp_path / "in.ppt", tmp_path / "out.pptx")
+        assert ok is False
+        assert "winget" in message
 
     def test_nonzero_return_code_reports_stderr(self, monkeypatch, tmp_path):
         fns = load(["_find_ppt_converter", "_convert_legacy_ppt_to_pptx"])

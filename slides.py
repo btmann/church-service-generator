@@ -57,14 +57,19 @@ def ehsf_join(*parts):
 
 # Configure tesseract path in a cross-platform way.
 # Optional override: set TESSERACT_CMD to a full executable path.
-_tesseract_cmd = os.environ.get("TESSERACT_CMD")
+_tesseract_cmd = os.environ.get("TESSERACT_CMD") or shutil.which("tesseract")
+if not _tesseract_cmd:
+	for _candidate in (
+		"/opt/homebrew/bin/tesseract",
+		"/usr/local/bin/tesseract",
+		r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+		r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+	):
+		if os.path.exists(_candidate):
+			_tesseract_cmd = _candidate
+			break
 if _tesseract_cmd:
 	pytesseract.pytesseract.tesseract_cmd = _tesseract_cmd
-else:
-	for _cmd in ("tesseract", "/opt/homebrew/bin/tesseract", "/usr/local/bin/tesseract"):
-		if _cmd == "tesseract" or os.path.exists(_cmd):
-			pytesseract.pytesseract.tesseract_cmd = _cmd
-			break
 
 #
 # Globals

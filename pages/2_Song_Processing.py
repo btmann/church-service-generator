@@ -26,6 +26,8 @@ if not os.environ.get("TESSERACT_CMD"):
         shutil.which("tesseract"),
         "/opt/homebrew/bin/tesseract",
         "/usr/local/bin/tesseract",
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
     ):
         if _cmd and os.path.exists(_cmd):
             os.environ["TESSERACT_CMD"] = _cmd
@@ -104,6 +106,12 @@ def _find_ppt_converter() -> str | None:
         path = shutil.which(cmd)
         if path:
             return path
+    for candidate in (
+        r"C:\Program Files\LibreOffice\program\soffice.exe",
+        r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
+    ):
+        if os.path.exists(candidate):
+            return candidate
     return None
 
 
@@ -111,10 +119,12 @@ def _convert_legacy_ppt_to_pptx(ppt_path: Path, pptx_path: Path) -> tuple[bool, 
     """Convert a binary .ppt to .pptx via LibreOffice-compatible CLI."""
     converter = _find_ppt_converter()
     if not converter:
-        return False, (
-            "Legacy .ppt conversion requires LibreOffice. Install it and retry: "
-            "brew install --cask libreoffice"
+        install_hint = (
+            "winget install -e --id TheDocumentFoundation.LibreOffice"
+            if sys.platform == "win32"
+            else "brew install --cask libreoffice"
         )
+        return False, f"Legacy .ppt conversion requires LibreOffice. Install it and retry: {install_hint}"
 
     with tempfile.TemporaryDirectory(prefix="ppt-convert-") as tmpdir:
         tmpdir_path = Path(tmpdir)
