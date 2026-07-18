@@ -17,6 +17,7 @@ python3 -m PyInstaller \
   --hidden-import worship \
   --hidden-import shs2phss \
   --add-data "$ROOT_DIR/ui.py:." \
+  --add-data "$ROOT_DIR/pages:pages" \
   --add-data "$ROOT_DIR/assets:assets" \
   --add-data "$ROOT_DIR/backgrounds:backgrounds" \
   --add-data "$ROOT_DIR/worship:worship" \
