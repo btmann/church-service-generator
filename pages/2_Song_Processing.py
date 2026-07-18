@@ -357,12 +357,22 @@ boxes, then come back to **Step 2** to process your completed translation.
                     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
                     key="s1_download",
                 )
+                bil_target = _esp_bil_pptx_path(s1_book, int(s1_num))
+                png_target_dir = _esp_bil_png_dir(s1_book, int(s1_num))
                 st.info(
                     "**Next steps:**\n"
-                    "1. Open the downloaded file in PowerPoint.\n"
-                    "2. Type the Spanish lyrics into each text box.\n"
-                    "3. Export the slides as PNG images (File → Export → PNG, one per slide).\n"
-                    "4. Come back to **Step 2** with the completed PPTX and the exported PNG files."
+                    "1. Get Spanish lyrics typed into each text box of the downloaded file "
+                    "(either do it yourself or send it to a translator) — do **not** touch the "
+                    "hidden text in each slide's Notes pane, the export macro needs it.\n"
+                    f"2. Save the completed file directly as:\n   `{bil_target}`\n"
+                    "3. In PowerPoint, open `assets/template-spanish.pptm` **first** — then open "
+                    f"the `{bil_target.name}` file you just saved in step 2 (opening it from that "
+                    "exact location matters — the export macro writes relative to wherever the "
+                    "open file is saved).\n"
+                    "4. Run the **ExtractImagesFromPres** macro (Developer/View → Macros, set "
+                    "\"Macros in\" to template-spanish.pptm, select ExtractImagesFromPres, Run). "
+                    f"This exports each slide's PNG directly into:\n   `{png_target_dir}`\n"
+                    "5. Come back to **Step 2** and point both fields at those same two paths above."
                 )
 
             if log:
@@ -377,10 +387,15 @@ boxes, then come back to **Step 2** to process your completed translation.
 Takes the bilingual PPTX (with Spanish text you added) and the slide PNG images exported
 from PowerPoint, then builds the Spanish version of the song into the library.
 
-**Before you start:**
-- You must have completed **Step 1** and added Spanish text to the template in PowerPoint.
-- Export the slides as PNG images from within PowerPoint (File → Export → Export to Image → PNG)
-  into a folder on this PC.
+**Before you start** (see **Step 1**'s "Next steps" for the full walkthrough):
+- The completed `-bil.pptx` must be saved directly into `ehsf/esp/<book>/bil/`, not some other folder
+  (e.g. a translator hand-off folder) — the export macro depends on it being opened from there.
+- The PNGs must come from running the **ExtractImagesFromPres** macro in `assets/template-spanish.pptm`
+  against that file — not a generic "Export to Image" — since the macro embeds the correct filenames
+  and skips the non-song metadata slide automatically. A plain PowerPoint export would misalign every
+  verse image by one slide.
+- Both fields below will normally point at the *same* `ehsf/esp/<book>/bil/...` location the macro
+  already wrote to — that's expected, not a mistake.
 """
         )
 
@@ -436,9 +451,13 @@ from PowerPoint, then builds the Spanish version of the song into the library.
             bil_pptx_path.parent.mkdir(parents=True, exist_ok=True)
             bil_pptx_path.write_bytes(s2_pptx_file.read_bytes())
 
-            # Copy PNGs from the local folder
+            # Copy PNGs from the local folder. This is normally the exact same
+            # folder the ExtractImagesFromPres macro already exported into
+            # (ehsf/esp/<book>/bil/<song>/) -- reading and rewriting the same
+            # files in place is a safe no-op, not an error.
             png_dir = _esp_bil_png_dir(s2_book, number)
             png_dir.mkdir(parents=True, exist_ok=True)
+
             png_files = sorted(
                 (p for p in s2_png_dir_input.iterdir() if p.is_file() and p.suffix.lower() == ".png"),
                 key=lambda p: p.name,
@@ -446,6 +465,12 @@ from PowerPoint, then builds the Spanish version of the song into the library.
             if not png_files:
                 st.error("No PNG files found in that folder. Make sure you exported slides as PNG.")
                 st.stop()
+
+            st.info(
+                f"Reading {len(png_files)} PNG(s) from {s2_png_dir_input}:\n\n"
+                + "\n".join(f"- {p.name}" for p in png_files)
+            )
+
             # Rename to sequential format (book-song-01.png, etc.)
             for ndx, src in enumerate(png_files, start=1):
                 dest = png_dir / f"{s2_book}-{song}-{ndx:03d}.png"
