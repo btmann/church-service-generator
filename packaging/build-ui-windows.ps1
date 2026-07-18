@@ -56,6 +56,7 @@ python -m PyInstaller `
   --hidden-import worship `
   --hidden-import shs2phss `
   --add-data "$Root/ui.py;." `
+  --add-data "$Root/pages;pages" `
   --add-data "$Root/assets;assets" `
   --add-data "$Root/backgrounds;backgrounds" `
   --add-data "$Root/worship;worship" `

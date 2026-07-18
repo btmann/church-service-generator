@@ -37,7 +37,14 @@ import slides as _slides
 
 # Mirror the resource-resolution logic from ui.py so the same EHSF root is used.
 def _resolve_resource_dir(folder_name):
-    for base in [_ROOT, Path.cwd()]:
+    candidates = [_ROOT, Path.cwd()]
+    try:
+        # In a packaged EXE, resources (like ehsf/) ship next to the actual
+        # executable, not next to the bundled source under _MEIPASS.
+        candidates.append(Path(sys.executable).resolve().parent)
+    except Exception:
+        pass
+    for base in candidates:
         candidate = base / folder_name
         if candidate.exists() and candidate.is_dir():
             return candidate
