@@ -10,7 +10,6 @@ import subprocess
 import sys
 import tempfile
 import traceback
-import zipfile
 from pathlib import Path
 
 import streamlit as st
@@ -374,14 +373,14 @@ boxes, then come back to **Step 2** to process your completed translation.
     with st.expander("✅ **Step 2** — Process Translated File", expanded=False):
         st.markdown(
             """
-**What this does:**  
+**What this does:**
 Takes the bilingual PPTX (with Spanish text you added) and the slide PNG images exported
 from PowerPoint, then builds the Spanish version of the song into the library.
 
 **Before you start:**
 - You must have completed **Step 1** and added Spanish text to the template in PowerPoint.
-- Export the slides as PNG images from within PowerPoint (File → Export → Export to Image → PNG).
-  Save all the PNGs into a folder, then zip them and upload below.
+- Export the slides as PNG images from within PowerPoint (File → Export → Export to Image → PNG)
+  into a folder on this PC.
 """
         )
 
@@ -398,24 +397,30 @@ from PowerPoint, then builds the Spanish version of the song into the library.
                 "Song Number", min_value=1, max_value=9999, value=1, step=1, key="s2_num"
             )
 
-        s2_pptx_upload = st.file_uploader(
-            "Upload completed bilingual PPTX",
-            type=["pptx"],
-            key="s2_pptx",
-            help="The PPTX file from Step 1 with Spanish text filled in.",
+        s2_pptx_path_input = st.text_input(
+            "Path to completed bilingual PPTX",
+            key="s2_pptx_path",
+            help="Full path to the PPTX file from Step 1 with Spanish text filled in.",
+        )
+        s2_png_folder_input = st.text_input(
+            "Path to folder with exported PNG images",
+            key="s2_png_folder",
+            help="Folder containing the PNG images exported from PowerPoint. File names must sort "
+            "in slide order (PowerPoint names them Slide1.PNG, Slide2.PNG, etc.).",
         )
 
-        s2_png_upload = st.file_uploader(
-            "Upload exported slide PNGs (ZIP file)",
-            type=["zip"],
-            key="s2_pngs",
-            help=(
-                "A ZIP file containing all slide PNG images exported from PowerPoint. "
-                "File names must sort in slide order (PowerPoint names them Slide1.PNG, Slide2.PNG, etc.)."
-            ),
-        )
+        s2_pptx_file = Path(s2_pptx_path_input).expanduser() if s2_pptx_path_input else None
+        s2_png_dir_input = Path(s2_png_folder_input).expanduser() if s2_png_folder_input else None
 
-        s2_ready = s2_pptx_upload is not None and s2_png_upload is not None
+        s2_pptx_valid = s2_pptx_file is not None and s2_pptx_file.is_file()
+        s2_png_valid = s2_png_dir_input is not None and s2_png_dir_input.is_dir()
+
+        if s2_pptx_path_input and not s2_pptx_valid:
+            st.warning(f"PPTX file not found: {s2_pptx_file}")
+        if s2_png_folder_input and not s2_png_valid:
+            st.warning(f"Folder not found: {s2_png_dir_input}")
+
+        s2_ready = s2_pptx_valid and s2_png_valid
 
         if st.button(
             "⚙️ Process Translation",
@@ -426,27 +431,25 @@ from PowerPoint, then builds the Spanish version of the song into the library.
             number = int(s2_num)
             song = _song_str(number)
 
-            # Save bilingual PPTX
+            # Copy bilingual PPTX from its local path
             bil_pptx_path = _esp_bil_pptx_path(s2_book, number)
             bil_pptx_path.parent.mkdir(parents=True, exist_ok=True)
-            bil_pptx_path.write_bytes(s2_pptx_upload.read())
+            bil_pptx_path.write_bytes(s2_pptx_file.read_bytes())
 
-            # Extract PNGs from ZIP
+            # Copy PNGs from the local folder
             png_dir = _esp_bil_png_dir(s2_book, number)
             png_dir.mkdir(parents=True, exist_ok=True)
-            zip_data = io.BytesIO(s2_png_upload.read())
-            with zipfile.ZipFile(zip_data) as zf:
-                png_names = sorted(
-                    [n for n in zf.namelist() if n.lower().endswith(".png")],
-                    key=lambda n: Path(n).name,
-                )
-                if not png_names:
-                    st.error("No PNG files found inside the ZIP. Make sure you exported slides as PNG.")
-                    st.stop()
-                # Rename to sequential format (book-song-01.png, etc.)
-                for ndx, name in enumerate(png_names, start=1):
-                    dest = png_dir / f"{s2_book}-{song}-{ndx:03d}.png"
-                    dest.write_bytes(zf.read(name))
+            png_files = sorted(
+                (p for p in s2_png_dir_input.iterdir() if p.is_file() and p.suffix.lower() == ".png"),
+                key=lambda p: p.name,
+            )
+            if not png_files:
+                st.error("No PNG files found in that folder. Make sure you exported slides as PNG.")
+                st.stop()
+            # Rename to sequential format (book-song-01.png, etc.)
+            for ndx, src in enumerate(png_files, start=1):
+                dest = png_dir / f"{s2_book}-{song}-{ndx:03d}.png"
+                dest.write_bytes(src.read_bytes())
 
             with st.spinner(f"Processing Spanish translation for {s2_book.upper()}-{song}…"):
                 _, log, err = _capture(_slides.make_esp_trans, s2_book, number)
