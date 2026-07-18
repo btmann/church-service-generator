@@ -3667,6 +3667,7 @@ def make_esp_trans(book, number):
 	window, padding = set_crop_window(crop, meta)
 
 	esppath = ehsf_join('esp', book, song)
+	os.makedirs(esppath, exist_ok=True)
 	espbase = esppath + "/" + book + "-" + song
 
 	for ndx, file in enumerate(files, 1):
