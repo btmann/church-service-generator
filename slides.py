@@ -411,7 +411,7 @@ def is_pftl_lyric(text):
 
 def process_pftl_song(number):
 	song, pathname, basename, rawname = get_song_paths("pftl", number)
-	prs = Presentation("ehsf/pftl/pptx/" + song + '.pptx')
+	prs = Presentation(ehsf_join("pftl", "pptx", song + ".pptx"))
 #	pprint.pprint(inspect.getmembers(prs))
 
 	# Create a directory to hold our output
@@ -541,7 +541,7 @@ def phss_get_images(slides, ndx, token, shape=0):
 
 def process_phss_song_ppt(number):
 	song, pathname, basename, rawname = get_song_paths("phss", number)
-	prs = Presentation("ehsf/phss/pptx/" + song + '.pptx')
+	prs = Presentation(ehsf_join("phss", "pptx", song + ".pptx"))
 	slides = prs.slides
 
 #	for ndx, slide in enumerate(slides, 1):
@@ -573,7 +573,7 @@ def process_phss_song_ppt(number):
 	nCoda = 0
 
 	# Extract lyrics from XML file
-	with open("ehsf/phss/phss.xml", 'r') as xml:
+	with open(ehsf_join("phss", "phss.xml"), 'r') as xml:
 		tree = etree.parse(xml)
 	hymn = tree.xpath('/Hymnal/HymnEntry[@HymnNumber="' + str(number) + '"]')
 
@@ -667,7 +667,7 @@ def process_phss_song_ppt(number):
 # take a PHSS standalone file (number.pptx in eh/pptx) and make an eh song from it
 def process_phss_to_eh(number):
 	song, pathname, basename, rawname = get_song_paths("eh", number)
-	prs = Presentation("ehsf/eh/pptx/" + song + '.pptx')
+	prs = Presentation(ehsf_join("eh", "pptx", song + ".pptx"))
 	slides = prs.slides
 
 	for ndx, slide in enumerate(slides, 1):
@@ -3627,7 +3627,7 @@ def make_esp_blank(book, number, target):
 
 def make_esp_trans(book, number):
 	song, pathname, basename, rawname = get_song_paths(book, number)
-	infile = "ehsf/esp/" + book + "/bil/" + book + "-" + song + "-bil.pptx";
+	infile = ehsf_join("esp", book, "bil", book + "-" + song + "-bil.pptx")
 
 	meta = dict()
 
@@ -3730,7 +3730,7 @@ def raw2png(book, number):
 #
 def raw2eh(number):
 	song, pathname, basename, rawname = get_song_paths("eh", number)
-	prs = Presentation("ehsf/eh/pptx/" + song + '-raw.pptx')
+	prs = Presentation(ehsf_join("eh", "pptx", song + "-raw.pptx"))
 
 	# Create a directory to hold our output
 	os.makedirs(pathname, exist_ok=True)
