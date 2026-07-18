@@ -412,6 +412,70 @@ from PowerPoint, then builds the Spanish version of the song into the library.
                 "Song Number", min_value=1, max_value=9999, value=1, step=1, key="s2_num"
             )
 
+        with st.expander(
+            "📂 Already have a completed bil.pptx from elsewhere? Place it and prepare the folder",
+            expanded=False,
+        ):
+            st.caption(
+                "Use this if you already have a finished `<book>-<song>-bil.pptx` (e.g. from a "
+                "translator, or copied over from another machine) and just need it saved in the "
+                "right spot with the export folder ready, before running the macro in Step 4 of "
+                "the walkthrough above."
+            )
+            s2_prep_path_input = st.text_input(
+                "Path to your existing bil.pptx",
+                key="s2_prep_path",
+                help="Full path to the completed bilingual PPTX file wherever it currently is.",
+            )
+            if st.button("📂 Place PPTX & Create Folder", key="s2_prep_go"):
+                prep_number = int(s2_num)
+                prep_src = Path(s2_prep_path_input).expanduser() if s2_prep_path_input else None
+                if prep_src is None or not prep_src.is_file():
+                    st.error(f"PPTX file not found: {prep_src}")
+                else:
+                    prep_dest = _esp_bil_pptx_path(s2_book, prep_number)
+                    prep_dest.parent.mkdir(parents=True, exist_ok=True)
+                    prep_dest.write_bytes(prep_src.read_bytes())
+                    prep_png_dir = _esp_bil_png_dir(s2_book, prep_number)
+                    prep_png_dir.mkdir(parents=True, exist_ok=True)
+                    st.success(
+                        f"✅ Placed PPTX at `{prep_dest}` and created the export folder "
+                        f"`{prep_png_dir}`.\n\n"
+                        "Now open `assets/template-spanish.pptm` first, then open that PPTX from "
+                        "its new location, and run the ExtractImagesFromPres macro."
+                    )
+
+        with st.expander("🤖 Auto-Export PNGs (no PowerPoint needed)", expanded=False):
+            st.caption(
+                "Alternative to the manual PowerPoint macro above, for anyone without PowerPoint "
+                "or macro access. Requires the completed `bil.pptx` to already be sitting at "
+                "`ehsf/esp/<book>/bil/<book>-<song>-bil.pptx` (use the 'Place PPTX & Create Folder' "
+                "section above first if it isn't there yet). Requires LibreOffice to be installed."
+            )
+            if st.button("🤖 Auto-Export PNGs", key="s2_autoexport_go"):
+                autoexport_number = int(s2_num)
+                autoexport_pptx = _esp_bil_pptx_path(s2_book, autoexport_number)
+                if not autoexport_pptx.is_file():
+                    st.error(
+                        f"No bilingual PPTX found at {autoexport_pptx}. Place it there first "
+                        "(see 'Already have a completed bil.pptx' above)."
+                    )
+                else:
+                    with st.spinner(f"Auto-exporting PNGs for {s2_book.upper()}-{_song_str(autoexport_number)}…"):
+                        count, log, err = _capture(_slides.export_bil_pngs, s2_book, autoexport_number)
+                    if err:
+                        st.error("Auto-export failed.")
+                        st.code(err, language="python")
+                    else:
+                        st.success(
+                            f"✅ Exported {count} PNG(s) to "
+                            f"{_esp_bil_png_dir(s2_book, autoexport_number)}. "
+                            "You can now use that same folder in the PNG field below."
+                        )
+                    if log:
+                        with st.expander("Auto-export log"):
+                            st.code(log)
+
         s2_pptx_path_input = st.text_input(
             "Path to completed bilingual PPTX",
             key="s2_pptx_path",

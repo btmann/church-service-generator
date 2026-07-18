@@ -300,3 +300,58 @@ class TestSetCropWindow:
         assert window == [0.1, 0.2, pytest.approx(0.6), pytest.approx(0.8)]
         assert padding == 0.95
         assert "window" in meta
+
+
+class TestFindSoffice:
+    def test_prefers_which_result(self, monkeypatch):
+        monkeypatch.setattr(slides.shutil, "which", lambda cmd: "/usr/bin/soffice" if cmd == "soffice" else None)
+        assert slides.find_soffice() == "/usr/bin/soffice"
+
+    def test_falls_back_to_windows_path(self, monkeypatch):
+        monkeypatch.setattr(slides.shutil, "which", lambda cmd: None)
+        windows_path = r"C:\Program Files\LibreOffice\program\soffice.exe"
+        monkeypatch.setattr(slides.os.path, "exists", lambda p: p == windows_path)
+        assert slides.find_soffice() == windows_path
+
+    def test_returns_none_when_not_found(self, monkeypatch):
+        monkeypatch.setattr(slides.shutil, "which", lambda cmd: None)
+        monkeypatch.setattr(slides.os.path, "exists", lambda p: False)
+        assert slides.find_soffice() is None
+
+
+@pytest.mark.skipif(slides.find_soffice() is None, reason="requires LibreOffice (soffice) to be installed")
+class TestExportBilPngs:
+    def _make_bil_pptx(self, tmp_path, book, number, notes):
+        from pptx import Presentation
+        from pptx.util import Inches
+
+        song = f"{number:03d}"
+        prs = Presentation()
+        blank = prs.slide_layouts[6]
+        prs.slides.add_slide(blank)  # slide 1: metadata slide, must be skipped
+        song_slide = prs.slides.add_slide(blank)
+        song_slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1)).text_frame.text = "Hola"
+        song_slide.notes_slide.notes_text_frame.text = notes
+
+        bildir = tmp_path / "esp" / book / "bil"
+        bildir.mkdir(parents=True)
+        pptx_path = bildir / f"{book}-{song}-bil.pptx"
+        prs.save(str(pptx_path))
+        return pptx_path
+
+    def test_exports_png_at_notes_specified_size_and_skips_metadata_slide(self, tmp_path):
+        self._make_bil_pptx(tmp_path, "test", 999, "400x300xtest/test-999-001.png")
+        slides.set_ehsf_root(str(tmp_path))
+
+        exported = slides.export_bil_pngs("test", 999)
+
+        assert exported == 1
+        out_path = tmp_path / "esp" / "test" / "bil" / "test" / "test-999-001.png"
+        assert out_path.exists()
+        from PIL import Image
+        assert Image.open(out_path).size == (400, 300)
+
+    def test_missing_pptx_raises(self, tmp_path):
+        slides.set_ehsf_root(str(tmp_path))
+        with pytest.raises(FileNotFoundError):
+            slides.export_bil_pngs("test", 999)

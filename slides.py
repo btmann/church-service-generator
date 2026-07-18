@@ -25,7 +25,12 @@ import argparse
 import json
 import glob
 import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
 import pytesseract
+import fitz
 from datetime import datetime
 import locale
 
@@ -3679,6 +3684,115 @@ def make_esp_trans(book, number):
 	jsonpath = ehsf_join('esp', book, song)
 	with open(jsonpath + "/" + book + "-" + song + ".json", 'w') as jsonfile:
 		json.dump(meta, jsonfile, ensure_ascii=False, indent=4)
+
+
+#
+# find_soffice / convert_pptx_to_pdf -- LibreOffice-based conversion helpers,
+# used by export_bil_pngs() below to render slides without PowerPoint.
+#
+
+def find_soffice():
+	"""Locate a LibreOffice-compatible CLI converter (soffice/libreoffice/unoconv)."""
+	for cmd in ("soffice", "libreoffice", "unoconv"):
+		path = shutil.which(cmd)
+		if path:
+			return path
+	for candidate in (
+		r"C:\Program Files\LibreOffice\program\soffice.exe",
+		r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
+	):
+		if os.path.exists(candidate):
+			return candidate
+	return None
+
+
+def convert_pptx_to_pdf(pptx_path, pdf_path):
+	"""Convert a pptx to pdf via a LibreOffice-compatible CLI. Returns (ok, message)."""
+	converter = find_soffice()
+	if not converter:
+		install_hint = (
+			"winget install -e --id TheDocumentFoundation.LibreOffice"
+			if sys.platform == "win32"
+			else "brew install --cask libreoffice"
+		)
+		return False, f"PNG auto-export requires LibreOffice. Install it and retry: {install_hint}"
+
+	with tempfile.TemporaryDirectory(prefix="pptx-to-pdf-") as tmpdir:
+		tmpdir_path = Path(tmpdir)
+		if Path(converter).name == "unoconv":
+			cmd = [converter, "-f", "pdf", "-o", str(tmpdir_path), str(pptx_path)]
+		else:
+			cmd = [converter, "--headless", "--convert-to", "pdf", "--outdir", str(tmpdir_path), str(pptx_path)]
+
+		proc = subprocess.run(cmd, capture_output=True, text=True)
+		if proc.returncode != 0:
+			details = (proc.stderr or proc.stdout or "unknown error").strip()
+			return False, f"Conversion failed ({Path(converter).name}): {details}"
+
+		converted_files = list(tmpdir_path.glob("*.pdf"))
+		if not converted_files:
+			return False, "Conversion did not produce a .pdf file."
+
+		pdf_path.write_bytes(converted_files[0].read_bytes())
+		return True, ""
+
+
+#
+# export_bil_pngs -- render a completed -bil.pptx's slides to PNG without
+# needing PowerPoint or the ExtractImagesFromPres macro. Mirrors that macro:
+# skips slide 1 (the metadata/title slide) and uses the same
+# "widthxheightxfilename" string embedded in each slide's Notes by
+# make_esp_blank to size and name each output PNG.
+#
+
+def export_bil_pngs(book, number):
+	song, pathname, basename, rawname = get_song_paths(book, number)
+	bil_pptx = ehsf_join('esp', book, 'bil', book + "-" + song + "-bil.pptx")
+	if not os.path.exists(bil_pptx):
+		raise FileNotFoundError(f"Bilingual PPTX not found: {bil_pptx}")
+
+	prs = Presentation(bil_pptx)
+
+	with tempfile.TemporaryDirectory(prefix="bil-export-") as tmpdir:
+		pdf_path = Path(tmpdir) / "bil.pdf"
+		ok, msg = convert_pptx_to_pdf(bil_pptx, pdf_path)
+		if not ok:
+			raise RuntimeError(msg)
+
+		doc = fitz.open(str(pdf_path))
+		try:
+			if len(doc) != len(prs.slides):
+				raise RuntimeError(
+					f"PDF page count ({len(doc)}) doesn't match slide count ({len(prs.slides)}); "
+					"cannot safely match notes metadata to pages."
+				)
+
+			exported = 0
+			for ndx, slide in enumerate(prs.slides):
+				if ndx == 0:
+					continue	# skip the metadata/title slide, same as the macro
+
+				notes = slide.notes_slide.notes_text_frame.text
+				fw_s, fh_s, fn = notes.split("x", 2)
+				fw, fh = int(fw_s), int(fh_s)
+
+				page = doc[ndx]
+				zoom_x = fw / page.rect.width
+				zoom_y = fh / page.rect.height
+				pix = page.get_pixmap(matrix=fitz.Matrix(zoom_x, zoom_y), alpha=False)
+
+				out_path = Path(ehsf_join('esp', book, 'bil', fn))
+				out_path.parent.mkdir(parents=True, exist_ok=True)
+				img = PIL.Image.open(io.BytesIO(pix.tobytes("png")))
+				if img.size != (fw, fh):
+					img = img.resize((fw, fh))
+				img.save(str(out_path))
+				exported += 1
+		finally:
+			doc.close()
+
+	return exported
+
 
 #
 # Support for manipulating existing songs
