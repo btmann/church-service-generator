@@ -341,6 +341,8 @@ def set_window(window, padding, iar):
 
 # analyze all the images to determine crop for each
 def set_crop_window(crop, meta):
+	if not crop:
+		raise ValueError("No slide images found to crop; check that PNG files were located.")
 	mtop = 1.1
 	mbot = -0.1
 	ml = 1.1
@@ -3648,7 +3650,7 @@ def make_esp_trans(book, number):
 	# esp/pftl/bil/xyz/*.png, *.txt (intermediate output from exporting from pptx file)
 	# esp/pftl/xyz/ -- json and pngs
 
-	bilpath = '/'.join(['ehsf', 'esp', book, 'bil', song])
+	bilpath = ehsf_join('esp', book, 'bil', song)
 
 	files = glob.glob(bilpath + "/*.png")
 	files.sort()
@@ -3664,7 +3666,7 @@ def make_esp_trans(book, number):
 
 	window, padding = set_crop_window(crop, meta)
 
-	esppath = '/'.join(['ehsf', 'esp', book, song])
+	esppath = ehsf_join('esp', book, song)
 	espbase = esppath + "/" + book + "-" + song
 
 	for ndx, file in enumerate(files, 1):
@@ -3673,7 +3675,7 @@ def make_esp_trans(book, number):
 		
 	# Output JSON data
 	pprint.pprint(meta)
-	jsonpath = '/'.join(['ehsf', 'esp', book, song])
+	jsonpath = ehsf_join('esp', book, song)
 	with open(jsonpath + "/" + book + "-" + song + ".json", 'w') as jsonfile:
 		json.dump(meta, jsonfile, ensure_ascii=False, indent=4)
 
@@ -3709,7 +3711,7 @@ def do_raw2png(picture, padding, basename, ndx):
 def raw2png(book, number):
 	song, pathname, basename, rawname = get_song_paths(book, number)
 
-	rawpath = '/'.join(['ehsf', book, song, 'raw'])
+	rawpath = ehsf_join(book, song, 'raw')
 
 	files = glob.glob(rawpath + "/*.png")
 	files.sort()

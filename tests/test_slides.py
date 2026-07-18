@@ -282,3 +282,21 @@ class TestParseIsodate:
         # sentinel like "0000-00-00" as the comment suggests.
         with pytest.raises(NameError):
             slides.parse_isodate({})
+
+
+class TestSetCropWindow:
+    def test_raises_clear_error_on_empty_crop(self):
+        # Regression: an empty `crop` dict (e.g. no PNGs were found for a
+        # song) used to blow up with an opaque
+        # `UnboundLocalError: cannot access local variable 'iar'` deep in
+        # set_window(), instead of a message pointing at the actual cause.
+        with pytest.raises(ValueError, match="No slide images found"):
+            slides.set_crop_window({}, {})
+
+    def test_computes_window_from_single_crop(self):
+        crop = {1: {"top": 0.1, "bot": 0.9, "left": 0.2, "right": 0.8, "width": 6, "height": 4}}
+        meta = {}
+        window, padding = slides.set_crop_window(crop, meta)
+        assert window == [0.1, 0.2, pytest.approx(0.6), pytest.approx(0.8)]
+        assert padding == 0.95
+        assert "window" in meta
