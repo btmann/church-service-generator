@@ -32,6 +32,41 @@ def load(names, extra_globals=None):
     return extract_functions(PAGE_PY, names, base_globals)
 
 
+class TestResolveResourceDir:
+    """Same regression as TestResolveResourceDir in test_ui_helpers.py: this
+    page recomputes its own EHSF_ROOT_PATH and calls _slides.set_ehsf_root
+    with it, so this copy is the one that actually matters for where a
+    processed song's files end up in the packaged EXE.
+    """
+
+    def test_falls_back_to_exe_folder_when_frozen_and_nothing_found(self, tmp_path, monkeypatch):
+        fake_root = tmp_path / "internal"
+        fns = load(["_resolve_resource_dir"], {"_ROOT": fake_root})
+        monkeypatch.setattr(Path, "cwd", lambda: fake_root)
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+        monkeypatch.setattr(sys, "executable", str(tmp_path / "dist" / "church-service-ui.exe"))
+        result = fns["_resolve_resource_dir"]("ehsf")
+        assert result == tmp_path / "dist" / "ehsf"
+
+    def test_falls_back_to_root_when_not_frozen_and_nothing_found(self, tmp_path, monkeypatch):
+        fake_root = tmp_path / "src"
+        fns = load(["_resolve_resource_dir"], {"_ROOT": fake_root})
+        monkeypatch.setattr(Path, "cwd", lambda: fake_root)
+        monkeypatch.setattr(sys, "frozen", False, raising=False)
+        result = fns["_resolve_resource_dir"]("ehsf")
+        assert result == fake_root / "ehsf"
+
+    def test_returns_existing_candidate_over_fallback(self, tmp_path, monkeypatch):
+        (tmp_path / "dist" / "ehsf").mkdir(parents=True)
+        fake_root = tmp_path / "internal"
+        fns = load(["_resolve_resource_dir"], {"_ROOT": fake_root})
+        monkeypatch.setattr(Path, "cwd", lambda: fake_root)
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+        monkeypatch.setattr(sys, "executable", str(tmp_path / "dist" / "church-service-ui.exe"))
+        result = fns["_resolve_resource_dir"]("ehsf")
+        assert result == tmp_path / "dist" / "ehsf"
+
+
 class TestSongStr:
     @pytest.mark.parametrize("number,expected", [(1, "001"), (12, "012"), (123, "123")])
     def test_zero_pads_to_three_digits(self, number, expected):

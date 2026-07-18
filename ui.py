@@ -58,7 +58,17 @@ def _resolve_resource_dir(folder_name):
         candidate = base / folder_name
         if candidate.exists() and candidate.is_dir():
             return candidate
-    return Path(folder_name)
+    # Nothing found yet (e.g. first run before any songs are processed).
+    # Default to next to the actual EXE (packaged) or next to ui.py (source)
+    # rather than a bare relative path, which would resolve against the
+    # process's cwd -- the PyInstaller onedir _internal folder, not the
+    # folder a user is actually looking in next to the .exe.
+    if getattr(sys, "frozen", False):
+        try:
+            return Path(sys.executable).resolve().parent / folder_name
+        except Exception:
+            pass
+    return Path(__file__).resolve().parent / folder_name
 
 # Configuration
 EHSF_ROOT_PATH = _resolve_resource_dir("ehsf")

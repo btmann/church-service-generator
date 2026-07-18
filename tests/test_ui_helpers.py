@@ -8,6 +8,7 @@ them standalone with a fake `streamlit` module and real os/json/Path.
 """
 import json
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -18,7 +19,7 @@ UI_PY = ROOT / "ui.py"
 
 
 def load(names, extra_globals=None):
-    base_globals = {"os": os, "json": json, "Path": Path}
+    base_globals = {"os": os, "json": json, "Path": Path, "sys": sys}
     if extra_globals:
         base_globals.update(extra_globals)
     return extract_functions(UI_PY, names, base_globals)
@@ -59,6 +60,49 @@ class TestShouldKeepExisting:
         fake_st = make_fake_streamlit(session_state={"reading": 0})
         fn = load(["should_keep_existing"], {"st": fake_st})["should_keep_existing"]
         assert fn("reading", 5, keep_manual=True) is False
+
+
+class TestResolveResourceDir:
+    """Regression coverage for the "processed a song but it's not in the
+    ehsf folder next to the .exe" bug: when no ehsf/ exists anywhere yet,
+    the fallback used to return a bare relative Path("ehsf"), which resolved
+    against the process cwd -- the PyInstaller onedir _internal folder, not
+    the folder containing the .exe a user actually checks.
+    """
+
+    def test_falls_back_to_exe_folder_when_frozen_and_nothing_found(self, tmp_path, monkeypatch):
+        fns = load(
+            ["_runtime_base_candidates", "_resolve_resource_dir"],
+            {"__file__": str(tmp_path / "internal" / "ui.py")},
+        )
+        monkeypatch.setattr(Path, "cwd", lambda: tmp_path / "internal")
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+        monkeypatch.setattr(sys, "executable", str(tmp_path / "dist" / "church-service-ui.exe"))
+        result = fns["_resolve_resource_dir"]("ehsf")
+        assert result == tmp_path / "dist" / "ehsf"
+
+    def test_falls_back_to_source_folder_when_not_frozen_and_nothing_found(self, tmp_path, monkeypatch):
+        fake_ui_py = tmp_path / "src" / "ui.py"
+        fns = load(
+            ["_runtime_base_candidates", "_resolve_resource_dir"],
+            {"__file__": str(fake_ui_py)},
+        )
+        monkeypatch.setattr(Path, "cwd", lambda: tmp_path / "src")
+        monkeypatch.setattr(sys, "frozen", False, raising=False)
+        result = fns["_resolve_resource_dir"]("ehsf")
+        assert result == fake_ui_py.parent / "ehsf"
+
+    def test_returns_existing_candidate_over_fallback(self, tmp_path, monkeypatch):
+        (tmp_path / "dist" / "ehsf").mkdir(parents=True)
+        fns = load(
+            ["_runtime_base_candidates", "_resolve_resource_dir"],
+            {"__file__": str(tmp_path / "internal" / "ui.py")},
+        )
+        monkeypatch.setattr(Path, "cwd", lambda: tmp_path / "internal")
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+        monkeypatch.setattr(sys, "executable", str(tmp_path / "dist" / "church-service-ui.exe"))
+        result = fns["_resolve_resource_dir"]("ehsf")
+        assert result == tmp_path / "dist" / "ehsf"
 
 
 class TestGetAvailableTemplates:

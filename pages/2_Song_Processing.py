@@ -47,6 +47,14 @@ def _resolve_resource_dir(folder_name):
         candidate = base / folder_name
         if candidate.exists() and candidate.is_dir():
             return candidate
+    # Nothing found yet (first run): default to next to the actual EXE
+    # (packaged) rather than _ROOT, which under PyInstaller onedir is the
+    # _internal bundle folder -- invisible next to the .exe a user checks.
+    if getattr(sys, "frozen", False):
+        try:
+            return Path(sys.executable).resolve().parent / folder_name
+        except Exception:
+            pass
     return _ROOT / folder_name
 
 EHSF_ROOT_PATH = _resolve_resource_dir("ehsf")
