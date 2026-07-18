@@ -4,7 +4,6 @@
 import base64
 import contextlib
 import io
-import json
 import os
 import shutil
 import subprocess
@@ -279,8 +278,7 @@ with eng_tab:
             )
 
             if json_path.exists():
-                with open(json_path, encoding="utf-8") as f:
-                    meta = json.load(f)
+                meta = _slides.load_json_safe(str(json_path))
                 with st.expander("View generated JSON metadata"):
                     st.json(meta)
 
@@ -456,8 +454,7 @@ from PowerPoint, then builds the Spanish version of the song into the library.
                     f"{len(esp_pngs)} slide image(s) created."
                 )
                 if esp_json.exists():
-                    with open(esp_json, encoding="utf-8") as f:
-                        meta = json.load(f)
+                    meta = _slides.load_json_safe(str(esp_json))
                     with st.expander("View generated Spanish JSON metadata"):
                         st.json(meta)
 

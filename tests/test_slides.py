@@ -11,6 +11,27 @@ def reset_ehsf_root():
     slides.set_ehsf_root(original)
 
 
+class TestLoadJsonSafe:
+    def test_loads_utf8_json(self, tmp_path):
+        f = tmp_path / "song.json"
+        f.write_text('{"title": "Amazing Grace"}', encoding="utf-8")
+        assert slides.load_json_safe(str(f)) == {"title": "Amazing Grace"}
+
+    def test_falls_back_to_latin1_for_legacy_credit_lines(self, tmp_path):
+        # Regression: a Windows packaged build crashed with
+        # UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa9 (the
+        # latin-1 copyright sign) when a page read a generated song JSON
+        # with a hardcoded `open(path, encoding="utf-8")` instead of this
+        # fallback-aware loader. 0xa9 is invalid UTF-8 but valid latin-1.
+        f = tmp_path / "song.json"
+        f.write_bytes('{"credits": "\xa9 1985 Word Music"}'.encode("latin-1"))
+        assert slides.load_json_safe(str(f)) == {"credits": "\xa9 1985 Word Music"}
+
+    def test_missing_file_raises(self, tmp_path):
+        with pytest.raises(FileNotFoundError):
+            slides.load_json_safe(str(tmp_path / "missing.json"))
+
+
 class TestIsPftlCopyright:
     def test_true_when_paperless_present(self):
         assert slides.is_pftl_copyright("Copyright Paperless Hymnal") is True
