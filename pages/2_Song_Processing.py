@@ -377,22 +377,20 @@ boxes, then come back to **Step 2** to process your completed translation.
                     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
                     key="s1_download",
                 )
-                bil_target = _esp_bil_pptx_path(s1_book, int(s1_num))
-                png_target_dir = _esp_bil_png_dir(s1_book, int(s1_num))
                 st.info(
                     "**Next steps:**\n"
                     "1. Get Spanish lyrics typed into each text box of the downloaded file "
                     "(either do it yourself or send it to a translator) — do **not** touch the "
-                    "hidden text in each slide's Notes pane, the export macro needs it.\n"
-                    f"2. Save the completed file directly as:\n   `{bil_target}`\n"
-                    "3. In PowerPoint, open `assets/template-spanish.pptm` **first** — then open "
-                    f"the `{bil_target.name}` file you just saved in step 2 (opening it from that "
-                    "exact location matters — the export macro writes relative to wherever the "
-                    "open file is saved).\n"
-                    "4. Run the **ExtractImagesFromPres** macro (Developer/View → Macros, set "
-                    "\"Macros in\" to template-spanish.pptm, select ExtractImagesFromPres, Run). "
-                    f"This exports each slide's PNG directly into:\n   `{png_target_dir}`\n"
-                    "5. Come back to **Step 2** and point both fields at those same two paths above."
+                    "hidden text in each slide's Notes pane, it's needed for exporting slide "
+                    "images later.\n"
+                    "2. Save the completed file anywhere convenient (e.g. Desktop, or wherever "
+                    "your translator sends it back).\n"
+                    "3. Go to **Step 2**, paste that file's path, and click **Process Translation** "
+                    "— it handles placing the file, exporting slide images, and building the final "
+                    "Spanish version automatically (requires LibreOffice; see the setup section "
+                    "above if it's not installed yet).\n\n"
+                    "*No PowerPoint or macro needed for this path — see Step 2's \"Advanced\" option "
+                    "only if you specifically want to use the manual PowerPoint macro process instead.*"
                 )
 
             if log:
@@ -404,18 +402,9 @@ boxes, then come back to **Step 2** to process your completed translation.
         st.markdown(
             """
 **What this does:**
-Takes the bilingual PPTX (with Spanish text you added) and the slide PNG images exported
-from PowerPoint, then builds the Spanish version of the song into the library.
-
-**Before you start** (see **Step 1**'s "Next steps" for the full walkthrough):
-- The completed `-bil.pptx` must be saved directly into `ehsf/esp/<book>/bil/`, not some other folder
-  (e.g. a translator hand-off folder) — the export macro depends on it being opened from there.
-- The PNGs must come from running the **ExtractImagesFromPres** macro in `assets/template-spanish.pptm`
-  against that file — not a generic "Export to Image" — since the macro embeds the correct filenames
-  and skips the non-song metadata slide automatically. A plain PowerPoint export would misalign every
-  verse image by one slide.
-- Both fields below will normally point at the *same* `ehsf/esp/<book>/bil/...` location the macro
-  already wrote to — that's expected, not a mistake.
+Takes the completed bilingual PPTX (with Spanish text added) — wherever it currently is — and
+in one step: places it in the song library, exports each slide to PNG, and builds the final
+Spanish version of the song. Requires LibreOffice to be installed (see the setup section above).
 """
         )
 
@@ -432,140 +421,52 @@ from PowerPoint, then builds the Spanish version of the song into the library.
                 "Song Number", min_value=1, max_value=9999, value=1, step=1, key="s2_num"
             )
 
-        with st.expander(
-            "📂 Already have a completed bil.pptx from elsewhere? Place it and prepare the folder",
-            expanded=False,
-        ):
-            st.caption(
-                "Use this if you already have a finished `<book>-<song>-bil.pptx` (e.g. from a "
-                "translator, or copied over from another machine) and just need it saved in the "
-                "right spot with the export folder ready, before running the macro in Step 4 of "
-                "the walkthrough above."
-            )
-            s2_prep_path_input = st.text_input(
-                "Path to your existing bil.pptx",
-                key="s2_prep_path",
-                help="Full path to the completed bilingual PPTX file wherever it currently is.",
-            )
-            if st.button("📂 Place PPTX & Create Folder", key="s2_prep_go"):
-                prep_number = int(s2_num)
-                prep_src = Path(s2_prep_path_input).expanduser() if s2_prep_path_input else None
-                if prep_src is None or not prep_src.is_file():
-                    st.error(f"PPTX file not found: {prep_src}")
-                else:
-                    prep_dest = _esp_bil_pptx_path(s2_book, prep_number)
-                    prep_dest.parent.mkdir(parents=True, exist_ok=True)
-                    prep_dest.write_bytes(prep_src.read_bytes())
-                    prep_png_dir = _esp_bil_png_dir(s2_book, prep_number)
-                    prep_png_dir.mkdir(parents=True, exist_ok=True)
-                    st.success(
-                        f"✅ Placed PPTX at `{prep_dest}` and created the export folder "
-                        f"`{prep_png_dir}`.\n\n"
-                        "Now open `assets/template-spanish.pptm` first, then open that PPTX from "
-                        "its new location, and run the ExtractImagesFromPres macro."
-                    )
-
-        with st.expander("🤖 Auto-Export PNGs (no PowerPoint needed)", expanded=False):
-            st.caption(
-                "Alternative to the manual PowerPoint macro above, for anyone without PowerPoint "
-                "or macro access. Requires the completed `bil.pptx` to already be sitting at "
-                "`ehsf/esp/<book>/bil/<book>-<song>-bil.pptx` (use the 'Place PPTX & Create Folder' "
-                "section above first if it isn't there yet). Requires LibreOffice to be installed."
-            )
-            if st.button("🤖 Auto-Export PNGs", key="s2_autoexport_go"):
-                autoexport_number = int(s2_num)
-                autoexport_pptx = _esp_bil_pptx_path(s2_book, autoexport_number)
-                if not autoexport_pptx.is_file():
-                    st.error(
-                        f"No bilingual PPTX found at {autoexport_pptx}. Place it there first "
-                        "(see 'Already have a completed bil.pptx' above)."
-                    )
-                else:
-                    with st.spinner(f"Auto-exporting PNGs for {s2_book.upper()}-{_song_str(autoexport_number)}…"):
-                        count, log, err = _capture(_slides.export_bil_pngs, s2_book, autoexport_number)
-                    if err:
-                        st.error("Auto-export failed.")
-                        st.code(err, language="python")
-                    else:
-                        st.success(
-                            f"✅ Exported {count} PNG(s) to "
-                            f"{_esp_bil_png_dir(s2_book, autoexport_number)}. "
-                            "You can now use that same folder in the PNG field below."
-                        )
-                    if log:
-                        with st.expander("Auto-export log"):
-                            st.code(log)
-
         s2_pptx_path_input = st.text_input(
-            "Path to completed bilingual PPTX",
+            "Path to completed bil.pptx",
             key="s2_pptx_path",
-            help="Full path to the PPTX file from Step 1 with Spanish text filled in.",
+            help="Full path to the finished bilingual PPTX with Spanish text added, wherever it "
+            "currently is (e.g. downloaded from a translator).",
         )
-        s2_png_folder_input = st.text_input(
-            "Path to folder with exported PNG images",
-            key="s2_png_folder",
-            help="Folder containing the PNG images exported from PowerPoint. File names must sort "
-            "in slide order (PowerPoint names them Slide1.PNG, Slide2.PNG, etc.).",
-        )
-
         s2_pptx_file = Path(s2_pptx_path_input).expanduser() if s2_pptx_path_input else None
-        s2_png_dir_input = Path(s2_png_folder_input).expanduser() if s2_png_folder_input else None
-
         s2_pptx_valid = s2_pptx_file is not None and s2_pptx_file.is_file()
-        s2_png_valid = s2_png_dir_input is not None and s2_png_dir_input.is_dir()
-
         if s2_pptx_path_input and not s2_pptx_valid:
             st.warning(f"PPTX file not found: {s2_pptx_file}")
-        if s2_png_folder_input and not s2_png_valid:
-            st.warning(f"Folder not found: {s2_png_dir_input}")
 
-        s2_ready = s2_pptx_valid and s2_png_valid
-
-        if st.button(
-            "⚙️ Process Translation",
-            key="s2_go",
-            type="primary",
-            disabled=not s2_ready,
-        ):
+        if st.button("🚀 Process Translation", key="s2_go", type="primary", disabled=not s2_pptx_valid):
             number = int(s2_num)
             song = _song_str(number)
 
-            # Copy bilingual PPTX from its local path
+            # Place the PPTX where the rest of the pipeline expects it. If
+            # it's already there (e.g. you're re-running this), this is a
+            # safe no-op self-copy.
             bil_pptx_path = _esp_bil_pptx_path(s2_book, number)
             bil_pptx_path.parent.mkdir(parents=True, exist_ok=True)
             bil_pptx_path.write_bytes(s2_pptx_file.read_bytes())
-
-            # Copy PNGs from the local folder. This is normally the exact same
-            # folder the ExtractImagesFromPres macro already exported into
-            # (ehsf/esp/<book>/bil/<song>/) -- reading and rewriting the same
-            # files in place is a safe no-op, not an error.
             png_dir = _esp_bil_png_dir(s2_book, number)
             png_dir.mkdir(parents=True, exist_ok=True)
 
-            png_files = sorted(
-                (p for p in s2_png_dir_input.iterdir() if p.is_file() and p.suffix.lower() == ".png"),
-                key=lambda p: p.name,
-            )
-            if not png_files:
-                st.error("No PNG files found in that folder. Make sure you exported slides as PNG.")
+            with st.spinner(f"Exporting slide images for {s2_book.upper()}-{song}…"):
+                count, export_log, export_err = _capture(_slides.export_bil_pngs, s2_book, number)
+
+            if export_err:
+                st.error(
+                    "PNG export failed. If you don't have LibreOffice installed, use the "
+                    "'Advanced' option below instead (for the manual PowerPoint macro route)."
+                )
+                st.code(export_err, language="python")
+                if export_log:
+                    with st.expander("Export log"):
+                        st.code(export_log)
                 st.stop()
 
-            st.info(
-                f"Reading {len(png_files)} PNG(s) from {s2_png_dir_input}:\n\n"
-                + "\n".join(f"- {p.name}" for p in png_files)
-            )
-
-            # Rename to sequential format (book-song-01.png, etc.)
-            for ndx, src in enumerate(png_files, start=1):
-                dest = png_dir / f"{s2_book}-{song}-{ndx:03d}.png"
-                dest.write_bytes(src.read_bytes())
+            st.info(f"Exported {count} slide image(s) to {png_dir}.")
 
             with st.spinner(f"Processing Spanish translation for {s2_book.upper()}-{song}…"):
-                _, log, err = _capture(_slides.make_esp_trans, s2_book, number)
+                _, process_log, process_err = _capture(_slides.make_esp_trans, s2_book, number)
 
-            if err:
+            if process_err:
                 st.error("Processing failed.")
-                st.code(err, language="python")
+                st.code(process_err, language="python")
             else:
                 esp_json = EHSF_ROOT_PATH / "esp" / s2_book / song / f"{s2_book}-{song}.json"
                 esp_pngs = list((EHSF_ROOT_PATH / "esp" / s2_book / song).glob("*.png"))
@@ -578,6 +479,44 @@ from PowerPoint, then builds the Spanish version of the song into the library.
                     with st.expander("View generated Spanish JSON metadata"):
                         st.json(meta)
 
-            if log:
+            if export_log or process_log:
                 with st.expander("Processing log"):
-                    st.code(log)
+                    if export_log:
+                        st.code(export_log)
+                    if process_log:
+                        st.code(process_log)
+
+        with st.expander(
+            "🛠️ Advanced: I already ran the PowerPoint macro myself (no LibreOffice)",
+            expanded=False,
+        ):
+            st.caption(
+                "Use this only if you followed Step 1's manual PowerPoint + ExtractImagesFromPres "
+                "macro walkthrough yourself and the PNGs are already sitting in "
+                "`ehsf/esp/<book>/bil/<song>/`. This skips the PPTX placement and auto-export above "
+                "and goes straight to building the final Spanish version from those existing PNGs."
+            )
+            if st.button("Finish Processing (skip auto-export)", key="s2_manual_finish"):
+                number = int(s2_num)
+                song = _song_str(number)
+                with st.spinner(f"Processing Spanish translation for {s2_book.upper()}-{song}…"):
+                    _, log, err = _capture(_slides.make_esp_trans, s2_book, number)
+
+                if err:
+                    st.error("Processing failed.")
+                    st.code(err, language="python")
+                else:
+                    esp_json = EHSF_ROOT_PATH / "esp" / s2_book / song / f"{s2_book}-{song}.json"
+                    esp_pngs = list((EHSF_ROOT_PATH / "esp" / s2_book / song).glob("*.png"))
+                    st.success(
+                        f"✅ Spanish translation processed for {s2_book.upper()}-{song}: "
+                        f"{len(esp_pngs)} slide image(s) created."
+                    )
+                    if esp_json.exists():
+                        meta = _slides.load_json_safe(str(esp_json))
+                        with st.expander("View generated Spanish JSON metadata"):
+                            st.json(meta)
+
+                if log:
+                    with st.expander("Processing log"):
+                        st.code(log)
