@@ -1,3 +1,6 @@
+import sys
+from pathlib import Path
+
 import pytest
 
 import slides
@@ -355,3 +358,40 @@ class TestExportBilPngs:
         slides.set_ehsf_root(str(tmp_path))
         with pytest.raises(FileNotFoundError):
             slides.export_bil_pngs("test", 999)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="covers the darwin/linux home-dir install path")
+class TestInstallBundledFonts:
+    def test_installs_bundled_fonts_into_user_fonts_dir(self, tmp_path, monkeypatch):
+        # Regression: LibreOffice silently substitutes a fallback font when
+        # Alegreya Sans isn't installed on the machine, which wraps subtitle
+        # text differently and (combined with "auto-fit shape to text")
+        # overlaps it with the slide content below. Installing the bundled
+        # font files fixes this; this test checks the install mechanics
+        # without touching the real user font directory.
+        assets_dir = tmp_path / "assets"
+        assets_dir.mkdir()
+        (assets_dir / "AlegreyaSans-Medium.otf").write_bytes(b"fake-font-data")
+        monkeypatch.setattr(slides, "assetRoot", str(assets_dir) + "/")
+
+        home_dir = tmp_path / "home"
+        home_dir.mkdir()
+        monkeypatch.setattr(Path, "home", classmethod(lambda cls: home_dir))
+
+        results = slides.install_bundled_fonts()
+
+        assert len(results) == 1
+        installed_path = Path(results[0][0])
+        expected_dir = (
+            home_dir / "Library" / "Fonts" if sys.platform == "darwin" else home_dir / ".local" / "share" / "fonts"
+        )
+        assert installed_path.parent == expected_dir
+        assert installed_path.read_bytes() == b"fake-font-data"
+
+    def test_no_bundled_fonts_returns_empty_list(self, tmp_path, monkeypatch):
+        assets_dir = tmp_path / "assets"
+        assets_dir.mkdir()
+        monkeypatch.setattr(slides, "assetRoot", str(assets_dir) + "/")
+        monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path / "home"))
+
+        assert slides.install_bundled_fonts() == []

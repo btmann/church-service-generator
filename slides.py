@@ -3795,6 +3795,63 @@ def export_bil_pngs(book, number):
 
 
 #
+# install_bundled_fonts -- install this project's bundled subtitle fonts
+# (assets/AlegreyaSans-*) for the current user. LibreOffice/PowerPoint
+# render each slide's Spanish subtitle text boxes using these font metrics;
+# without them installed, the renderer substitutes a fallback font, which
+# can wrap text differently and (combined with the text boxes' "auto-fit
+# shape to text" setting) change their rendered height enough to overlap
+# adjacent slide content.
+#
+
+def install_bundled_fonts():
+	font_files = sorted(glob.glob(assetRoot + "AlegreyaSans-*.otf")) + sorted(glob.glob(assetRoot + "AlegreyaSans-*.ttf"))
+	results = []
+
+	if sys.platform == "win32":
+		import winreg
+		fonts_dir = Path(os.environ["LOCALAPPDATA"]) / "Microsoft" / "Windows" / "Fonts"
+		fonts_dir.mkdir(parents=True, exist_ok=True)
+		for f in font_files:
+			src = Path(f)
+			dest = fonts_dir / src.name
+			dest.write_bytes(src.read_bytes())
+			try:
+				with winreg.OpenKey(
+					winreg.HKEY_CURRENT_USER,
+					r"Software\Microsoft\Windows NT\CurrentVersion\Fonts",
+					0, winreg.KEY_SET_VALUE,
+				) as key:
+					suffix = "OpenType" if src.suffix.lower() == ".otf" else "TrueType"
+					winreg.SetValueEx(key, f"{src.stem} ({suffix})", 0, winreg.REG_SZ, str(dest))
+				results.append((str(dest), "installed"))
+			except OSError as e:
+				results.append((str(dest), f"copied but registry update failed: {e}"))
+	elif sys.platform == "darwin":
+		fonts_dir = Path.home() / "Library" / "Fonts"
+		fonts_dir.mkdir(parents=True, exist_ok=True)
+		for f in font_files:
+			src = Path(f)
+			dest = fonts_dir / src.name
+			dest.write_bytes(src.read_bytes())
+			results.append((str(dest), "installed"))
+	else:
+		fonts_dir = Path.home() / ".local" / "share" / "fonts"
+		fonts_dir.mkdir(parents=True, exist_ok=True)
+		for f in font_files:
+			src = Path(f)
+			dest = fonts_dir / src.name
+			dest.write_bytes(src.read_bytes())
+			results.append((str(dest), "installed"))
+		try:
+			subprocess.run(["fc-cache", "-f"], capture_output=True)
+		except Exception:
+			pass
+
+	return results
+
+
+#
 # Support for manipulating existing songs
 #
 

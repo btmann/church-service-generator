@@ -303,6 +303,26 @@ with esp_tab:
         "The Spanish slides will appear on the right-hand column of bilingual services."
     )
 
+    with st.expander("🔤 One-time setup: install subtitle fonts", expanded=False):
+        st.caption(
+            "The Spanish subtitle text boxes use a specific font (Alegreya Sans). If it isn't "
+            "installed on this PC, PowerPoint/LibreOffice silently substitute a different font, "
+            "which can wrap the text differently and make it overlap the slide below it — the "
+            "text itself is still correct, but the layout looks broken. Run this once per PC "
+            "before using either export method below."
+        )
+        if st.button("🔤 Install Fonts", key="install_fonts_go"):
+            results = _slides.install_bundled_fonts()
+            if results:
+                for path, msg in results:
+                    st.write(f"- {msg}: `{path}`")
+                st.success(
+                    "✅ Fonts installed. If you already have PowerPoint or LibreOffice open, "
+                    "close and reopen it so it picks up the new font."
+                )
+            else:
+                st.error("No bundled font files found in assets/.")
+
     # ── Step 1: Generate blank template ──────────────────────────────────────
     with st.expander("📋 **Step 1** — Generate Translation Template", expanded=True):
         st.markdown(
