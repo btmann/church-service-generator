@@ -306,7 +306,7 @@ def generate_readings(items):
 		elif item['type'] == 'ls-am':
 			readinglist[item['id']]  = { "reading": "" }
 		elif item['type'] == 'sermon':
-			readinglist[item['id']]  = { "title": "", "tï¿½tulo": "" }
+			readinglist[item['id']]  = { "title": "", "título": "" }
 	return { "readings" : readinglist }
 
 

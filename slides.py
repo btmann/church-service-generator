@@ -866,7 +866,7 @@ def get_navigation(meta, verses, chorus, coda):
 # at least one of verses/chorus must be set
 
 vex_eng = dict(omit="Omit Verse ", omits="Omit Verses ", chorusafterone="Chorus After Verse ", chorusaftermany="Chorus After Verses ", chorusafterlast="Chorus After Last Verse", nochorus="Omit the Chorus")
-vex_esp = dict(omit="Omitir el verso ", omits="Omitir los versos ", chorusafterone="Coro despuï¿½s del verso ", chorusaftermany="Coro despuï¿½s de los versos ", chorusafterlast="Coro despuï¿½s del ï¿½ltimo verso", nochorus="Omitir el coro")
+vex_esp = dict(omit="Omitir el verso ", omits="Omitir los versos ", chorusafterone="Coro después del verso ", chorusaftermany="Coro después de los versos ", chorusafterlast="Coro después del último verso", nochorus="Omitir el coro")
 
 def get_verse_exceptions(meta, verses, chorus, repeat, vex):
 	if repeat:
@@ -1353,7 +1353,7 @@ def add_song_title_slide(outp, language, item, navitems, ndi, verses=None, choru
 			esp = dict()
 			esp[LAYOUT_TITLE_TITLE] = dict(text=str(displaySong), fonts=eng_fonts, max_size=60, step_size=6, bold=True, size=[0.675, 4.6, 2.5, 1])
 			esp[LAYOUT_TITLE_DETAIL] = dict(text=espm['title'].upper(), max_size=40, step_size=4, bold=True, size=[1.62, 3.75, 4.2, 1.8])
-			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CCANTANDO...AL SEï¿½OR\u201D\nCOLOSENSES 3:16", max_size=22, step_size=2, size=[4.280, 4.1, 3.5, 0.9])
+			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CCANTANDO...AL SEÑOR\u201D\nCOLOSENSES 3:16", max_size=22, step_size=2, size=[4.280, 4.1, 3.5, 0.9])
 			esp[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(espm['credits'].splitlines()), max_size=13, step_size=1)
 			if bubble:
 				esp[LAYOUT_TITLE_CALLOUT] = dict(text=espm['bubble'].upper(), max_size=18, step_size=2, size=[0.25, 7.4, 3.0, 0.44], align=PP_ALIGN.LEFT)
@@ -1664,7 +1664,7 @@ def add_verse_to_deck_tall(slide, displayBook, displaySong, basename, ndx, meta,
 			left = 0.1
 			width = 1.375
 			set_placeholder_size(v, top, left, width, v.height.inches)
-			v.text = "Traducciï¿½n " + esp['translation_copyright']
+			v.text = "Traducción " + esp['translation_copyright']
 		else:
 			v._element.getparent().remove(v._element)
 
@@ -1765,7 +1765,7 @@ def add_verse_to_deck_wide(slide, displayBook, displaySong, basename, ndx, meta,
 		espcopy = None
 		if esp:
 			if 'translation_copyright' in esp:
-				espcopy = "Traducciï¿½n " + esp['translation_copyright']
+				espcopy = "Traducción " + esp['translation_copyright']
 		if meta['copyright'] != '':
 			add_text_run(v.text_frame, meta['copyright'], 'Avenir Next LT Pro', 8, espcopy is not None, bold=False)
 		v.text_frame.margin_top = 0
@@ -2231,7 +2231,7 @@ def add_song(outp, language, item, navitems, ndi, title=True, music=True):
 	if item['esp'] != None:
 		item['esp']['bubble'] = None
 		if bubble != None:
-			item['esp']['bubble'] = "Himno de Invitaciï¿½n"
+			item['esp']['bubble'] = "Himno de Invitación"
 	repeat = get_item(item, 'repeat')
 	coda = get_item(item, 'coda')
 	if coda is None:
@@ -2257,11 +2257,11 @@ def add_song_entry(outp, language, item, navitems, ndi):
 #		eng[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(meta['credits'].splitlines()), max_size=12, step_size=2)
 
 	if language == "bil" or language == "esp":
-		if 'tï¿½tulo' in item:
+		if 'título' in item:
 			esp = dict()
 			esp[LAYOUT_TITLE_TITLE] = dict(text=' ', fonts=eng_fonts, max_size=60, step_size=6, bold=True, size=[0.675, 4.6, 2.5, 1])
-			esp[LAYOUT_TITLE_DETAIL] = dict(text=item['tï¿½tulo'].upper(), max_size=56, step_size=6, bold=True, size=[1.62, 3.75, 4.2, 1.8])
-			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CCANTANDO...AL SEï¿½OR\u201D\nCOLOSENSES 3:16", max_size=22, step_size=2, size=[4.280, 4.1, 3.5, 0.9])
+			esp[LAYOUT_TITLE_DETAIL] = dict(text=item['título'].upper(), max_size=56, step_size=6, bold=True, size=[1.62, 3.75, 4.2, 1.8])
+			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CCANTANDO...AL SEÑOR\u201D\nCOLOSENSES 3:16", max_size=22, step_size=2, size=[4.280, 4.1, 3.5, 0.9])
 #			esp[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(espm['credits'].splitlines()), max_size=13, step_size=1)
 
 	slide = add_title_slide(outp, item, navitems, ndi, language, eng, esp, "song-beige", doLeader=False)
@@ -2459,8 +2459,8 @@ def add_ls(outp, language, item, navitems, ndi):
 		if language == "bil" or language == "esp":
 			esp = dict()
 			esp[LAYOUT_TITLE_DETAIL] = dict(text="CENA DEL", max_size=72, step_size=6, bold=True, size=[1.300, 3.35, 5.0, 1.5])
-			esp[LAYOUT_TITLE_REFERENCE] = dict(text="SEï¿½OR", max_size=72, step_size=6, bold=True, size=[2.575, 3.35, 5.0, 2.4])
-			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CHACED ESTO EN MEMORIA DE Mï¿½\u201D LUCAS 22:19", max_size=24, step_size=2, size=[3.925, 3.67, 4.36, 1.0])
+			esp[LAYOUT_TITLE_REFERENCE] = dict(text="SEÑOR", max_size=72, step_size=6, bold=True, size=[2.575, 3.35, 5.0, 2.4])
+			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CHACED ESTO EN MEMORIA DE MÍ\u201D LUCAS 22:19", max_size=24, step_size=2, size=[3.925, 3.67, 4.36, 1.0])
 
 		slide = add_title_slide(outp, item, navitems, ndi, language, eng, esp, "supper-vial")
 		fade_to_black(outp, slide)
@@ -2579,8 +2579,8 @@ def add_invitation(outp, language, item, navitems, ndi):
 
 	if language == "bil" or language == "esp":
 		esp = dict()
-		esp[LAYOUT_TITLE_DETAIL] = dict(text="INVITACIï¿½N", max_size=68, step_size=6, bold=True, size=[1.59, 3.35, 5.0, 1.8])
-		esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CVENID A Mï¿½...Y YO OS HARï¿½ DESCANSAR\u201D", max_size=26, step_size=2, size=[3.29, 3.47, 4.78, 1.0])
+		esp[LAYOUT_TITLE_DETAIL] = dict(text="INVITACIÓN", max_size=68, step_size=6, bold=True, size=[1.59, 3.35, 5.0, 1.8])
+		esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CVENID A MÍ...Y YO OS HARÉ DESCANSAR\u201D", max_size=26, step_size=2, size=[3.29, 3.47, 4.78, 1.0])
 		esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"MATEO 11:28", max_size=24, step_size=2, size=[4.2, 3.6, 4.52, 1.0])
 
 	slide = add_title_slide(outp, item, navitems, ndi, language, eng, esp, "invitation-road")
@@ -2785,8 +2785,8 @@ def parse_worship_item(order, item, language):
 			title = meta['title']
 		order.append([title, 1, leader])
 	elif item['type'] == 'lyric' or item['type'] == 'singing':
-		if (language == 'esp') and ('tï¿½tulo' in item):
-			title = item['tï¿½tulo']
+		if (language == 'esp') and ('título' in item):
+			title = item['título']
 		else:
 			title = item['title']
 		order.append([title, 1, leader])
@@ -3003,10 +3003,10 @@ def get_navbar(worship, language):
 			ndi = ndi - 1
 		elif item['type'] == 'medley':
 			engitems.append([ndi, "medley", "Medley"])
-			espitems.append([ndi, "medley", "Popurrï¿½"])
+			espitems.append([ndi, "medley", "Popurrí"])
 		elif item['type'] == 'prayer':
 			engitems.append([ndi, "prayer", "Prayer"])
-			espitems.append([ndi, "prayer", "Oraciï¿½n"])
+			espitems.append([ndi, "prayer", "Oración"])
 		elif item['type'] == 'reading':
 			engitems.append([ndi, "reading", "Reading"])
 			espitems.append([ndi, "reading", "Lectura"])
@@ -3021,13 +3021,13 @@ def get_navbar(worship, language):
 			espitems.append([ndi, "report", "Reporte"])
 		elif item['type'] == 'invitation':
 			engitems.append([ndi, "invitation", "Invitation"])
-			espitems.append([ndi, "invitation", "Invitaciï¿½n", 11])
+			espitems.append([ndi, "invitation", "Invitación", 11])
 		elif item['type'] == 'welcome':
 			engitems.append([ndi, "welcome", "Welcome"])
 			espitems.append([ndi, "welcome", "Bienvenida", 12])
 		elif item['type'] == 'ls-am' or item['type'] == 'ls-pm':
 			engitems.append([ndi, "supper", u"Lord\u2019s Supper", 10.5])
-			espitems.append([ndi, "supper", "Cena del Seï¿½or", 11])
+			espitems.append([ndi, "supper", "Cena del Señor", 11])
 		elif item['type'] == 'collection':
 			engitems.append([ndi, "collection", "Collection", 11])
 			espitems.append([ndi, "collection", "Ofrenda"])
