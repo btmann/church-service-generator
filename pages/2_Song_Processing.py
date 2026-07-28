@@ -262,6 +262,13 @@ with eng_tab:
             st.error("Unsupported file type. Please upload a .ppt or .pptx file.")
             st.stop()
 
+        if _slides.repair_pptx_zip_separators(str(pptx_path)):
+            st.info(
+                "This file used backslash path separators internally (a quirk of some "
+                "Windows export tools) instead of the required forward slashes — repaired "
+                "automatically before processing."
+            )
+
         with st.spinner(f"Processing {eng_book.upper()}-{song}…"):
             if eng_book == "pftl":
                 _, log, err = _capture(_slides.process_pftl_song, number)

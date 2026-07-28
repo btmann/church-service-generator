@@ -395,3 +395,34 @@ class TestInstallBundledFonts:
         monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path / "home"))
 
         assert slides.install_bundled_fonts() == []
+
+
+class TestRepairPptxZipSeparators:
+    def _make_zip(self, path, names):
+        import zipfile
+        with zipfile.ZipFile(path, "w") as zf:
+            for name in names:
+                zf.writestr(name, b"<xml/>")
+
+    def test_repairs_backslash_separators(self, tmp_path):
+        # Regression: some Windows export/re-packaging tools zip .pptx
+        # internals with "\" instead of the ZIP/OPC-required "/", so
+        # python-pptx can't find _rels/.rels and fails with a cryptic
+        # KeyError instead of opening the file.
+        import zipfile
+        path = tmp_path / "broken.pptx"
+        self._make_zip(path, [r"_rels\.rels", r"ppt\presentation.xml"])
+
+        assert slides.repair_pptx_zip_separators(str(path)) is True
+
+        with zipfile.ZipFile(path) as zf:
+            names = zf.namelist()
+        assert "_rels/.rels" in names
+        assert "ppt/presentation.xml" in names
+        assert not any("\\" in n for n in names)
+
+    def test_noop_when_already_compliant(self, tmp_path):
+        path = tmp_path / "fine.pptx"
+        self._make_zip(path, ["_rels/.rels", "ppt/presentation.xml"])
+
+        assert slides.repair_pptx_zip_separators(str(path)) is False
