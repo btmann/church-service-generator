@@ -26,12 +26,12 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # t=&t=NKJV&mvText=matthew+26%3A27-29&refDelim=1&refFormat=2&numDelim=0&sqrbrkt=1
 
 def load_json_safe(filepath):
-	"""Load JSON file with UTF-8 and Latin-1 encoding support"""
+	"""Load JSON file with UTF-8 and Windows-1252 encoding support"""
 	try:
 		with open(filepath, 'r', encoding='utf-8') as f:
 			return json.load(f)
 	except UnicodeDecodeError:
-		with open(filepath, 'r', encoding='latin-1') as f:
+		with open(filepath, 'r', encoding='cp1252') as f:
 			return json.load(f)
 
 def update_passages(args):

@@ -16,12 +16,12 @@ from typing import Any
 
 
 def load_json_with_fallback(path: Path) -> dict[str, Any] | None:
-    """Load JSON using UTF-8 first, then latin-1 for legacy metadata."""
+    """Load JSON using UTF-8 first, then Windows-1252 for legacy metadata."""
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except UnicodeDecodeError:
         try:
-            return json.loads(path.read_text(encoding="latin-1"))
+            return json.loads(path.read_text(encoding="cp1252"))
         except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             return None
     except (OSError, json.JSONDecodeError):

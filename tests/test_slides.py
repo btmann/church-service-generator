@@ -426,3 +426,106 @@ class TestRepairPptxZipSeparators:
         self._make_zip(path, ["_rels/.rels", "ppt/presentation.xml"])
 
         assert slides.repair_pptx_zip_separators(str(path)) is False
+
+
+class TestNoMojibakeInSource:
+    """Canary: slides.py/worship.py declare `# encoding: iso-8859-15`, so
+    Spanish accented characters must be written as single ISO-8859-15 bytes
+    (or \\uXXXX escapes), never as raw UTF-8 multi-byte sequences -- those
+    get double-decoded into garbage (e.g. "Oraciï¿œn" instead of "Oración")
+    the moment the file is re-saved by a UTF-8-default editor. This has
+    regressed silently more than once; catch it before it ships again.
+    """
+
+    REPLACEMENT_CHAR_UTF8 = b"\xef\xbf\xbd"
+    # The one legitimate use: sanitize_display_text's own cleanup pattern,
+    # which intentionally contains this byte sequence to strip it out.
+    ALLOWED_CONTEXT = b'cleaned.replace("\xc3\xaf\xc2\xbf\xc2\xbd", "")'
+
+    def _unexpected_occurrences(self, path):
+        with open(path, "rb") as f:
+            data = f.read()
+        count = data.count(self.REPLACEMENT_CHAR_UTF8)
+        if self.ALLOWED_CONTEXT in data:
+            count -= 1
+        return count
+
+    def test_slides_py_has_no_stray_mojibake(self):
+        assert self._unexpected_occurrences("slides.py") == 0
+
+    def test_worship_py_has_no_stray_mojibake(self):
+        assert self._unexpected_occurrences("worship.py") == 0
+
+
+class TestAnalyzeImage:
+    """Regression: analyze_image() used to be a no-op that always reported
+    the full raw image as "content" (top=0, bot=1), which fed a skewed
+    aspect ratio into set_window() whenever the source export had uneven
+    margins -- causing slides to render "tall" instead of "wide", with no
+    margin above the topmost content and excess margin below it.
+    """
+
+    def _make_image(self, tmp_path, img_width=1000, img_height=800, content_box=(100, 200, 900, 500)):
+        from PIL import Image, ImageDraw
+        img = Image.new("RGB", (img_width, img_height), "white")
+        draw = ImageDraw.Draw(img)
+        draw.rectangle(content_box, fill="black")
+        path = tmp_path / "test.png"
+        img.save(path)
+        return path
+
+    def test_detects_content_bounds_not_full_image(self, tmp_path):
+        path = self._make_image(tmp_path, 1000, 800, content_box=(100, 200, 900, 500))
+        result = slides.analyze_image(str(path))
+
+        # Content spans y=200..500 of an 800-tall image, so top/bot should
+        # reflect that (with a small safety margin), not 0/1 (full image).
+        assert 0 < result["top"] < 0.3
+        assert 0.55 < result["bot"] < 0.75
+        assert result["width"] < 1000
+        assert result["height"] < 800
+
+    def test_blank_image_falls_back_to_full_bounds(self, tmp_path):
+        from PIL import Image
+        path = tmp_path / "blank.png"
+        Image.new("RGB", (400, 300), "white").save(path)
+
+        result = slides.analyze_image(str(path))
+        assert result == dict(width=400, height=300, top=0, bot=1, staff=-1, left=0, right=1)
+
+    def test_wide_content_yields_wide_aspect_ratio(self, tmp_path):
+        # A short, wide content band (like a line of sheet music) should
+        # produce a wide (width > height) content aspect ratio, even though
+        # the raw image itself might be closer to square/tall due to margins.
+        path = self._make_image(tmp_path, 1000, 1000, content_box=(50, 400, 950, 600))
+        result = slides.analyze_image(str(path))
+        assert result["width"] > result["height"]
+
+
+class TestSizeImageToWindow:
+    def test_crops_to_song_wide_window(self, tmp_path):
+        from PIL import Image
+        img = Image.new("RGB", (1000, 800), "white")
+        src = tmp_path / "src.png"
+        img.save(src)
+
+        basename = str(tmp_path / "pftl-012")
+        # window fractions: top=0.1, left=0.05, width=0.9, height=0.6
+        slides.size_image_to_window(str(src), None, [0.1, 0.05, 0.9, 0.6], 0.95, basename, None, 1)
+
+        out = Image.open(basename + "-01.png")
+        assert out.size == (900, 480)  # 1000*0.9, 800*0.6
+
+    def test_also_saves_raw_copy_when_rawname_given(self, tmp_path):
+        from PIL import Image
+        img = Image.new("RGB", (400, 300), "white")
+        src = tmp_path / "src.png"
+        img.save(src)
+
+        basename = str(tmp_path / "pftl-012")
+        rawname = str(tmp_path / "raw" / "pftl-012")
+        (tmp_path / "raw").mkdir()
+        slides.size_image_to_window(str(src), None, [0, 0, 1, 1], 0.95, basename, rawname, 1)
+
+        assert (tmp_path / "raw" / "pftl-012-01.png").exists()
+        assert Image.open(basename + "-01.png").size == (400, 300)
