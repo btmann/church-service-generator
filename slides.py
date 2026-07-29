@@ -617,6 +617,14 @@ def phss_get_images(slides, ndx, token, shape=0):
 		break
 	return files, ndx
 
+def is_blank_credit_line(text):
+	"""True if *text* is empty or contains nothing but underscores -- the
+	Sumphonia PHSS export template leaves unused credit-line placeholders as
+	a lone "_", which would otherwise leak into the rendered credits text.
+	"""
+	return not text.strip().strip('_')
+
+
 def process_phss_song_ppt(number):
 	song, pathname, basename, rawname = get_song_paths("phss", number)
 	prs = Presentation(ehsf_join("phss", "pptx", song + ".pptx"))
@@ -685,12 +693,14 @@ def process_phss_song_ppt(number):
 							meta['lyrics']['Coda'].append(item.text)
 
 
-	# Extract credits from first slide in PPT file
+	# Extract credits from first slide in PPT file. Skip blank/placeholder
+	# shapes (the Sumphonia export template leaves unused credit lines as a
+	# lone "_") so they don't leak into the rendered credits text.
 	credits = []
 	for ndy, shape in enumerate(prs.slides[0].shapes, 1):
 		if shape.has_text_frame:
 			text = shape.text_frame.text
-			if text != meta['title'] and text != meta['number']:
+			if text != meta['title'] and text != meta['number'] and not is_blank_credit_line(text):
 				credits.append(text)
 	meta['credits'] = '\n'.join(credits)
 
@@ -777,12 +787,15 @@ def process_phss_to_eh(number):
 	nChorus = 0
 	nCoda = 0
 
-	# Extract credits from first slide in PPT file
+	# Extract credits from first slide in PPT file. Skip blank/placeholder
+	# shapes (the Sumphonia export template leaves unused credit lines as a
+	# lone "_") so they don't leak into the rendered credits text.
 	credits = []
 	for ndy, shape in enumerate(prs.slides[0].shapes, 1):
 		if shape.has_text_frame:
 			text = shape.text_frame.text
-			credits.append(text)
+			if not is_blank_credit_line(text):
+				credits.append(text)
 	meta['credits'] = '\n'.join(credits)
 
 	print(meta['credits'])

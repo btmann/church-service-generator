@@ -529,3 +529,21 @@ class TestSizeImageToWindow:
 
         assert (tmp_path / "raw" / "pftl-012-01.png").exists()
         assert Image.open(basename + "-01.png").size == (400, 300)
+
+
+class TestIsBlankCreditLine:
+    # Regression: PHSS-277's credits ended with three trailing lines that
+    # were each just "_" -- placeholder credit-line shapes left blank in
+    # the Sumphonia export template, swept up by process_phss_song_ppt's
+    # "every text frame on the title slide" credits extraction.
+    @pytest.mark.parametrize("text", ["_", "___", "", "   ", " _ "])
+    def test_blank_or_underscore_only(self, text):
+        assert slides.is_blank_credit_line(text) is True
+
+    @pytest.mark.parametrize("text", [
+        "© 2005 Thankyou Music (admin. by EMI Christian Music Group)",
+        "Tune: SPEAK O LORD",
+        "_not blank_",
+    ])
+    def test_real_credit_text(self, text):
+        assert slides.is_blank_credit_line(text) is False
