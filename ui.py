@@ -1261,7 +1261,14 @@ with flow_tab:
                         item.get("source_folder", "") if isinstance(item, dict) else ""
                     )
                 ).strip().lower()
-                default_source_key = "esp" if existing_source_folder.startswith("esp") else "eng"
+                # Default to Spanish for new/unselected song entries; still respect an
+                # explicit prior English choice (a non-empty, non-"esp/..." source_folder).
+                if existing_source_folder.startswith("esp"):
+                    default_source_key = "esp"
+                elif existing_source_folder:
+                    default_source_key = "eng"
+                else:
+                    default_source_key = "esp"
                 source_choice = st.selectbox(
                     f"Source ({item_id})",
                     ["eng", "esp"],
