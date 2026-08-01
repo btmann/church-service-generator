@@ -1,0 +1,59 @@
+{
+    "lyrics": {
+        "1": [
+            "Draw from the springs of salvation;",
+            "Give thanks to His great and holy name.",
+            "Make known His deeds among the people;",
+            "Make known His exalted way."
+        ],
+        "2": [
+            "Call on His name with thanksgiving;",
+            "Yes, joyously praise His name in song.",
+            "Through love He authored our salvation;",
+            "Through love He did give His Son."
+        ],
+        "chorus": [
+            "Praise the LORD and shout for joy,",
+            "For the Holy One is in our midst.",
+            "Praise the LORD and shout for joy,",
+            "For He is in our midst.",
+            null,
+            "Praise the LORD and shout and cry for joy,",
+            "For the Holy One is in our midst.",
+            "Praise the LORD and shout and cry for joy,",
+            "For He is in our midst."
+        ]
+    },
+    "verses": {
+        "1": [
+            1,
+            2
+        ],
+        "2": [
+            5,
+            6
+        ]
+    },
+    "chorus": {
+        "1": [
+            3,
+            4
+        ],
+        "2": [
+            7,
+            8
+        ]
+    },
+    "codas": {},
+    "number": "105",
+    "copyright": "© 2014 Sumphonia Productions, LLC",
+    "title": "He Is in Our Midst",
+    "credits": "© 1982 Glenda B. Schales\nTune: Glenda B. Schales (1982)\nHymn: Glenda B. Schales (1982)\n_\n_\n_",
+    "window_orientation": "wide",
+    "window": [
+        0.125,
+        1.151915455746367,
+        8.296169088507266,
+        5.4
+    ]
+}

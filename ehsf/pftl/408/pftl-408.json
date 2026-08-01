@@ -1,0 +1,59 @@
+{
+    "lyrics": {
+        "1": [
+            "1.\nLow in the grave He lay\nJesus, my Savior!  \nWaiting the coming day\nJesus my Lord!"
+        ],
+        "1c": [
+            "Up from the grave He arose \nWith a mighty triumph o'er His foes;  \nHe arose a Victor from the dark domain,\nAnd He lives forever with His saints to reign;  \nHe arose!  He arose!  \nHallelujah!  Christ arose!"
+        ],
+        "2": [
+            "2.\nVainly they watch His bed\nJesus, my Savior!  \nVainly they seal the dead\nJesus my Lord!"
+        ],
+        "2c": [
+            "Up from the grave He arose \nWith a mighty triumph o'er His foes;  \nHe arose a Victor from the dark domain,\nAnd He lives forever with His saints to reign;  \nHe arose!  He arose!  \nHallelujah!  Christ arose!"
+        ],
+        "3": [
+            "3.\nDeath cannot keep his prey\nJesus, my Savior!  \nHe tore the bars away\nJesus my Lord!"
+        ],
+        "3c": [
+            "Up from the grave He arose \nWith a mighty triumph o'er His foes;  \nHe arose a Victor from the dark domain,\nAnd He lives forever with His saints to reign;  \nHe arose!  He arose!  \nHallelujah!  Christ arose!"
+        ]
+    },
+    "verses": {
+        "1": [
+            1
+        ],
+        "2": [
+            4
+        ],
+        "3": [
+            7
+        ]
+    },
+    "chorus": {
+        "1": [
+            2,
+            3
+        ],
+        "2": [
+            5,
+            6
+        ],
+        "3": [
+            8,
+            9
+        ]
+    },
+    "codas": {},
+    "title": "Low in the Grave He Lay",
+    "copyright": "© 2001 The Paperless Hymnal™",
+    "number": "408",
+    "credits": "Words and Music by: Robert Lowry",
+    "window_orientation": "wide",
+    "window": [
+        0.125,
+        0.9012500000000003,
+        8.7975,
+        5.4
+    ]
+}

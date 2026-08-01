@@ -1,0 +1,17 @@
+.git
+.gitignore
+.venv
+.vscode
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.log
+.DS_Store
+build
+dist
+old_root_files
+other
+packaging
+font_problem.PNG
+fontstillnot showing.PNG

@@ -1,0 +1,59 @@
+{
+    "lyrics": {
+        "1": [
+            "1. \nBlue skies and rainbows and sunbeams from heaven \nis what I can see when my Lord is living in me."
+        ],
+        "1c": [
+            "Jesus is well and alive today.\nHe makes His home in my heart.\nNever more will I be all alone since He \npromised me that we never would part."
+        ],
+        "2": [
+            "2. \nGreen grass and flowers all blooming in springtime \nare works of the Master. I live for Jesus each day."
+        ],
+        "2c": [
+            "Jesus is well and alive today.\nHe makes His home in my heart.\nNever more will I be all alone since He \npromised me that we never would part."
+        ],
+        "3": [
+            "3. \nMountains, green valleys, the beauty surrounds me \nall make me aware of the one who fashioned it all. "
+        ],
+        "3c": [
+            "Jesus is well and alive today.\nHe makes His home in my heart.\nNever more will I be all alone since He \npromised me that we never would part."
+        ]
+    },
+    "verses": {
+        "1": [
+            1
+        ],
+        "2": [
+            4
+        ],
+        "3": [
+            7
+        ]
+    },
+    "chorus": {
+        "1": [
+            2,
+            3
+        ],
+        "2": [
+            5,
+            6
+        ],
+        "3": [
+            8,
+            9
+        ]
+    },
+    "codas": {},
+    "title": "Blue Skies and Rainbows",
+    "copyright": "© 2007 The Paperless Hymnal®",
+    "number": "851",
+    "credits": "Words and Music by: Gary Mabry\nCopyright © 1971 (Renewed) by Boston Music Company, a division of Music Sales Corp.\nInternational Copyright Secured, All rights Reserved. Reprinted by permission.",
+    "window_orientation": "wide",
+    "window": [
+        0.2989204788371098,
+        0.8,
+        9.0,
+        5.052159042325781
+    ]
+}

@@ -1,0 +1,43 @@
+{
+    "lyrics": {
+        "1": [
+            "1.\nAll things praise Thee, Lord most high,\nHeaven and earth, and sea and sky;\nAll were for Thy glory made,\nThat Thy greatness, thus displayed,\nShould all worship bring to Thee;\nAll things praise Thee— Lord, may we!"
+        ],
+        "2": [
+            "2.\nAll things praise Thee— night to night\nSings in silent hymns of light;\nAll things praise Thee— day by day\nChants Thy power in burning ray;\nTime and space are praising Thee;\nAll things praise Thee— Lord, may we!"
+        ],
+        "3": [
+            "3.\nAll things praise Thee: heaven's high shrine\nRings with melody divine;\nLowly bending at Thy feet,\nSeraph and archangel meet;\nThis their highest bliss, to be\nEver praising— Lord, may we!"
+        ]
+    },
+    "verses": {
+        "1": [
+            1,
+            2,
+            3
+        ],
+        "2": [
+            4,
+            5,
+            6
+        ],
+        "3": [
+            7,
+            8,
+            9
+        ]
+    },
+    "chorus": {},
+    "codas": {},
+    "title": "All Things Praise Thee",
+    "copyright": "© 2006 The Paperless Hymnal®",
+    "number": "25",
+    "credits": "Words: George W. Conder\nMusic: Conrad Kocher / Arr.: William H. Monk",
+    "window_orientation": "wide",
+    "window": [
+        0.2582337883959043,
+        0.8,
+        9.0,
+        5.133532423208192
+    ]
+}

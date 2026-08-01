@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+
+# PyInstaller artifacts
+build/
+dist/
+*.spec
+
+# Song data (large folder, keep on OneDrive)
+# Exception: sample song for testing
+ehsf/
+!ehsf/
+!ehsf/pftl/
+!ehsf/pftl/738/
+!ehsf/pftl/738/**
+
+# macOS metadata
+.DS_Store

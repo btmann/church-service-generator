@@ -296,6 +296,12 @@ class _Line(tuple):
         return self[0]
 
 
+try:
+    _RAQM_LAYOUT_ENGINE = ImageFont.Layout.RAQM  # Pillow >= 9.2
+except AttributeError:
+    _RAQM_LAYOUT_ENGINE = ImageFont.LAYOUT_RAQM  # Pillow < 9.2	# drw
+
+
 class _Fonts(object):
     """
     A memoizing cache for ImageFont objects.
@@ -307,7 +313,7 @@ class _Fonts(object):
     def font(cls, font_path, point_size):
         if (font_path, point_size) not in cls.fonts:
             cls.fonts[(font_path, point_size)] = ImageFont.truetype(
-                font_path, point_size, layout_engine=ImageFont.LAYOUT_RAQM	# drw
+                font_path, point_size, layout_engine=_RAQM_LAYOUT_ENGINE	# drw
             )
         return cls.fonts[(font_path, point_size)]
 
@@ -322,7 +328,17 @@ def _rendered_size(text, point_size, font_file, features):
     px_per_inch = 72.0
 
     font = _Fonts.font(font_file, point_size)
-    px_width, px_height = font.getsize(text, features=features)	#drw features=('smcp', 'ordn')
+    # getsize() was removed in Pillow 10+; getlength()+getmetrics() is the
+    # documented replacement (advance width + ascent/descent, matching
+    # getsize's old semantics).	# drw
+    try:
+        px_width = font.getlength(text, features=features)
+    except KeyError:
+        # `features` shaping requires libraqm; measure without it rather
+        # than crash when raqm isn't available on this machine.	# drw
+        px_width = font.getlength(text)
+    ascent, descent = font.getmetrics()
+    px_height = ascent + descent
 
     emu_width = int(px_width / px_per_inch * emu_per_inch)
     emu_height = int(px_height / px_per_inch * emu_per_inch)

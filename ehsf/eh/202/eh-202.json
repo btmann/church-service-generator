@@ -1,0 +1,30 @@
+{
+    "verses": {
+        "1": [
+            1,2,3
+        ],
+        "2": [
+            6,7,8
+        ]
+    },
+    "chorus": {
+        "1": [
+            4,5
+        ],
+        "2": [
+            9,10,11
+        ]
+    },
+    "codas": {},
+    "number": "202",
+    "copyright": "Typeset R. J. Stevens Music",
+    "title": "Goodness of God",
+    "credits": "Words and Music by: Jenn Johnson, Ed Cash, Jason Ingram, Ben Fielding, Brian Johnson\nArr. Mark Simons, Shane Coffman, Aneva Peirce\n© Copyright 2019 Fellowship Music. (Admin. by Capitol CMG Publishing.)\nAll Rights Reserved. Used by Permission.",
+    "window_orientation": "tall",
+    "window": [
+        0.40490178884601935,
+        0.8,
+        7.5,
+        5.440196422307961
+    ]
+}
