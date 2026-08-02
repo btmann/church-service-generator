@@ -19,6 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import worship
 import slides
+import ui_theme
 
 
 def _runtime_base_candidates():
@@ -35,12 +36,20 @@ def _runtime_base_candidates():
         if resolved not in candidates:
             candidates.append(resolved)
 
-    add(Path.cwd())
-    add(Path(__file__).resolve().parent)
-    try:
-        add(Path(sys.executable).resolve().parent)
-    except Exception:
-        pass
+    if getattr(sys, "frozen", False):
+        # Packaged EXE: resources always live next to the actual executable.
+        # Deliberately skip cwd/__file__ (the PyInstaller onedir _internal
+        # folder) here -- checking those first made resolution depend on
+        # how/where the EXE happened to be launched from, so the same data
+        # could end up read from (or written to) a different folder on
+        # different runs.
+        try:
+            add(Path(sys.executable).resolve().parent)
+        except Exception:
+            pass
+    else:
+        add(Path.cwd())
+        add(Path(__file__).resolve().parent)
 
     expanded = []
     for base in candidates:
@@ -119,271 +128,16 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-HARBOR_BLUE_THEME = {
-    "bg": "#dcebf5",
-    "surface": "#f7fbff",
-    "text": "#102f42",
-    "muted": "#35576a",
-    "accent": "#1c6f96",
-    "hero_start": "#0f4461",
-    "hero_end": "#1b6387",
-    "hero_text": "#ffffff",
-    "field_bg": "#ffffff",
-}
-
-
-def build_ui_style():
-    theme = HARBOR_BLUE_THEME
-
-    return f"""
-    <style>
-    :root {{
-        --ui-bg: {theme['bg']};
-        --ui-surface: {theme['surface']};
-        --ui-text: {theme['text']};
-        --ui-muted: {theme['muted']};
-        --ui-accent: {theme['accent']};
-        --ui-hero-start: {theme['hero_start']};
-        --ui-hero-end: {theme['hero_end']};
-        --ui-hero-text: {theme['hero_text']};
-        --ui-field-bg: {theme['field_bg']};
-        --ui-border: var(--ui-accent);
-    }}
-
-    .stApp {{
-        font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
-        background: var(--ui-bg);
-        color: var(--ui-text);
-    }}
-
-    .stApp p,
-    .stApp li,
-    .stMarkdown,
-    .stMarkdown p,
-    .stMarkdown li,
-    .stText,
-    .stCaption,
-    div[data-testid="stMarkdownContainer"] p {{
-        color: var(--ui-text);
-    }}
-
-    .stApp h1,
-    .stApp h2,
-    .stApp h3,
-    .stApp h4,
-    .stApp h5,
-    .stApp h6,
-    div[data-testid="stWidgetLabel"] > label,
-    div[data-testid="stExpander"] summary,
-    div[data-testid="stFileUploaderDropzoneInstructions"] {{
-        color: var(--ui-text) !important;
-    }}
-
-    div[data-testid="stCaptionContainer"],
-    div[data-testid="stCaptionContainer"] *,
-    div[data-testid="stForm"] small,
-    div[data-testid="stForm"] [data-testid="stMarkdownContainer"] small,
-    div[data-testid="stWidgetLabel"] [data-testid="stMarkdownContainer"] p {{
-        color: var(--ui-muted) !important;
-    }}
-
-    .block-container {{
-        max-width: 1420px;
-        padding-top: 1.1rem;
-        padding-bottom: 1.6rem;
-        padding-left: 1.1rem;
-        padding-right: 1.1rem;
-    }}
-
-    .hero-wrap {{
-        width: 100%;
-        margin: 0;
-        padding: 0.2rem 0 0.7rem 0;
-    }}
-
-    .hero {{
-        width: 100%;
-        margin: 0;
-        padding: 1.3rem 1.25rem;
-        border-radius: 14px;
-        background: linear-gradient(135deg, var(--ui-hero-start) 0%, var(--ui-hero-end) 100%);
-        color: var(--ui-hero-text) !important;
-        border: 1px solid var(--ui-border);
-        box-shadow: 0 10px 22px rgba(15, 68, 97, 0.18);
-        margin-bottom: 0.25rem;
-        overflow: visible;
-    }}
-
-    .hero h1,
-    .hero p {{
-        color: var(--ui-hero-text) !important;
-    }}
-
-    .hero h1 {{
-        font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
-        margin: 0 0 0.15rem 0;
-        font-size: 1.6rem;
-        line-height: 1.35;
-        letter-spacing: 0;
-        font-weight: 700;
-    }}
-
-    .hero p {{
-        margin: 0;
-        font-size: 0.98rem;
-        line-height: 1.45;
-        opacity: 0.96;
-    }}
-
-    .section-heading {{
-        margin: 0.6rem 0 0.45rem 0;
-        color: var(--ui-text);
-        font-size: 0.92rem;
-        font-weight: 700;
-        letter-spacing: 0.55px;
-        text-transform: uppercase;
-    }}
-
-    .flow-item {{
-        margin: 0.65rem 0 0.45rem 0;
-        padding: 0.5rem 0.6rem;
-        border-left: 4px solid var(--ui-accent);
-        background: linear-gradient(90deg, var(--ui-hero-start) 0%, var(--ui-hero-end) 100%);
-        color: var(--ui-hero-text) !important;
-        border-radius: 8px;
-        font-weight: 700;
-        line-height: 1.45;
-        overflow-wrap: anywhere;
-        letter-spacing: 0;
-        box-shadow: inset 0 0 0 1px var(--ui-border), 0 3px 10px rgba(15, 68, 97, 0.12);
-    }}
-
-    div[data-testid="stVerticalBlock"] div:has(> div > .section-heading) {{
-        border: 1px solid var(--ui-border);
-        border-radius: 12px;
-        padding: 0.65rem 0.8rem 0.75rem 0.8rem;
-        background: var(--ui-surface);
-        box-shadow: 0 4px 14px rgba(16, 47, 66, 0.08);
-    }}
-
-    div[data-testid="stVerticalBlock"] {{
-        gap: 0.6rem;
-    }}
-
-    div[data-baseweb="select"] > div,
-    div[data-baseweb="input"] > div {{
-        border-radius: 8px;
-        border: 1px solid var(--ui-border);
-        background: var(--ui-field-bg);
-        box-shadow: none;
-        min-height: 2.5rem;
-    }}
-
-    div[data-baseweb="select"] > div:hover,
-    div[data-baseweb="input"] > div:hover {{
-        border-color: var(--ui-accent);
-    }}
-
-    div[data-baseweb="select"] > div:focus-within,
-    div[data-baseweb="input"] > div:focus-within {{
-        border-color: var(--ui-accent);
-        box-shadow: 0 0 0 1px var(--ui-accent);
-    }}
-
-    div[data-baseweb="input"] input,
-    div[data-baseweb="input"] input[type="number"],
-    div[data-baseweb="select"] input,
-    div[data-baseweb="select"] div,
-    div[data-baseweb="select"] span,
-    div[data-baseweb="tag"] span,
-    div[data-baseweb="select"] [role="combobox"],
-    div[data-baseweb="popover"] [role="option"] {{
-        color: var(--ui-text) !important;
-        -webkit-text-fill-color: var(--ui-text) !important;
-    }}
-
-    div[data-baseweb="input"] input::placeholder,
-    div[data-baseweb="select"] input::placeholder {{
-        color: var(--ui-muted) !important;
-        -webkit-text-fill-color: var(--ui-muted) !important;
-        opacity: 1;
-    }}
-
-    div[data-testid="stWidgetLabel"] > label {{
-        color: var(--ui-text) !important;
-        font-weight: 600;
-        line-height: 1.45;
-        overflow-wrap: anywhere;
-    }}
-
-    div[data-testid="stCaptionContainer"],
-    div[data-testid="stCaptionContainer"] p,
-    .stCaption {{
-        line-height: 1.45;
-    }}
-
-    div[data-testid="stTabs"] [data-baseweb="tab-list"] {{
-        background: var(--ui-surface);
-        border: 1px solid var(--ui-border);
-        border-radius: 6px;
-        padding: 0.12rem;
-    }}
-
-    div[data-testid="stTabs"] [data-baseweb="tab"] {{
-        border-radius: 4px;
-        color: var(--ui-text) !important;
-        font-weight: 600;
-    }}
-
-    div[data-testid="stTabs"] [aria-selected="true"] {{
-        background: var(--ui-accent);
-        color: var(--ui-hero-text) !important;
-    }}
-
-    .stButton > button {{
-        border-radius: 8px;
-        border: 1px solid var(--ui-accent);
-        background: var(--ui-accent);
-        color: var(--ui-hero-text);
-        font-weight: 700;
-        letter-spacing: 0;
-        min-height: 2.6rem;
-        box-shadow: 0 5px 14px rgba(28, 111, 150, 0.24);
-    }}
-
-    .stButton > button:hover {{
-        filter: brightness(0.9);
-        border-color: var(--ui-accent);
-        background: var(--ui-accent);
-    }}
-
-    div[data-testid="stAlert"] {{
-        border-radius: 6px;
-        border: 1px solid var(--ui-border);
-        background: var(--ui-surface);
-    }}
-
-    @media (max-width: 900px) {{
-        .hero h1 {{
-            font-size: 1.3rem;
-        }}
-
-        .block-container {{
-            padding-left: 0.75rem;
-            padding-right: 0.75rem;
-        }}
-    }}
-    </style>
-    <div class="hero-wrap">
+ui_theme.inject_shared_theme()
+st.markdown(
+    '''<div class="hero-wrap">
       <div class="hero">
           <h1>Church Service Generator</h1>
           <p>Prepare each service in a clear, simple bulletin-style workflow.</p>
       </div>
-    </div>
-    """
-
-
-st.markdown(build_ui_style(), unsafe_allow_html=True)
+    </div>''',
+    unsafe_allow_html=True,
+)
 
 # Initialize session state
 if 'generated_files' not in st.session_state:

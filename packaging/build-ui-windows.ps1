@@ -36,9 +36,18 @@ if (Test-Path $StaleExe) {
   Remove-Item $StaleExe -Force
 }
 
-# Remove previous onedir output so PyInstaller doesn't fail trying to clean a locked directory.
-$StaleDir = Join-Path $Root "dist/church-service-ui"
-Remove-PathWithRetry -Path $StaleDir
+# Remove only the PyInstaller-managed pieces of the previous onedir output
+# (the _internal bundle and the .exe itself), NOT the whole
+# dist/church-service-ui folder -- that folder is also where the app stores
+# ehsf/ (the song library) next to the EXE, and deleting it wholesale would
+# silently destroy that data on every rebuild.
+$AppDir = Join-Path $Root "dist/church-service-ui"
+$StaleInternal = Join-Path $AppDir "_internal"
+Remove-PathWithRetry -Path $StaleInternal
+$StaleAppExe = Join-Path $AppDir "church-service-ui.exe"
+if (Test-Path $StaleAppExe) {
+  Remove-Item $StaleAppExe -Force
+}
 
 python -m pip install -r packaging/requirements-build.txt
 if ($LASTEXITCODE -ne 0) {

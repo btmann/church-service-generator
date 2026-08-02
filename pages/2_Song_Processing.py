@@ -32,16 +32,25 @@ if not os.environ.get("TESSERACT_CMD"):
             break
 
 import slides as _slides
+import ui_theme
 
 # Mirror the resource-resolution logic from ui.py so the same EHSF root is used.
 def _resolve_resource_dir(folder_name):
-    candidates = [_ROOT, Path.cwd()]
-    try:
-        # In a packaged EXE, resources (like ehsf/) ship next to the actual
-        # executable, not next to the bundled source under _MEIPASS.
-        candidates.append(Path(sys.executable).resolve().parent)
-    except Exception:
-        pass
+    if getattr(sys, "frozen", False):
+        # Packaged EXE: resources always live next to the actual executable.
+        # Deliberately skip _ROOT/cwd (the PyInstaller onedir _internal
+        # folder) here -- checking those first made resolution depend on
+        # how/where the EXE happened to be launched from, so the same data
+        # could end up read from (or written to) a different folder on
+        # different runs. Must match ui.py's resolver exactly, since both
+        # set slides.EHSF_ROOT and need to agree on one location.
+        candidates = []
+        try:
+            candidates.append(Path(sys.executable).resolve().parent)
+        except Exception:
+            pass
+    else:
+        candidates = [_ROOT, Path.cwd()]
     for base in candidates:
         candidate = base / folder_name
         if candidate.exists() and candidate.is_dir():
@@ -75,6 +84,7 @@ st.set_page_config(
     page_icon="🎵",
     layout="wide",
 )
+ui_theme.inject_shared_theme()
 
 st.title("🎵 Song Library Processing")
 

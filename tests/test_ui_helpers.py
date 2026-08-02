@@ -104,6 +104,23 @@ class TestResolveResourceDir:
         result = fns["_resolve_resource_dir"]("ehsf")
         assert result == tmp_path / "dist" / "ehsf"
 
+    def test_frozen_never_reads_from_cwd_even_if_it_has_a_match(self, tmp_path, monkeypatch):
+        # Regression: launching the packaged EXE from different working
+        # directories used to resolve ehsf/ to a different folder each time,
+        # because cwd was checked before the exe's own folder. Once frozen,
+        # only the exe's folder should ever be consulted.
+        (tmp_path / "cwd" / "ehsf").mkdir(parents=True)
+        (tmp_path / "dist" / "ehsf").mkdir(parents=True)
+        fns = load(
+            ["_runtime_base_candidates", "_resolve_resource_dir"],
+            {"__file__": str(tmp_path / "internal" / "ui.py")},
+        )
+        monkeypatch.setattr(Path, "cwd", lambda: tmp_path / "cwd")
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+        monkeypatch.setattr(sys, "executable", str(tmp_path / "dist" / "church-service-ui.exe"))
+        result = fns["_resolve_resource_dir"]("ehsf")
+        assert result == tmp_path / "dist" / "ehsf"
+
 
 class TestGetAvailableTemplates:
     def test_lists_json_files_sorted_without_extension(self, tmp_path):

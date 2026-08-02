@@ -66,6 +66,21 @@ class TestResolveResourceDir:
         result = fns["_resolve_resource_dir"]("ehsf")
         assert result == tmp_path / "dist" / "ehsf"
 
+    def test_frozen_never_reads_from_cwd_even_if_it_has_a_match(self, tmp_path, monkeypatch):
+        # Regression: launching the packaged EXE from different working
+        # directories used to resolve ehsf/ to a different folder each time,
+        # because cwd/_ROOT were checked before the exe's own folder. Once
+        # frozen, only the exe's folder should ever be consulted.
+        (tmp_path / "cwd" / "ehsf").mkdir(parents=True)
+        (tmp_path / "dist" / "ehsf").mkdir(parents=True)
+        fake_root = tmp_path / "cwd"
+        fns = load(["_resolve_resource_dir"], {"_ROOT": fake_root})
+        monkeypatch.setattr(Path, "cwd", lambda: fake_root)
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+        monkeypatch.setattr(sys, "executable", str(tmp_path / "dist" / "church-service-ui.exe"))
+        result = fns["_resolve_resource_dir"]("ehsf")
+        assert result == tmp_path / "dist" / "ehsf"
+
 
 class TestSongStr:
     @pytest.mark.parametrize("number,expected", [(1, "001"), (12, "012"), (123, "123")])
