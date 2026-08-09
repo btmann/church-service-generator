@@ -189,38 +189,44 @@ def load_template(template_name):
 
 
 def make_custom_template_item(item_type, seq):
-    """Create one custom order item with sensible defaults."""
+    """Create one custom order item with sensible defaults.
+
+    Position labels include `seq` so that adding several items of the same
+    type (e.g. 9 songs) gives each its own distinct leader field instead of
+    all of them sharing one position name and silently overwriting each
+    other's leader input down to whichever was typed last.
+    """
     if item_type == "welcome":
         return {
             "type": "welcome",
             "id": f"welcome-{seq}",
             "desc": "Announcements",
             "esp": "Bienvenida",
-            "position": "Announcements",
+            "position": f"Announcements {seq}",
         }
     if item_type == "song":
         return {
             "type": "song",
             "id": f"song-{seq}",
-            "position": "Song Leader",
+            "position": f"Song Leader {seq}",
         }
     if item_type == "reading":
         return {
             "type": "reading",
             "id": f"reading-{seq}",
-            "position": "Scripture Reading",
+            "position": f"Scripture Reading {seq}",
         }
     if item_type == "prayer":
         return {
             "type": "prayer",
             "id": f"prayer-{seq}",
-            "position": "Prayer",
+            "position": f"Prayer {seq}",
         }
     if item_type == "ls-am":
         return {
             "type": "ls-am",
             "id": f"ls-{seq}",
-            "position": "Lord's Supper",
+            "position": f"Lord's Supper {seq}",
             "reading": 0,
         }
     if item_type == "collection":
@@ -234,7 +240,7 @@ def make_custom_template_item(item_type, seq):
         return {
             "type": item_type,
             "id": f"{item_type}-{seq}",
-            "position": "Preach",
+            "position": f"Preach {seq}",
         }
     if item_type == "invitation":
         return {
@@ -702,7 +708,14 @@ if selected_template == CUSTOM_TEMPLATE_KEY:
             seq = 1 + sum(1 for item in current_items if isinstance(item, dict) and item.get("type") == custom_item_type)
             current_items.append(make_custom_template_item(custom_item_type, seq))
             st.session_state.custom_template_items = current_items
-            st.rerun()
+            # Deliberately no st.rerun() here: Streamlit already reruns this
+            # whole script on every button click, and calling st.rerun() would
+            # abort *this* pass before it reaches the Service Flow widgets
+            # further down -- any widget not instantiated during a pass has
+            # its session_state pruned, which wiped out every already-entered
+            # field (song numbers, leaders, verses/chorus...) on every add/
+            # remove/reorder click. Letting this pass run to completion keeps
+            # all of those widgets alive and their values intact.
 
     custom_items = list(st.session_state.custom_template_items)
     if custom_items:
@@ -714,15 +727,12 @@ if selected_template == CUSTOM_TEMPLATE_KEY:
             if ccols[1].button("↑", key=f"custom_up_{ndx}", disabled=(ndx == 0)):
                 custom_items[ndx - 1], custom_items[ndx] = custom_items[ndx], custom_items[ndx - 1]
                 st.session_state.custom_template_items = custom_items
-                st.rerun()
             if ccols[2].button("↓", key=f"custom_down_{ndx}", disabled=(ndx == len(custom_items) - 1)):
                 custom_items[ndx + 1], custom_items[ndx] = custom_items[ndx], custom_items[ndx + 1]
                 st.session_state.custom_template_items = custom_items
-                st.rerun()
             if ccols[3].button("✕", key=f"custom_remove_{ndx}"):
                 del custom_items[ndx]
                 st.session_state.custom_template_items = custom_items
-                st.rerun()
     else:
         st.info("Add at least one item to start building a custom service flow.")
 
@@ -901,13 +911,13 @@ with search_tab:
                     if st.button("Use This Song", key="song_search_apply_button"):
                         target = next((slot for slot in song_slots if slot["label"] == target_label), None)
                         if target:
-                            st.session_state[f"book_{target['item_id']}_{target['idx']}"] = book_code
+                            st.session_state[f"book_{target['item_id']}"] = book_code
                             try:
                                 applied_song_num = int(song_num)
                             except (TypeError, ValueError):
                                 applied_song_num = 1
-                            st.session_state[f"song_{target['item_id']}_{target['idx']}"] = applied_song_num
-                            st.session_state[f"song_source_{target['item_id']}_{target['idx']}"] = source_folder
+                            st.session_state[f"song_{target['item_id']}"] = applied_song_num
+                            st.session_state[f"song_source_{target['item_id']}"] = source_folder
                             st.session_state["song_search_applied_message"] = (
                                 f"Applied {book_code.upper()}-{song_num} ({source_folder or 'unknown source'}) to {target_label}."
                             )
@@ -943,7 +953,7 @@ with flow_tab:
         if position_name and "prayer for" not in position_name.lower() and "reading" not in position_name.lower() and item_type not in ['prayer', 'reading', 'welcome']:
             leaders_input[position_name] = st.text_input(
                 f"Leader: {position_name}",
-                key=f"leader_{position_name}_{idx}"
+                key=f"leader_{position_name}"
             )
 
         if 'song' in item_type and item_id:
@@ -991,7 +1001,7 @@ with flow_tab:
                     f"Book ({item_id})",
                     book_options,
                     index=default_book_index,
-                    key=f"book_{item_id}_{idx}",
+                    key=f"book_{item_id}",
                     label_visibility="collapsed",
                     format_func=lambda code: SONG_BOOK_OPTIONS.get(code, code)
                 )
@@ -1002,7 +1012,7 @@ with flow_tab:
                     f"Song # ({item_id})",
                     min_value=0,
                     max_value=1000,
-                    key=f"song_{item_id}_{idx}",
+                    key=f"song_{item_id}",
                     value=default_song_num,
                     label_visibility="collapsed"
                 )
@@ -1011,7 +1021,7 @@ with flow_tab:
                 st.caption("Song Source")
                 existing_source_folder = str(
                     st.session_state.get(
-                        f"song_source_{item_id}_{idx}",
+                        f"song_source_{item_id}",
                         item.get("source_folder", "") if isinstance(item, dict) else ""
                     )
                 ).strip().lower()
@@ -1027,7 +1037,7 @@ with flow_tab:
                     f"Source ({item_id})",
                     ["eng", "esp"],
                     index=1 if default_source_key == "esp" else 0,
-                    key=f"song_source_choice_{item_id}_{idx}",
+                    key=f"song_source_choice_{item_id}",
                     label_visibility="collapsed",
                     format_func=lambda code: "English (ehsf)" if code == "eng" else "Spanish (ehsf/esp)"
                 )
@@ -1036,7 +1046,7 @@ with flow_tab:
                     source_folder = f"esp/{book}"
                 else:
                     source_folder = book
-                st.session_state[f"song_source_{item_id}_{idx}"] = source_folder
+                st.session_state[f"song_source_{item_id}"] = source_folder
 
             available_verses = []
             available_chorus = []
@@ -1056,7 +1066,7 @@ with flow_tab:
                         f"Verses ({item_id})",
                         options=available_verses,
                         default=available_verses,
-                        key=f"verses_{item_id}_{idx}",
+                        key=f"verses_{item_id}",
                         label_visibility="collapsed"
                     )
                 else:
@@ -1068,7 +1078,7 @@ with flow_tab:
                         f"Chorus After Verse ({item_id})",
                         options=available_chorus,
                         default=available_chorus,
-                        key=f"chorus_{item_id}_{idx}",
+                        key=f"chorus_{item_id}",
                         label_visibility="collapsed"
                     )
                 else:
@@ -1086,7 +1096,7 @@ with flow_tab:
                     "coda": 0
                 }
 
-                selected_source_folder = source_folder or st.session_state.get(f"song_source_{item_id}_{idx}", "")
+                selected_source_folder = source_folder or st.session_state.get(f"song_source_{item_id}", "")
                 if selected_source_folder:
                     song_payload["source_folder"] = str(selected_source_folder)
 
@@ -1112,7 +1122,7 @@ with flow_tab:
         if item_type == 'reading' and item_id:
             reading_number_str = st.text_input(
                 "Scripture reading number (optional)",
-                key=f"reading_number_{item_id}_{idx}",
+                key=f"reading_number_{item_id}",
                 help="Optional manual override if you need to track or force a specific reading number."
             )
             eng_passage = st.text_input("English passage", key=f"reading_eng_passage_{item_id}")
@@ -1143,7 +1153,7 @@ with flow_tab:
             title_es = st.text_input("Title (Spanish)", key=f"title_es_{item_id}")
             readings_input[item_id] = {"title": title_en, "título": title_es}
         elif item_type in ['welcome', 'invitation'] and item_id:
-            desc = st.text_input("Display text (optional)", key=f"desc_{item_id}_{idx}")
+            desc = st.text_input("Display text (optional)", key=f"desc_{item_id}")
             if desc:
                 readings_input[item_id] = {"desc": desc}
 

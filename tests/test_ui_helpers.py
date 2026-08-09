@@ -154,16 +154,24 @@ class TestLoadTemplate:
 
 
 class TestMakeCustomTemplateItem:
+    """Position labels include `seq` (e.g. "Song Leader 2", not "Song Leader")
+    so that adding several items of the same type each get their own distinct
+    leader field in the Service Flow -- otherwise every item of that type
+    shares one position name and silently overwrites the others' leader input
+    down to whichever was typed last (see the "9 songs -> all get the same
+    leader" bug).
+    """
+
     def test_welcome(self):
         fn = load(["make_custom_template_item"])["make_custom_template_item"]
         item = fn("welcome", 1)
         assert item["id"] == "welcome-1"
-        assert item["position"] == "Announcements"
+        assert item["position"] == "Announcements 1"
 
     def test_song(self):
         fn = load(["make_custom_template_item"])["make_custom_template_item"]
         item = fn("song", 2)
-        assert item == {"type": "song", "id": "song-2", "position": "Song Leader"}
+        assert item == {"type": "song", "id": "song-2", "position": "Song Leader 2"}
 
     def test_ls_am_includes_reading_default(self):
         fn = load(["make_custom_template_item"])["make_custom_template_item"]
@@ -172,11 +180,18 @@ class TestMakeCustomTemplateItem:
         assert item["id"] == "ls-3"
 
     @pytest.mark.parametrize("item_type", ["sermon", "lesson", "report"])
-    def test_preach_types_share_position(self, item_type):
+    def test_preach_types_use_distinct_positions(self, item_type):
         fn = load(["make_custom_template_item"])["make_custom_template_item"]
         item = fn(item_type, 4)
-        assert item["position"] == "Preach"
+        assert item["position"] == "Preach 4"
         assert item["id"] == f"{item_type}-4"
+
+    def test_multiple_songs_get_distinct_positions(self):
+        fn = load(["make_custom_template_item"])["make_custom_template_item"]
+        items = [fn("song", seq) for seq in range(1, 4)]
+        positions = [item["position"] for item in items]
+        assert positions == ["Song Leader 1", "Song Leader 2", "Song Leader 3"]
+        assert len(set(positions)) == 3
 
     def test_unknown_type_falls_back_to_minimal_item(self):
         fn = load(["make_custom_template_item"])["make_custom_template_item"]
