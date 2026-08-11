@@ -297,12 +297,48 @@ class TestSetCropWindow:
             slides.set_crop_window({}, {})
 
     def test_computes_window_from_single_crop(self):
-        crop = {1: {"top": 0.1, "bot": 0.9, "left": 0.2, "right": 0.8, "width": 6, "height": 4}}
+        # width/height (6x4, aspect 1.5) is deliberately different from
+        # raw_width/raw_height (8x5, aspect 1.6) here: set_crop_window must
+        # use the raw canvas aspect ratio for meta['window'], not the
+        # cropped-content one, so this catches a regression back to the old
+        # cr["width"]/cr["height"] behavior (see TestSetCropWindowUsesRawAspectRatio).
+        crop = {1: {"top": 0.1, "bot": 0.9, "left": 0.2, "right": 0.8, "width": 6, "height": 4, "raw_width": 8, "raw_height": 5}}
         meta = {}
         window, padding = slides.set_crop_window(crop, meta)
         assert window == [0.1, 0.2, pytest.approx(0.6), pytest.approx(0.8)]
         assert padding == 0.95
-        assert "window" in meta
+        assert meta["window_orientation"] == "tall"
+        assert meta["window"] == pytest.approx([0.125, 0.95, 7.2, 6.0])
+
+
+class TestSetCropWindowUsesRawAspectRatio:
+    """Regression: the final image window size/orientation used to be
+    computed from cr["width"]/cr["height"] -- the CROPPED CONTENT box of
+    whichever page happened to be last in the crop dict -- instead of the
+    constant raw canvas aspect ratio. A song whose last page has notably
+    less content than the rest (e.g. a short final verse) produced a wildly
+    wrong aspect ratio, shrinking the exported image window (PFTL-557's
+    real bug: a normal-sized hymn rendered at ~1.8" tall instead of ~4.7").
+    """
+
+    def test_last_page_having_less_content_does_not_skew_the_window(self):
+        # Page 1: full-height content. Page 2: same raw canvas, but only
+        # half the vertical content (its own cropped-content aspect ratio
+        # is very different from page 1's) -- as would happen with a short
+        # final verse/refrain on an otherwise normal hymn.
+        full_page = {"top": 0.1, "bot": 0.9, "left": 0.0, "right": 1.0, "width": 1000, "height": 800, "raw_width": 1000, "raw_height": 1000}
+        short_page = {"top": 0.1, "bot": 0.5, "left": 0.0, "right": 1.0, "width": 1000, "height": 400, "raw_width": 1000, "raw_height": 1000}
+
+        meta_last_is_short = {}
+        slides.set_crop_window({1: full_page, 2: short_page}, meta_last_is_short)
+
+        meta_last_is_full = {}
+        slides.set_crop_window({1: short_page, 2: full_page}, meta_last_is_full)
+
+        # Regardless of which page happens to be last in the dict, the
+        # window must come out the same -- both use the raw canvas ratio.
+        assert meta_last_is_short["window"] == pytest.approx(meta_last_is_full["window"])
+        assert meta_last_is_short["window_orientation"] == meta_last_is_full["window_orientation"]
 
 
 class TestFindSoffice:
@@ -491,7 +527,7 @@ class TestAnalyzeImage:
         Image.new("RGB", (400, 300), "white").save(path)
 
         result = slides.analyze_image(str(path))
-        assert result == dict(width=400, height=300, top=0, bot=1, staff=-1, left=0, right=1)
+        assert result == dict(width=400, height=300, raw_width=400, raw_height=300, top=0, bot=1, staff=-1, left=0, right=1)
 
     def test_wide_content_yields_wide_aspect_ratio(self, tmp_path):
         # A short, wide content band (like a line of sheet music) should

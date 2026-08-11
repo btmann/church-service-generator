@@ -318,7 +318,7 @@ def analyze_image(picture):
 	if bbox is None:
 		# Blank/all-white image; fall back to full bounds rather than crop
 		# everything away.
-		return dict(width=width, height=height, top=0, bot=1, staff=-1, left=0, right=1)
+		return dict(width=width, height=height, raw_width=width, raw_height=height, top=0, bot=1, staff=-1, left=0, right=1)
 
 	left_px, top_px, right_px, bot_px = bbox
 
@@ -334,6 +334,12 @@ def analyze_image(picture):
 
 	return dict(
 		width=content_width, height=content_height,
+		# Full pre-crop canvas size, distinct from the cropped content
+		# width/height above -- set_crop_window needs this (not the
+		# per-page content box, which varies with how much a given page
+		# happens to be filled) to convert the union content window back
+		# into a correctly-proportioned physical size.
+		raw_width=width, raw_height=height,
 		top=top_px / height, bot=bot_px / height,
 		left=left_px / width, right=right_px / width,
 		staff=-1,
@@ -416,7 +422,14 @@ def set_crop_window(crop, meta):
 		mbot = max(mbot, cr["bot"])
 		ml = min(ml, cr["left"])
 		mr = max(mr, cr["right"])
-		iar = cr["width"] / cr["height"]
+		# Use the raw (pre-crop) canvas aspect ratio, which is constant
+		# across every page of a song, not the cropped-content aspect
+		# ratio of whichever page happens to be last in the dict --
+		# pages with less content (e.g. a short final verse) have a very
+		# different cropped-content shape, which previously made the
+		# exported image window randomly too small/oddly proportioned
+		# depending on insertion order.
+		iar = cr["raw_width"] / cr["raw_height"]
 
 	window = [ mtop, ml, mr - ml, mbot - mtop]
 	padding = 0.95
