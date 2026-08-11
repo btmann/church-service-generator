@@ -658,8 +658,13 @@ def process_phss_song_ppt(number):
 	nChorus = 0
 	nCoda = 0
 
-	# Extract lyrics from XML file
-	with open(ehsf_join("phss", "phss.xml"), 'r') as xml:
+	# Extract lyrics from XML file. Bundled alongside the app's other static
+	# assets (fonts, backgrounds, templates) under assetRoot -- it's Sumphonia's
+	# shipped hymnal database, not user-generated data like the rest of ehsf/.
+	# Opened in binary mode so lxml reads the encoding from the XML prolog
+	# itself instead of Python's platform-default text encoding (cp1252 on
+	# Windows), which would otherwise mangle or crash on the file's UTF-8 content.
+	with open(assetRoot + "phss.xml", 'rb') as xml:
 		tree = etree.parse(xml)
 	hymn = tree.xpath('/Hymnal/HymnEntry[@HymnNumber="' + str(number) + '"]')
 

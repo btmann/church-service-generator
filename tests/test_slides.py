@@ -547,3 +547,28 @@ class TestIsBlankCreditLine:
     ])
     def test_real_credit_text(self, text):
         assert slides.is_blank_credit_line(text) is False
+
+
+class TestProcessPhssSongPptReadsBundledXml:
+    """Regression: phss.xml (Sumphonia's hymnal reference database that
+    process_phss_song_ppt parses for lyrics/title) used to be read via
+    ehsf_join("phss", "phss.xml") -- a location under the user-generated
+    ehsf/ data folder it was never actually shipped to. Every fresh
+    install/rebuild hit "no such file or dir .../ehsf/phss/phss.xml" until
+    someone manually copied it in. It's bundled, read-only reference data
+    like fonts/backgrounds/templates, so it must be read via assetRoot
+    instead, where it ships automatically with the rest of assets/.
+    """
+
+    def test_source_reads_from_assetroot_not_ehsf(self):
+        import inspect
+        source = inspect.getsource(slides.process_phss_song_ppt)
+        assert 'assetRoot + "phss.xml"' in source
+        assert "ehsf_join(\"phss\", \"phss.xml\")" not in source
+
+    def test_bundled_phss_xml_parses_and_has_hymn_entries(self):
+        from lxml import etree
+        with open(slides.assetRoot + "phss.xml", "rb") as xml:
+            tree = etree.parse(xml)
+        hymn = tree.xpath('/Hymnal/HymnEntry[@HymnNumber="1"]')
+        assert len(hymn) == 1
