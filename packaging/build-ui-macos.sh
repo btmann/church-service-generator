@@ -16,6 +16,7 @@ python3 -m PyInstaller \
   --hidden-import slides \
   --hidden-import worship \
   --hidden-import shs2phss \
+  --hidden-import ui_theme \
   --add-data "$ROOT_DIR/ui.py:." \
   --add-data "$ROOT_DIR/pages:pages" \
   --add-data "$ROOT_DIR/assets:assets" \

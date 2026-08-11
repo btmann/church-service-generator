@@ -64,6 +64,7 @@ python -m PyInstaller `
   --hidden-import slides `
   --hidden-import worship `
   --hidden-import shs2phss `
+  --hidden-import ui_theme `
   --add-data "$Root/ui.py;." `
   --add-data "$Root/pages;pages" `
   --add-data "$Root/assets;assets" `
