@@ -121,6 +121,40 @@ class TestResolveResourceDir:
         result = fns["_resolve_resource_dir"]("ehsf")
         assert result == tmp_path / "dist" / "ehsf"
 
+    def test_frozen_falls_back_to_internal_bundle_for_shipped_resources(self, tmp_path, monkeypatch):
+        # Regression: "worship" (containing worship/templates, the bundled
+        # template library) is added via PyInstaller's --add-data, which
+        # lands it inside the onedir _internal folder, not next to the .exe.
+        # Only checking the exe's own folder (as ehsf correctly does, since
+        # that's user-generated data, never bundled) meant a packaged build
+        # always reported "No templates found in worship/templates" because
+        # _internal/worship was never consulted.
+        (tmp_path / "dist" / "_internal" / "worship").mkdir(parents=True)
+        fns = load(
+            ["_runtime_base_candidates", "_resolve_resource_dir"],
+            {"__file__": str(tmp_path / "dist" / "_internal" / "ui.py")},
+        )
+        monkeypatch.setattr(Path, "cwd", lambda: tmp_path / "dist" / "_internal")
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+        monkeypatch.setattr(sys, "executable", str(tmp_path / "dist" / "church-service-ui.exe"))
+        result = fns["_resolve_resource_dir"]("worship")
+        assert result == tmp_path / "dist" / "_internal" / "worship"
+
+    def test_frozen_prefers_exe_adjacent_override_over_internal_bundle(self, tmp_path, monkeypatch):
+        # A folder placed next to the .exe (e.g. a user-customized template
+        # set) should still win over the bundled default inside _internal.
+        (tmp_path / "dist" / "worship").mkdir(parents=True)
+        (tmp_path / "dist" / "_internal" / "worship").mkdir(parents=True)
+        fns = load(
+            ["_runtime_base_candidates", "_resolve_resource_dir"],
+            {"__file__": str(tmp_path / "dist" / "_internal" / "ui.py")},
+        )
+        monkeypatch.setattr(Path, "cwd", lambda: tmp_path / "dist" / "_internal")
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+        monkeypatch.setattr(sys, "executable", str(tmp_path / "dist" / "church-service-ui.exe"))
+        result = fns["_resolve_resource_dir"]("worship")
+        assert result == tmp_path / "dist" / "worship"
+
 
 class TestGetAvailableTemplates:
     def test_lists_json_files_sorted_without_extension(self, tmp_path):

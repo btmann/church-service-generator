@@ -37,14 +37,23 @@ def _runtime_base_candidates():
             candidates.append(resolved)
 
     if getattr(sys, "frozen", False):
-        # Packaged EXE: resources always live next to the actual executable.
-        # Deliberately skip cwd/__file__ (the PyInstaller onedir _internal
-        # folder) here -- checking those first made resolution depend on
-        # how/where the EXE happened to be launched from, so the same data
-        # could end up read from (or written to) a different folder on
-        # different runs.
+        # Packaged EXE: user-writable/generated data (ehsf/, output worship/)
+        # always lives next to the actual executable, checked first here --
+        # deliberately not cwd, which depends on how/where the EXE happened
+        # to be launched from and would make the same data resolve to a
+        # different folder on different runs.
         try:
             add(Path(sys.executable).resolve().parent)
+        except Exception:
+            pass
+        # Bundled read-only resources (e.g. worship/templates) ship inside
+        # the PyInstaller onedir bundle folder (_internal, next to the exe),
+        # not next to the exe itself. __file__ for a script executed out of
+        # that bundle resolves to _internal, and moves correctly along with
+        # the app if the whole onedir folder is relocated, so it's safe to
+        # check as a fallback after the exe-adjacent folder.
+        try:
+            add(Path(__file__).resolve().parent)
         except Exception:
             pass
     else:
