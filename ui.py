@@ -88,9 +88,32 @@ def _resolve_resource_dir(folder_name):
             pass
     return Path(__file__).resolve().parent / folder_name
 
+
+def _resolve_bundled_templates_dir():
+    """Resolve the shipped worship/ resource folder (the template library).
+
+    This must NOT be found via the same "does a folder named worship exist
+    nearby" scan _resolve_resource_dir does for ehsf/: OUTPUT_WORSHIP_ROOT_PATH
+    below (where generated services get written) is exe_dir / "worship" --
+    the exact same path and name as the bundled template folder would be if
+    it were looked up the same way. Once a single service has ever been
+    generated, that output folder exists, so a generic scan permanently
+    matches it instead of the real template library and "No templates found
+    in worship/templates" never goes away, even on a correct fresh build.
+    The template library only ever lives in one deterministic place: inside
+    the PyInstaller onedir bundle (_internal, alongside ui.py) when frozen,
+    or next to ui.py itself in a source checkout.
+    """
+    if getattr(sys, "frozen", False):
+        try:
+            return Path(__file__).resolve().parent / "worship"
+        except Exception:
+            return Path(sys.executable).resolve().parent / "_internal" / "worship"
+    return Path(__file__).resolve().parent / "worship"
+
 # Configuration
 EHSF_ROOT_PATH = _resolve_resource_dir("ehsf")
-WORSHIP_RESOURCE_PATH = _resolve_resource_dir("worship")
+WORSHIP_RESOURCE_PATH = _resolve_bundled_templates_dir()
 
 # Keep templates/styles discovery independent from where generated files are written.
 OUTPUT_WORSHIP_ROOT_PATH = Path(os.environ.get("CHURCH_SERVICE_OUTPUT_ROOT", "")).expanduser() if os.environ.get("CHURCH_SERVICE_OUTPUT_ROOT") else (EHSF_ROOT_PATH.parent / "worship")

@@ -121,39 +121,47 @@ class TestResolveResourceDir:
         result = fns["_resolve_resource_dir"]("ehsf")
         assert result == tmp_path / "dist" / "ehsf"
 
-    def test_frozen_falls_back_to_internal_bundle_for_shipped_resources(self, tmp_path, monkeypatch):
-        # Regression: "worship" (containing worship/templates, the bundled
-        # template library) is added via PyInstaller's --add-data, which
-        # lands it inside the onedir _internal folder, not next to the .exe.
-        # Only checking the exe's own folder (as ehsf correctly does, since
-        # that's user-generated data, never bundled) meant a packaged build
-        # always reported "No templates found in worship/templates" because
-        # _internal/worship was never consulted.
-        (tmp_path / "dist" / "_internal" / "worship").mkdir(parents=True)
+
+class TestResolveBundledTemplatesDir:
+    """Regression coverage for a permanent naming collision: the app writes
+    generated services to exe_dir / "worship" (OUTPUT_WORSHIP_ROOT_PATH), the
+    exact same folder name the bundled template library would need if it
+    were looked up the same exists-nearby way ehsf/ is. Once a single
+    service has ever been generated, that output folder exists, so a
+    generic scan permanently matches it instead of the real template
+    library inside _internal -- "No templates found in worship/templates"
+    never goes away, even on a correct, freshly rebuilt app. The template
+    library must resolve deterministically to the bundle location instead.
+    """
+
+    def test_frozen_resolves_to_internal_bundle(self, tmp_path, monkeypatch):
         fns = load(
-            ["_runtime_base_candidates", "_resolve_resource_dir"],
+            ["_resolve_bundled_templates_dir"],
             {"__file__": str(tmp_path / "dist" / "_internal" / "ui.py")},
         )
-        monkeypatch.setattr(Path, "cwd", lambda: tmp_path / "dist" / "_internal")
         monkeypatch.setattr(sys, "frozen", True, raising=False)
         monkeypatch.setattr(sys, "executable", str(tmp_path / "dist" / "church-service-ui.exe"))
-        result = fns["_resolve_resource_dir"]("worship")
+        result = fns["_resolve_bundled_templates_dir"]()
         assert result == tmp_path / "dist" / "_internal" / "worship"
 
-    def test_frozen_prefers_exe_adjacent_override_over_internal_bundle(self, tmp_path, monkeypatch):
-        # A folder placed next to the .exe (e.g. a user-customized template
-        # set) should still win over the bundled default inside _internal.
+    def test_frozen_ignores_an_existing_output_worship_folder_next_to_exe(self, tmp_path, monkeypatch):
+        # The output folder (exe_dir / "worship") already exists here, as it
+        # would after generating any service -- it must NOT be picked up.
         (tmp_path / "dist" / "worship").mkdir(parents=True)
-        (tmp_path / "dist" / "_internal" / "worship").mkdir(parents=True)
         fns = load(
-            ["_runtime_base_candidates", "_resolve_resource_dir"],
+            ["_resolve_bundled_templates_dir"],
             {"__file__": str(tmp_path / "dist" / "_internal" / "ui.py")},
         )
-        monkeypatch.setattr(Path, "cwd", lambda: tmp_path / "dist" / "_internal")
         monkeypatch.setattr(sys, "frozen", True, raising=False)
         monkeypatch.setattr(sys, "executable", str(tmp_path / "dist" / "church-service-ui.exe"))
-        result = fns["_resolve_resource_dir"]("worship")
-        assert result == tmp_path / "dist" / "worship"
+        result = fns["_resolve_bundled_templates_dir"]()
+        assert result == tmp_path / "dist" / "_internal" / "worship"
+
+    def test_not_frozen_resolves_next_to_ui_py(self, tmp_path):
+        fake_ui_py = tmp_path / "src" / "ui.py"
+        fns = load(["_resolve_bundled_templates_dir"], {"__file__": str(fake_ui_py)})
+        result = fns["_resolve_bundled_templates_dir"]()
+        assert result == tmp_path / "src" / "worship"
 
 
 class TestGetAvailableTemplates:
