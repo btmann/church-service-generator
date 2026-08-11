@@ -39,8 +39,7 @@ if (Test-Path $StaleExe) {
 # Remove only the PyInstaller-managed pieces of the previous onedir output
 # (the _internal bundle and the .exe itself), NOT the whole
 # dist/church-service-ui folder -- that folder is also where the app stores
-# ehsf/ (the song library) next to the EXE, and deleting it wholesale would
-# silently destroy that data on every rebuild.
+# ehsf/ (the song library) next to the EXE.
 $AppDir = Join-Path $Root "dist/church-service-ui"
 $StaleInternal = Join-Path $AppDir "_internal"
 Remove-PathWithRetry -Path $StaleInternal
@@ -49,38 +48,73 @@ if (Test-Path $StaleAppExe) {
   Remove-Item $StaleAppExe -Force
 }
 
-python -m pip install -r packaging/requirements-build.txt
-if ($LASTEXITCODE -ne 0) {
-  throw "pip install failed with exit code $LASTEXITCODE"
+# PyInstaller's own onedir build step unconditionally deletes and recreates
+# its ENTIRE named output directory (dist/church-service-ui) once it decides
+# the COLLECT step needs to rerun -- confirmed directly in a PyInstaller
+# build log ("Removing dir .../dist/church-service-ui"). This happens
+# regardless of the cleanup above, so anything the app stores next to the
+# EXE (ehsf/, the generated-output worship/ folder, the log file, etc.)
+# would otherwise be silently destroyed on every single rebuild. Move
+# everything PyInstaller does NOT manage out of the way first, and restore
+# it afterward (even if the build fails) so that data survives.
+$PreserveDir = Join-Path $Root "dist/_preserve_temp"
+Remove-PathWithRetry -Path $PreserveDir
+if (Test-Path $AppDir) {
+  New-Item -ItemType Directory -Path $PreserveDir | Out-Null
+  Get-ChildItem -Path $AppDir -Force | Where-Object {
+    $_.Name -ne "_internal" -and $_.Name -ne "church-service-ui.exe"
+  } | ForEach-Object {
+    Move-Item -Path $_.FullName -Destination $PreserveDir
+  }
 }
 
-python -m PyInstaller `
-  --noconfirm `
-  --clean `
-  --windowed `
-  --onedir `
-  --name church-service-ui `
-  --paths "$Root/python-pptx-mods" `
-  --hidden-import slides `
-  --hidden-import worship `
-  --hidden-import shs2phss `
-  --hidden-import ui_theme `
-  --add-data "$Root/ui.py;." `
-  --add-data "$Root/pages;pages" `
-  --add-data "$Root/assets;assets" `
-  --add-data "$Root/backgrounds;backgrounds" `
-  --add-data "$Root/worship;worship" `
-  --collect-all streamlit `
-  --collect-all altair `
-  --collect-all pydeck `
-  launch-ui.py
-if ($LASTEXITCODE -ne 0) {
-  throw "PyInstaller failed with exit code $LASTEXITCODE"
-}
+try {
+  python -m pip install -r packaging/requirements-build.txt
+  if ($LASTEXITCODE -ne 0) {
+    throw "pip install failed with exit code $LASTEXITCODE"
+  }
 
-$ExpectedExe = Join-Path $Root "dist/church-service-ui/church-service-ui.exe"
-if (-not (Test-Path $ExpectedExe)) {
-  throw "Build finished but expected EXE was not found: $ExpectedExe"
+  python -m PyInstaller `
+    --noconfirm `
+    --clean `
+    --windowed `
+    --onedir `
+    --name church-service-ui `
+    --paths "$Root/python-pptx-mods" `
+    --hidden-import slides `
+    --hidden-import worship `
+    --hidden-import shs2phss `
+    --hidden-import ui_theme `
+    --add-data "$Root/ui.py;." `
+    --add-data "$Root/pages;pages" `
+    --add-data "$Root/assets;assets" `
+    --add-data "$Root/backgrounds;backgrounds" `
+    --add-data "$Root/worship;worship" `
+    --collect-all streamlit `
+    --collect-all altair `
+    --collect-all pydeck `
+    launch-ui.py
+  if ($LASTEXITCODE -ne 0) {
+    throw "PyInstaller failed with exit code $LASTEXITCODE"
+  }
+
+  $ExpectedExe = Join-Path $Root "dist/church-service-ui/church-service-ui.exe"
+  if (-not (Test-Path $ExpectedExe)) {
+    throw "Build finished but expected EXE was not found: $ExpectedExe"
+  }
+}
+finally {
+  # Restore preserved data regardless of whether the build succeeded, so a
+  # failed build never stays behind holding the user's ehsf/worship data.
+  if (Test-Path $PreserveDir) {
+    if (-not (Test-Path $AppDir)) {
+      New-Item -ItemType Directory -Path $AppDir | Out-Null
+    }
+    Get-ChildItem -Path $PreserveDir -Force | ForEach-Object {
+      Move-Item -Path $_.FullName -Destination $AppDir -Force
+    }
+    Remove-Item $PreserveDir -Force -Recurse
+  }
 }
 
 Write-Host "Build complete: $Root/dist/church-service-ui/"
