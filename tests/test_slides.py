@@ -608,3 +608,68 @@ class TestProcessPhssSongPptReadsBundledXml:
             tree = etree.parse(xml)
         hymn = tree.xpath('/Hymnal/HymnEntry[@HymnNumber="1"]')
         assert len(hymn) == 1
+
+
+class TestAddSongTitleSlideBilingualLayout:
+    """Regression: on a bilingual ("bil") song title slide, English and
+    Spanish text (title/detail/quote/credits) used to share nearly-identical
+    hardcoded `size=` coordinates, so both languages rendered fully
+    overlapping and illegible on every line. Single-language (eng-only/
+    esp-only) slides were never affected and must keep their original
+    coordinates unchanged.
+    """
+
+    def _build_slide(self, language):
+        from pptx import Presentation
+        outp = Presentation(slides.assetRoot + "template-2020.pptx")
+        item = {
+            'book': 'pftl',
+            'song': '17',
+            'meta': {'credits': 'Words: Test\nMusic: Test', 'verses': {'1': [1]}, 'chorus': {}},
+            'esp': {'title': 'PRUEBA DE CANCION', 'credits': 'Palabras: Prueba\nMusica: Prueba'},
+            'eng_title': 'Test Song Title',
+        }
+        slides.add_song_title_slide(outp, language, item, None, 0)
+        return outp.slides[-1]
+
+    def _vertical_range(self, slide, shape_id):
+        # Shape *names* go generic ("Text Placeholder N") once a slide is
+        # created from a layout -- shape_id is the only stable way to find
+        # a specific placeholder, which is also how get_placeholder() (used
+        # throughout slides.py) looks shapes up.
+        shape = slides.get_placeholder(slide, shape_id)
+        assert shape is not None, f"no placeholder with shape_id={shape_id}"
+        top = shape.top.inches
+        return top, top + shape.height.inches
+
+    def test_bil_detail_quote_credits_do_not_overlap_vertically(self):
+        slide = self._build_slide("bil")
+        pairs = [
+            (slides.LAYOUT_TITLE_BIL_ENG_DETAIL, slides.LAYOUT_TITLE_BIL_ESP_DETAIL),
+            (slides.LAYOUT_TITLE_BIL_ENG_QUOTE, slides.LAYOUT_TITLE_BIL_ESP_QUOTE),
+            (slides.LAYOUT_TITLE_BIL_ENG_CREDITS, slides.LAYOUT_TITLE_BIL_ESP_CREDITS),
+        ]
+        for eng_id, esp_id in pairs:
+            eng_top, eng_bot = self._vertical_range(slide, eng_id)
+            esp_top, esp_bot = self._vertical_range(slide, esp_id)
+            assert eng_bot <= esp_top, f"eng ({eng_top}-{eng_bot}) overlaps esp ({esp_top}-{esp_bot})"
+
+    def test_bil_text_stays_within_the_slide(self):
+        # Slide is 10.0 x 6.25in (verified against a real generated .pptx).
+        slide = self._build_slide("bil")
+        shape_ids = [
+            slides.LAYOUT_TITLE_BIL_ENG_TITLE, slides.LAYOUT_TITLE_BIL_ENG_DETAIL,
+            slides.LAYOUT_TITLE_BIL_ENG_QUOTE, slides.LAYOUT_TITLE_BIL_ENG_CREDITS,
+            slides.LAYOUT_TITLE_BIL_ESP_DETAIL, slides.LAYOUT_TITLE_BIL_ESP_QUOTE,
+            slides.LAYOUT_TITLE_BIL_ESP_CREDITS,
+        ]
+        for shape_id in shape_ids:
+            top, bottom = self._vertical_range(slide, shape_id)
+            assert 0 <= top
+            assert bottom <= 6.25
+
+    def test_single_language_slide_keeps_original_coordinates(self):
+        slide = self._build_slide("eng")
+        top, bottom = self._vertical_range(slide, slides.LAYOUT_TITLE_ENG_DETAIL)
+        assert top == pytest.approx(1.675)
+        assert (bottom - top) == pytest.approx(1.8)

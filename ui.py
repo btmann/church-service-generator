@@ -561,6 +561,26 @@ def render_generated_downloads():
     )
 
 
+def get_readings_index_section(item_type):
+    """Return the markdown body of assets/readings-index.md's section for
+    this item type (Lord's Supper vs Collection), for the "View Index"
+    popover next to the reading-slide-index field -- lets a user look up
+    which index number matches which passage without leaving the form.
+    """
+    path = Path(__file__).resolve().parent / "assets" / "readings-index.md"
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+
+    heading = "## Lord's Supper Readings" if item_type == "ls-am" else "## Collection Readings"
+    if heading not in text:
+        return None
+    section = text.split(heading, 1)[1]
+    section = section.split("\n## ", 1)[0]  # stop before the next heading, if any
+    return heading + section
+
+
 def get_song_structure(book, song_num, source_folder=""):
     """Return available verses and chorus slots for a song.
     Uses the same metadata resolver as slide generation, including fallback
@@ -625,7 +645,15 @@ def generate_presentation(date, time, template, songs_data, leaders_data, readin
         leaders = leaders_file_data.get('leaders', {})
         if not isinstance(leaders, dict):
             raise ValueError(f"leaders.json['leaders'] should be dict, got {type(leaders).__name__}")
-        
+
+        # Mirrors worship.py's generate_json: slides.add_welcome() writes this
+        # into the welcome slide's speaker notes ("Song Leader: <name>"), but
+        # only if the spec dict actually has a top-level 'leader' key -- this
+        # UI's own from-scratch spec never set it, so the notes were silently
+        # never populated when generating through the app.
+        if 'Song Leader' in leaders:
+            spec['leader'] = leaders['Song Leader']
+
         # Load readings data with type checking
         readings_file_data = load_json_safe(specbase + "-readings.json")
         if not isinstance(readings_file_data, dict):
@@ -1169,13 +1197,23 @@ with flow_tab:
                 reading_payload["reading"] = int(reading_number_str.strip())
             readings_input[item_id] = reading_payload
         elif item_type in ['ls-am', 'collection'] and item_id:
-            reading_index = st.number_input(
-                "Reading slide index (0-based)",
-                min_value=0,
-                max_value=50,
-                value=0,
-                key=f"reading_index_{item_id}"
-            )
+            reading_col, index_button_col = st.columns([4, 1])
+            with reading_col:
+                reading_index = st.number_input(
+                    "Reading slide index (0-based)",
+                    min_value=0,
+                    max_value=50,
+                    value=0,
+                    key=f"reading_index_{item_id}"
+                )
+            with index_button_col:
+                st.write("")
+                with st.popover("View Index"):
+                    section_md = get_readings_index_section(item_type)
+                    if section_md:
+                        st.markdown(section_md)
+                    else:
+                        st.caption("Reading index reference not available.")
             readings_input[item_id] = {"reading": int(reading_index)}
         elif item_type == 'sermon' and item_id:
             st.info("Sermon details will be added later by another person.")
@@ -1195,10 +1233,21 @@ missing_song_slots = [slot for slot in locals().get("missing_song_slots", []) if
 if missing_song_slots:
     st.warning("Select a song number for each song item before generating the presentation.")
 
+# The Song Leader field is only meaningful on the normal (non-custom)
+# templates, where exactly one song item carries the "Song Leader" position;
+# custom templates give every song its own distinct leader field instead, so
+# there's no single required one to enforce there.
+missing_song_leader = (
+    selected_template != CUSTOM_TEMPLATE_KEY
+    and not str(leaders_input.get('Song Leader', '')).strip()
+)
+if missing_song_leader:
+    st.warning("Song Leader name is required before generating the presentation.")
+
 col_left, col_generate, col_right = st.columns([1, 1.2, 1])
 
 with col_generate:
-    if st.button("🚀 Generate & Download PowerPoint", type="primary", use_container_width=True, disabled=len(missing_song_slots) > 0):
+    if st.button("🚀 Generate & Download PowerPoint", type="primary", use_container_width=True, disabled=(len(missing_song_slots) > 0 or missing_song_leader)):
         with st.spinner("🔄 Generating presentation..."):
             success, result, debug_info = generate_presentation(
                 service_date,

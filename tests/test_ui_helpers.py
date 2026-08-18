@@ -240,6 +240,36 @@ class TestMakeCustomTemplateItem:
         assert fn("mystery", 9) == {"type": "mystery", "id": "mystery-9"}
 
 
+class TestGetReadingsIndexSection:
+    """Backs the "View Index" popover next to the Lord's Supper/Collection
+    reading-slide-index field, so a user can look up which index number
+    matches which passage without leaving the form.
+    """
+
+    def load_fn(self):
+        return load(["get_readings_index_section"], {"__file__": str(UI_PY)})["get_readings_index_section"]
+
+    def test_ls_am_returns_lords_supper_section(self):
+        fn = self.load_fn()
+        section = fn("ls-am")
+        assert section is not None
+        assert section.startswith("## Lord's Supper Readings")
+        assert "## Collection Readings" not in section
+
+    def test_collection_returns_collection_section_only(self):
+        fn = self.load_fn()
+        section = fn("collection")
+        assert section is not None
+        assert section.startswith("## Collection Readings")
+
+    def test_missing_file_returns_none(self, tmp_path):
+        fn = load(
+            ["get_readings_index_section"],
+            {"__file__": str(tmp_path / "nowhere" / "ui.py")},
+        )["get_readings_index_section"]
+        assert fn("ls-am") is None
+
+
 class TestGetSongPositions:
     def test_extracts_song_items_by_id(self):
         fn = load(["get_song_positions"])["get_song_positions"]

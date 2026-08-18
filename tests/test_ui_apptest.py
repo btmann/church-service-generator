@@ -134,3 +134,89 @@ class TestCustomTemplateVerseChorusPersistence:
         assert list(at.exception) == []
 
         assert at.multiselect(key="verses_song-1").value == [1, 2, 3]
+
+
+def start_normal_template(template_name="wednesday", song_number=738):
+    """wednesday is the smallest normal template (3 songs), keeping this fast."""
+    at = AppTest.from_file(str(UI_PY))
+    at.run(timeout=30)
+    at.selectbox(key="template_select").set_value(template_name).run()
+    song_inputs = [ni for ni in at.number_input if ni.key and ni.key.startswith("song_song-")]
+    for ni in song_inputs:
+        at.number_input(key=ni.key).set_value(song_number).run()
+    return at
+
+
+def _generate_button(at):
+    return [b for b in at.button if "Generate" in (b.label or "")][0]
+
+
+def _cleanup_generated_files(pptx_path):
+    """Remove exactly what create_worship_files/generate_presentation wrote
+    for one test run, without touching any sibling date folders."""
+    pptx_path = Path(pptx_path)
+    json_path = pptx_path.with_suffix(".json")
+    for f in (pptx_path, json_path):
+        if f.exists():
+            f.unlink()
+
+    date_str, time_str = pptx_path.stem.split("-")
+    specs_leaf = ROOT / "worship" / "specs" / date_str[0:4] / date_str[4:6] / date_str[6:8] / time_str
+    if specs_leaf.is_dir():
+        for f in specs_leaf.iterdir():
+            f.unlink()
+        specs_leaf.rmdir()
+
+
+class TestSongLeaderRequiredField:
+    """Regression: on normal (non-custom) templates, the Song Leader field
+    could be left blank and the presentation would still generate with no
+    leader name anywhere -- it's now required before Generate is enabled.
+    Custom templates give every song its own distinct leader field instead
+    (see TestCustomTemplateDistinctLeaders), so this requirement is specific
+    to the single shared "Song Leader" position on normal templates.
+    """
+
+    def test_generate_disabled_until_leader_is_filled(self):
+        at = start_normal_template()
+        assert _generate_button(at).disabled is True
+
+        at.text_input(key="leader_Song Leader").set_value("Alice").run()
+        assert _generate_button(at).disabled is False
+
+    def test_whitespace_only_leader_still_counts_as_missing(self):
+        at = start_normal_template()
+        at.text_input(key="leader_Song Leader").set_value("   ").run()
+        assert _generate_button(at).disabled is True
+
+    def test_custom_template_does_not_require_a_leader(self):
+        at = start_custom_template_with_songs(1)
+        at.number_input(key="song_song-1").set_value(738).run()
+        assert _generate_button(at).disabled is False
+
+
+class TestWelcomeSlideLeaderNotes:
+    """Regression: slides.py's add_welcome() has always written the Song
+    Leader's name into the welcome slide's speaker notes when the worship
+    spec has a top-level 'leader' key -- but ui.py's own from-scratch spec
+    builder (a duplicate of worship.py's generate_json) never set that key,
+    so the notes were silently never populated when generating through the
+    app, even though the underlying slides.py feature worked.
+    """
+
+    def test_generated_welcome_slide_notes_include_leader_name(self):
+        at = start_normal_template()
+        at.text_input(key="leader_Song Leader").set_value("Alice Test Leader").run()
+        assert _generate_button(at).disabled is False
+
+        at.button(key=_generate_button(at).key).click().run(timeout=60)
+        assert list(at.exception) == []
+
+        pptx_path = at.session_state["generated_files"]["pptx_path"]
+        try:
+            from pptx import Presentation
+            prs = Presentation(pptx_path)
+            notes = prs.slides[0].notes_slide.notes_text_frame.text
+            assert notes == "Song Leader: Alice Test Leader"
+        finally:
+            _cleanup_generated_files(pptx_path)
