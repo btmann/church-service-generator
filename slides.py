@@ -1440,42 +1440,23 @@ def add_song_title_slide(outp, language, item, navitems, ndi, verses=None, choru
 	eng = None
 	esp = None
 
-	# Bilingual title slides show English and Spanish simultaneously in the
-	# same circle -- unlike a single-language slide, where each element gets
-	# the whole circle to itself, here each language gets its own smaller,
-	# non-overlapping zone (English upper, Spanish lower) with reduced font
-	# sizes. Single-language (eng-only/esp-only) sizes below are unchanged.
-	is_bil = language == "bil"
-
 	if language == "bil" or language == "eng" or espm is None:
 		eng = dict()
+		eng[LAYOUT_TITLE_TITLE] = dict(text=str(displaySong), max_size=60, step_size=6, bold=True, size=[0.675, 4.6, 2.5, 1])
 		eng_title_text = item.get('eng_title') or 'No song format found'
-		if is_bil:
-			eng[LAYOUT_TITLE_TITLE] = dict(text=str(displaySong), max_size=50, step_size=4, bold=True, size=[0.55, 4.6, 2.5, 0.8])
-			eng[LAYOUT_TITLE_DETAIL] = dict(text=eng_title_text.upper(), max_size=22, step_size=2, bold=True, size=[1.35, 3.6, 4.5, 0.65])
-			eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CSINGING...TO THE LORD\u201D\nCOLOSSIANS 3:16", max_size=15, step_size=1, size=[4.25, 3.8, 4.0, 0.40])
-			eng[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(meta['credits'].splitlines()), max_size=9, step_size=1, size=[5.16, 3.5, 4.7, 0.35])
-		else:
-			eng[LAYOUT_TITLE_TITLE] = dict(text=str(displaySong), max_size=60, step_size=6, bold=True, size=[0.675, 4.6, 2.5, 1])
-			eng[LAYOUT_TITLE_DETAIL] = dict(text=eng_title_text.upper(), max_size=40, step_size=4, bold=True, size=[1.675, 3.75, 4.2, 1.8])
-			eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CSINGING...TO THE LORD\u201D\nCOLOSSIANS 3:16", max_size=24, step_size=2, size=[4.325, 4.1, 3.5, 0.7])
-			eng[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(meta['credits'].splitlines()), max_size=12, step_size=2)
+		eng[LAYOUT_TITLE_DETAIL] = dict(text=eng_title_text.upper(), max_size=40, step_size=4, bold=True, size=[1.675, 3.75, 4.2, 1.8])
+		eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CSINGING...TO THE LORD\u201D\nCOLOSSIANS 3:16", max_size=24, step_size=2, size=[4.325, 4.1, 3.5, 0.7])
+		eng[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(meta['credits'].splitlines()), max_size=12, step_size=2)
 		if bubble:
 			eng[LAYOUT_TITLE_CALLOUT] = dict(text=bubble.upper(), max_size=18, step_size=2, size=[0.25, 7.4, 3.0, 0.44], align=PP_ALIGN.LEFT)
 
 	if language == "bil" or language == "esp":
 		if espm:
 			esp = dict()
-			if is_bil:
-				esp[LAYOUT_TITLE_TITLE] = dict(text=str(displaySong), fonts=eng_fonts, max_size=50, step_size=4, bold=True, size=[0.55, 4.6, 2.5, 0.8])
-				esp[LAYOUT_TITLE_DETAIL] = dict(text=espm['title'].upper(), max_size=20, step_size=2, bold=True, size=[2.05, 3.6, 4.5, 0.65])
-				esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CCANTANDO...AL SEÑOR\u201D\nCOLOSENSES 3:16", max_size=14, step_size=1, size=[4.68, 3.8, 4.0, 0.45])
-				esp[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(espm['credits'].splitlines()), max_size=9, step_size=1, size=[5.54, 3.5, 4.7, 0.35])
-			else:
-				esp[LAYOUT_TITLE_TITLE] = dict(text=str(displaySong), fonts=eng_fonts, max_size=60, step_size=6, bold=True, size=[0.675, 4.6, 2.5, 1])
-				esp[LAYOUT_TITLE_DETAIL] = dict(text=espm['title'].upper(), max_size=40, step_size=4, bold=True, size=[1.62, 3.75, 4.2, 1.8])
-				esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CCANTANDO...AL SEÑOR\u201D\nCOLOSENSES 3:16", max_size=22, step_size=2, size=[4.280, 4.1, 3.5, 0.9])
-				esp[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(espm['credits'].splitlines()), max_size=13, step_size=1)
+			esp[LAYOUT_TITLE_TITLE] = dict(text=str(displaySong), fonts=eng_fonts, max_size=60, step_size=6, bold=True, size=[0.675, 4.6, 2.5, 1])
+			esp[LAYOUT_TITLE_DETAIL] = dict(text=espm['title'].upper(), max_size=40, step_size=4, bold=True, size=[1.62, 3.75, 4.2, 1.8])
+			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CCANTANDO...AL SEÑOR\u201D\nCOLOSENSES 3:16", max_size=22, step_size=2, size=[4.280, 4.1, 3.5, 0.9])
+			esp[LAYOUT_TITLE_CREDITS] = dict(text='\n'.join(espm['credits'].splitlines()), max_size=13, step_size=1)
 			if bubble:
 				esp[LAYOUT_TITLE_CALLOUT] = dict(text=espm['bubble'].upper(), max_size=18, step_size=2, size=[0.25, 7.4, 3.0, 0.44], align=PP_ALIGN.LEFT)
 
