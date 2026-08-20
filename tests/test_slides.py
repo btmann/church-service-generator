@@ -608,3 +608,43 @@ class TestProcessPhssSongPptReadsBundledXml:
             tree = etree.parse(xml)
         hymn = tree.xpath('/Hymnal/HymnEntry[@HymnNumber="1"]')
         assert len(hymn) == 1
+
+
+class TestSupperReading1Cor11_27to29Nasb95:
+    """Regression for the added Lord's Supper reading at index 103: 1
+    Corinthians 11:27-29 in the NASB95 wording specifically (distinct from
+    the existing 1 Corinthians 11:27-32 entry at index 51, which uses
+    NKJV/RVR1960) -- both should keep working independently.
+    """
+
+    def test_index_103_is_nasb95_1_corinthians_11_27_29(self):
+        eng_ref, eng_passage = slides.get_supper_reading(103, 0)
+        assert eng_ref.text == "1 Corinthians 11:27-29"
+        assert eng_passage.text == (
+            "Therefore whoever eats the bread or drinks the cup of the Lord in an "
+            "unworthy manner, shall be guilty of the body and the blood of the Lord. "
+            "But a man must examine himself, and in so doing he is to eat of the "
+            "bread and drink of the cup. For he who eats and drinks, eats and "
+            "drinks judgment to himself if he does not judge the body rightly."
+        )
+
+    def test_index_103_spanish_is_rvr1960(self):
+        esp_ref, esp_passage = slides.get_supper_reading(103, 1)
+        assert esp_ref.text == "1 Corintios 11:27-29"
+        assert esp_passage.text == (
+            "De manera que cualquiera que comiere este pan o bebiere esta copa del "
+            "Señor indignamente, será culpado del cuerpo y de la sangre del Señor. "
+            "Por tanto, pruébese cada uno a sí mismo, y coma así del pan, y beba de "
+            "la copa. Porque el que come y bebe indignamente, sin discernir el "
+            "cuerpo del Señor, juicio come y bebe para sí."
+        )
+
+    def test_existing_index_51_still_intact(self):
+        # The pre-existing, differently-worded 1 Cor 11:27-32 (NKJV) entry
+        # must survive untouched -- this addition only appends a new slide.
+        eng_ref, _ = slides.get_supper_reading(51, 0)
+        assert eng_ref.text == "1 Corinthians 11:27-32"
+
+    def test_index_104_still_out_of_range(self):
+        with pytest.raises(ValueError, match="out of range"):
+            slides.get_supper_reading(104, 0)

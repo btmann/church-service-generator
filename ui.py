@@ -1202,7 +1202,6 @@ with flow_tab:
                 reading_index = st.number_input(
                     "Reading slide index (0-based)",
                     min_value=0,
-                    max_value=50,
                     value=0,
                     key=f"reading_index_{item_id}"
                 )
