@@ -228,6 +228,25 @@ class TestMakeCustomTemplateItem:
         assert item["position"] == "Preach 4"
         assert item["id"] == f"{item_type}-4"
 
+    def test_announcements_title(self):
+        fn = load(["make_custom_template_item"])["make_custom_template_item"]
+        item = fn("announcements-title", 1)
+        assert item == {
+            "type": "announcements-title",
+            "id": "announcements-title-1",
+            "position": "Announcer 1",
+        }
+
+    def test_announcements_title_position_does_not_collide_with_welcome(self):
+        # welcome's position is "Announcements {seq}" -- announcements-title
+        # must use a genuinely different string, or a welcome item and an
+        # announcements-title item with the same seq would silently share a
+        # leader field (the exact bug distinct-position labels exist to avoid).
+        fn = load(["make_custom_template_item"])["make_custom_template_item"]
+        welcome_position = fn("welcome", 1)["position"]
+        announcements_title_position = fn("announcements-title", 1)["position"]
+        assert welcome_position != announcements_title_position
+
     def test_multiple_songs_get_distinct_positions(self):
         fn = load(["make_custom_template_item"])["make_custom_template_item"]
         items = [fn("song", seq) for seq in range(1, 4)]

@@ -149,6 +149,7 @@ CUSTOM_ITEM_TYPE_OPTIONS = [
     "sermon",
     "lesson",
     "report",
+    "announcements-title",
     "invitation",
 ]
 
@@ -274,6 +275,16 @@ def make_custom_template_item(item_type, seq):
             "id": f"{item_type}-{seq}",
             "position": f"Preach {seq}",
         }
+    if item_type == "announcements-title":
+        return {
+            "type": item_type,
+            "id": f"{item_type}-{seq}",
+            # Deliberately NOT "Announcements {seq}" -- the "welcome" item
+            # type already uses that exact position name, and two items
+            # sharing a position name silently overwrite each other's
+            # leader input (see make_custom_template_item's docstring).
+            "position": f"Announcer {seq}",
+        }
     if item_type == "invitation":
         return {
             "type": "invitation",
@@ -320,7 +331,7 @@ def build_default_readings(template_items):
             readings[item_id] = {"lang": [{"passage": "", "pew": ""}, {"passage": ""}]}
         elif item_type in ['ls-am', 'collection']:
             readings[item_id] = {"reading": ""}
-        elif item_type in ['sermon', 'lesson', 'report']:
+        elif item_type in ['sermon', 'lesson', 'report', 'announcements-title']:
             readings[item_id] = {"title": "", "título": ""}
     return readings
 
@@ -759,7 +770,11 @@ if selected_template == CUSTOM_TEMPLATE_KEY:
             "Add service item",
             CUSTOM_ITEM_TYPE_OPTIONS,
             key="custom_item_type_select",
-            format_func=lambda t: t.replace("-", " ").title(),
+            # "announcements-title" (distinct from the pre-existing plain
+            # "announcements" type) is an internal name, not something a
+            # user needs to see -- the generic hyphen-to-title transform
+            # would otherwise show the redundant-looking "Announcements Title".
+            format_func=lambda t: "Announcements" if t == "announcements-title" else t.replace("-", " ").title(),
         )
     with builder_col2:
         st.write("")
@@ -1216,6 +1231,9 @@ with flow_tab:
             readings_input[item_id] = {"reading": int(reading_index)}
         elif item_type == 'sermon' and item_id:
             st.info("Sermon details will be added later by another person.")
+            readings_input[item_id] = {"title": "", "título": ""}
+        elif item_type == 'announcements-title' and item_id:
+            st.info("This slide just shows \"Announcements\", then fades to black.")
             readings_input[item_id] = {"title": "", "título": ""}
         elif item_type in ['lesson', 'report'] and item_id:
             title_en = st.text_input("Title (English)", key=f"title_en_{item_id}")

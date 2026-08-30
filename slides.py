@@ -2411,21 +2411,48 @@ def add_sermon(outp, language, item, navitems, ndi):
 	if item['type'] == 'lesson':
 		engt = 'LESSON'
 		espt = 'LECCI\u00d3N'
+	elif item['type'] == 'announcements-title':
+		engt = 'ANNOUNCEMENT'
+		espt = 'ANUNCIOS'
 	else:
 		engt = 'SERMON'
 		espt = 'SERM\u00d3N'
 
+	# ANNOUNCEMENTS/ANUNCIOS are much longer than SERMON/LESSON, so they
+	# need the circle's widest region (vertically centered, instead of
+	# sermon/lesson's higher position where the circle has already begun
+	# to curve inward). The size ceiling is deliberately well below what
+	# fit_text calculates as the largest fitting size: fit_text measures
+	# against the actual AvenirNextLTPro-Bold.otf file, but
+	# install_bundled_fonts() only installs the AlegreyaSans (Spanish)
+	# files onto the system, not the Avenir Next LT Pro (English) ones --
+	# so LibreOffice/PowerPoint render English text with a substituted
+	# fallback font that's measurably wider, wrapping ANNOUNCEMENTS onto
+	# a second line at a size fit_text considers safe. This lower ceiling
+	# was verified empirically against the actual rendered output, not
+	# just fit_text's calculation.
+	if item['type'] == 'announcements-title':
+		detail_top, detail_top_esp, detail_height = 2.35, 2.35, 1.2
+		detail_left, detail_width = 3.15, 5.4
+		detail_max_size, detail_step_size = 30, 2
+	else:
+		detail_top, detail_top_esp, detail_height = 1.675, 1.59, 1.8
+		detail_left, detail_width = 3.35, 5.0
+		detail_max_size, detail_step_size = 64, 6
+
 	if language == "bil" or language == "eng":
 		eng = dict()
-		eng[LAYOUT_TITLE_DETAIL] = dict(text=engt, max_size=64, step_size=6, bold=True, size=[1.675, 3.35, 5.0, 1.8])
-		eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CHE COMMANDED US TO PREACH TO THE PEOPLE\u201D", max_size=24, step_size=2, size=[3.33, 3.47, 4.78, 1.0])
-		eng[LAYOUT_TITLE_REFERENCE] = dict(text=u"ACTS 10:42", max_size=20, step_size=2, size=[4.225, 3.6, 4.52, 1.0])
+		eng[LAYOUT_TITLE_DETAIL] = dict(text=engt, max_size=detail_max_size, step_size=detail_step_size, bold=True, size=[detail_top, detail_left, detail_width, detail_height])
+		if item['type'] != 'announcements-title':
+			eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CHE COMMANDED US TO PREACH TO THE PEOPLE\u201D", max_size=24, step_size=2, size=[3.33, 3.47, 4.78, 1.0])
+			eng[LAYOUT_TITLE_REFERENCE] = dict(text=u"ACTS 10:42", max_size=20, step_size=2, size=[4.225, 3.6, 4.52, 1.0])
 
 	if language == "bil" or language == "esp":
 		esp = dict()
-		esp[LAYOUT_TITLE_DETAIL] = dict(text=espt, max_size=64, step_size=6, bold=True, size=[1.59, 3.35, 5.0, 1.8])
-		esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CNOS MAND\u00d3 QUE PREDIC\u00c1SEMOS AL PUEBLO\u201D", max_size=26, step_size=2, size=[3.29, 3.47, 4.78, 1.0])
-		esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"HECHOS 10:42", max_size=24, step_size=2, size=[4.2, 3.6, 4.52, 1.0])
+		esp[LAYOUT_TITLE_DETAIL] = dict(text=espt, max_size=detail_max_size, step_size=detail_step_size, bold=True, size=[detail_top_esp, detail_left, detail_width, detail_height])
+		if item['type'] != 'announcements-title':
+			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CNOS MAND\u00d3 QUE PREDIC\u00c1SEMOS AL PUEBLO\u201D", max_size=26, step_size=2, size=[3.29, 3.47, 4.78, 1.0])
+			esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"HECHOS 10:42", max_size=24, step_size=2, size=[4.2, 3.6, 4.52, 1.0])
 
 	slide = add_title_slide(outp, item, navitems, ndi, language, eng, esp, "sermon-notes")
 	fade_to_black(outp, slide)
@@ -2913,6 +2940,12 @@ def parse_worship_item(order, item, language):
 		else:
 			desc = tags['report']
 		order.append([desc, 0, leader])
+	elif item['type'] == 'announcements-title':
+		if tags['title'] in item:
+			desc = item[tags['title']]
+		else:
+			desc = tags['announcements']
+		order.append([desc, 0, leader])
 	elif item['type'] == 'invitation':
 		if tags['title'] in item:
 			desc = item[tags['title']]
@@ -3121,6 +3154,9 @@ def get_navbar(worship, language):
 		elif item['type'] == 'report':
 			engitems.append([ndi, "report", "Report"])
 			espitems.append([ndi, "report", "Reporte"])
+		elif item['type'] == 'announcements-title':
+			engitems.append([ndi, "announcements-title", "Announcement"])
+			espitems.append([ndi, "announcements-title", "Anuncios"])
 		elif item['type'] == 'invitation':
 			engitems.append([ndi, "invitation", "Invitation"])
 			espitems.append([ndi, "invitation", "Invitación", 11])
@@ -3214,7 +3250,7 @@ def make_worship_deck(jsonfile):
 			add_prayer(outp, language, item, navitems, ndi)
 		elif item['type'] == 'reading':
 			add_scripture_reading(outp, language, item, navitems, ndi)
-		elif item['type'] == 'sermon' or item['type'] == 'lesson' or item['type'] == 'report':
+		elif item['type'] == 'sermon' or item['type'] == 'lesson' or item['type'] == 'report' or item['type'] == 'announcements-title':
 			add_sermon(outp, language, item, navitems, ndi)
 		elif item['type'] == 'invitation':
 			add_invitation(outp, language, item, navitems, ndi)

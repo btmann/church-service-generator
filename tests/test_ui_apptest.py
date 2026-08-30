@@ -220,3 +220,46 @@ class TestWelcomeSlideLeaderNotes:
             assert notes == "Song Leader: Alice Test Leader"
         finally:
             _cleanup_generated_files(pptx_path)
+
+
+class TestCustomTemplateAnnouncementsTitleItem:
+    """New Custom Template Builder option: an "Announcements" title-card
+    slide (mirrors Sermon/Lesson/Report -- same quote/background, own text,
+    fade to black afterward). Exercises the full UI wiring (dropdown, added
+    item, its own leader field, generation) end to end.
+    """
+
+    def test_can_add_item_and_it_gets_its_own_leader_field(self):
+        at = AppTest.from_file(str(UI_PY))
+        at.run(timeout=30)
+        at.selectbox(key="template_select").set_value("Custom Template (Build Order)").run()
+        at.selectbox(key="custom_item_type_select").set_value("announcements-title").run()
+        at.button(key="custom_add_item").click().run()
+        assert list(at.exception) == []
+
+        leader_inputs = [ti for ti in at.text_input if ti.key and ti.key.startswith("leader_Announcer")]
+        assert len(leader_inputs) == 1
+
+    def test_generates_without_leader_being_required(self):
+        # Only the normal-template "Song Leader" field is required (see
+        # TestSongLeaderRequiredField); this new item type must not trip
+        # that same requirement on the custom template path.
+        at = AppTest.from_file(str(UI_PY))
+        at.run(timeout=30)
+        at.selectbox(key="template_select").set_value("Custom Template (Build Order)").run()
+        at.selectbox(key="custom_item_type_select").set_value("announcements-title").run()
+        at.button(key="custom_add_item").click().run()
+
+        generate = [b for b in at.button if "Generate" in (b.label or "")][0]
+        assert generate.disabled is False
+
+        at.button(key=generate.key).click().run(timeout=60)
+        assert list(at.exception) == []
+
+        pptx_path = at.session_state["generated_files"]["pptx_path"]
+        try:
+            from pptx import Presentation
+            prs = Presentation(pptx_path)
+            assert len(prs.slides) == 2  # title card + fade-to-black
+        finally:
+            _cleanup_generated_files(pptx_path)

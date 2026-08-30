@@ -648,3 +648,123 @@ class TestSupperReading1Cor11_27to29Nasb95:
     def test_index_104_still_out_of_range(self):
         with pytest.raises(ValueError, match="out of range"):
             slides.get_supper_reading(104, 0)
+
+
+class TestAnnouncementsTitleItemType:
+    """New custom-template item type: a title card reading "ANNOUNCEMENT"
+    (English deliberately singular -- see below; Spanish stays "ANUNCIOS")
+    (mirroring the existing "Sermon"/"Lesson"/"Report" title cards' fade to
+    black afterward and background) rather than the pre-existing
+    "announcements" type, which is just an immediate blank slide with no
+    title at all -- a different type name was needed to avoid changing that
+    existing type's behavior (used by sunday-pm.json). Unlike sermon/lesson,
+    it has no quote/reference (a preaching-specific Bible verse doesn't fit
+    an announcements slide) and uses its own, smaller/repositioned DETAIL
+    box: "ANNOUNCEMENTS" is much longer than "SERMON"/"LESSON" and was
+    wrapping onto a second line -- verified empirically against the actual
+    LibreOffice-rendered output, not just fit_text's own calculation, which
+    doesn't account for install_bundled_fonts() never installing the
+    English Avenir Next LT Pro files (only the Spanish AlegreyaSans ones),
+    so English text renders with a substituted, measurably wider font. Once
+    the sizing was fixed, the requester still preferred the singular
+    "ANNOUNCEMENT" as a wording choice (not a technical requirement).
+    """
+
+    def test_add_sermon_uses_announcements_title_and_fades_to_black(self):
+        from pptx import Presentation
+        outp = Presentation(slides.assetRoot + "template-2020.pptx")
+        item = {'type': 'announcements-title'}
+        slides.add_sermon(outp, "bil", item, None, 0)
+
+        assert len(outp.slides) == 2  # title slide + fade-to-black slide
+        title_slide = outp.slides[-2]
+        eng_detail = slides.get_placeholder(title_slide, slides.LAYOUT_TITLE_BIL_ENG_DETAIL)
+        esp_detail = slides.get_placeholder(title_slide, slides.LAYOUT_TITLE_BIL_ESP_DETAIL)
+        assert eng_detail.text_frame.text == "ANNOUNCEMENT"
+        assert esp_detail.text_frame.text == "ANUNCIOS"
+
+    def test_has_no_quote_or_reference(self):
+        # A sermon-specific Bible verse doesn't belong on an announcements
+        # slide; add_texts() removes any placeholder not in the texts dict.
+        from pptx import Presentation
+        outp = Presentation(slides.assetRoot + "template-2020.pptx")
+        slides.add_sermon(outp, "bil", {'type': 'announcements-title'}, None, 0)
+        title_slide = outp.slides[-2]
+        assert slides.get_placeholder(title_slide, slides.LAYOUT_TITLE_BIL_ENG_QUOTE) is None
+        assert slides.get_placeholder(title_slide, slides.LAYOUT_TITLE_BIL_ESP_QUOTE) is None
+
+    def test_sermon_still_has_its_quote_and_reference(self):
+        # Regression: removing the quote/reference for announcements-title
+        # must not disturb sermon/lesson, which still need theirs.
+        from pptx import Presentation
+        outp = Presentation(slides.assetRoot + "template-2020.pptx")
+        slides.add_sermon(outp, "bil", {'type': 'sermon'}, None, 0)
+        title_slide = outp.slides[-2]
+        quote = slides.get_placeholder(title_slide, slides.LAYOUT_TITLE_BIL_ENG_QUOTE)
+        assert quote is not None
+        assert "PREACH" in quote.text_frame.text
+
+    def test_detail_font_size_has_safety_margin_against_font_substitution(self):
+        # fit_text sizes English text against the real AvenirNextLTPro-Bold.otf
+        # file, but LibreOffice/PowerPoint substitute a wider fallback font at
+        # render time (that font is never actually installed on the system --
+        # see install_bundled_fonts()), so a size fit_text considers safely
+        # fitting can still wrap in the real output. 32pt was the empirically
+        # confirmed threshold; anything higher risks reintroducing the wrap.
+        from pptx import Presentation
+        outp = Presentation(slides.assetRoot + "template-2020.pptx")
+        slides.add_sermon(outp, "eng", {'type': 'announcements-title'}, None, 0)
+        title_slide = outp.slides[-2]
+        eng_detail = slides.get_placeholder(title_slide, slides.LAYOUT_TITLE_BIL_ENG_DETAIL)
+        size_pt = eng_detail.text_frame.paragraphs[0].runs[0].font.size.pt
+        assert size_pt <= 32
+
+    def test_sermon_and_lesson_still_show_their_own_text(self):
+        # Regression: adding the new branch must not disturb the existing
+        # sermon/lesson text selection it sits alongside.
+        from pptx import Presentation
+        for item_type, expected_eng in [("sermon", "SERMON"), ("lesson", "LESSON")]:
+            outp = Presentation(slides.assetRoot + "template-2020.pptx")
+            slides.add_sermon(outp, "bil", {'type': item_type}, None, 0)
+            title_slide = outp.slides[-2]
+            eng_detail = slides.get_placeholder(title_slide, slides.LAYOUT_TITLE_BIL_ENG_DETAIL)
+            assert eng_detail.text_frame.text == expected_eng
+
+    def test_dispatches_through_add_sermon_in_make_worship_deck(self):
+        import inspect
+        source = inspect.getsource(slides.make_worship_deck)
+        assert "'announcements-title'" in source
+
+    def test_parse_worship_item_uses_announcements_tag(self):
+        order = []
+        slides.parse_worship_item(order, {'type': 'announcements-title'}, 'eng')
+        assert order == [["Announcements", 0, " "]]
+
+        orden = []
+        slides.parse_worship_item(orden, {'type': 'announcements-title'}, 'esp')
+        assert orden == [["Anuncios", 0, " "]]
+
+    def test_parse_worship_item_honors_custom_title_override(self):
+        order = []
+        slides.parse_worship_item(order, {'type': 'announcements-title', 'title': 'Special Notice'}, 'eng')
+        assert order == [["Special Notice", 0, " "]]
+
+    def test_get_navbar_lists_announcements_title(self):
+        # Singular "Announcement" to match the title card's DETAIL text --
+        # this sidebar nav label is a separate text element, so changing the
+        # DETAIL text's wording didn't touch this one automatically.
+        worship = {'items': [{'type': 'announcements-title'}]}
+        engitems, espitems = slides.get_navbar(worship, 'bil')
+        assert engitems == [[0, "announcements-title", "Announcement"]]
+        assert espitems == [[0, "announcements-title", "Anuncios"]]
+
+    def test_existing_plain_announcements_type_is_unaffected(self):
+        # The pre-existing "announcements" type (an immediate blank slide,
+        # used by sunday-pm.json) must keep its own separate behavior.
+        order = []
+        slides.parse_worship_item(order, {'type': 'announcements'}, 'eng')
+        assert order == [["Announcements", 0, " "]]
+
+        worship = {'items': [{'type': 'announcements'}]}
+        engitems, _ = slides.get_navbar(worship, 'bil')
+        assert engitems == [[0, "announcements", "Closing", 10]]
