@@ -846,6 +846,23 @@ if selected_template != CUSTOM_TEMPLATE_KEY and autofill_ran_for != autofill_sig
         if not isinstance(fetched_readings, dict):
             fetched_readings = {}
 
+        # Surface autofill failures instead of leaving fields silently
+        # blank with no indication why -- a real API error (auth, network,
+        # or the church schedule genuinely having nothing for this date)
+        # was previously indistinguishable from "nothing to autofill",
+        # so a failure looked identical to a bug with no way to tell them apart.
+        autofill_errors = []
+        if isinstance(fetched_leaders_data, dict) and fetched_leaders_data.get('_error'):
+            autofill_errors.append(f"Leader assignments: {fetched_leaders_data['_error']}")
+        if isinstance(fetched_readings_data, dict) and fetched_readings_data.get('_error'):
+            autofill_errors.append(f"Scripture reading: {fetched_readings_data['_error']}")
+        if autofill_errors:
+            st.warning(
+                "Could not auto-fill from the church schedule:\n\n"
+                + "\n".join(autofill_errors)
+                + "\n\nYou can still enter these fields manually."
+            )
+
         for pos_name in sorted(leader_positions.keys()):
             if pos_name in fetched_leaders and isinstance(fetched_leaders[pos_name], str):
                 for idx, item in enumerate(template_items):
@@ -899,8 +916,10 @@ if selected_template != CUSTOM_TEMPLATE_KEY and autofill_ran_for != autofill_sig
                     st.session_state[title_es_key] = title_es
 
         st.session_state["autofill_ran_for"] = autofill_signature
-    except Exception:
-        # Non-breaking behavior: keep form usable even if pull API fails.
+    except Exception as e:
+        # Keep the form usable even if the pull API fails entirely, but say
+        # why instead of leaving every field silently blank with no clue.
+        st.warning(f"Could not auto-fill from the church schedule: {e}\n\nYou can still enter these fields manually.")
         st.session_state["autofill_ran_for"] = autofill_signature
 
 st.markdown('<div class="section-heading">Service Flow Inputs (PowerPoint Order)</div>', unsafe_allow_html=True)

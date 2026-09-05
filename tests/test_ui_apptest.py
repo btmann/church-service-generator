@@ -263,3 +263,59 @@ class TestCustomTemplateAnnouncementsTitleItem:
             assert len(prs.slides) == 2  # title card + fade-to-black
         finally:
             _cleanup_generated_files(pptx_path)
+
+
+class TestAutofillErrorVisibility:
+    """Regression: a failed church-schedule autofill (bad auth, network
+    issue, the schedule API genuinely having nothing for a given date) used
+    to leave every reading/leader field silently blank with zero feedback --
+    indistinguishable from "there's nothing to autofill". A user seeing a
+    blank field had no way to tell a real failure from a data gap.
+    """
+
+    def test_reading_fetch_error_shows_a_warning(self):
+        from unittest.mock import patch
+        with patch("worship.fetch_readings", return_value={"readings": {}, "_error": "Scripture API response 401: Unauthorized"}), \
+             patch("worship.fetch_leaders", return_value={"leaders": {}}):
+            at = AppTest.from_file(str(UI_PY))
+            at.run(timeout=30)
+            at.selectbox(key="template_select").set_value("sunday-am").run()
+
+        assert list(at.exception) == []
+        warnings = [w.value for w in at.warning]
+        assert any("Scripture reading" in w and "401: Unauthorized" in w for w in warnings)
+
+    def test_leader_fetch_error_shows_a_warning(self):
+        from unittest.mock import patch
+        with patch("worship.fetch_leaders", return_value={"leaders": {}, "_error": "Assignments API exception: timed out"}), \
+             patch("worship.fetch_readings", return_value={"readings": {}}):
+            at = AppTest.from_file(str(UI_PY))
+            at.run(timeout=30)
+            at.selectbox(key="template_select").set_value("sunday-am").run()
+
+        assert list(at.exception) == []
+        warnings = [w.value for w in at.warning]
+        assert any("Leader assignments" in w and "timed out" in w for w in warnings)
+
+    def test_no_warning_when_autofill_succeeds(self):
+        from unittest.mock import patch
+        with patch("worship.fetch_readings", return_value={"readings": {}}), \
+             patch("worship.fetch_leaders", return_value={"leaders": {}}):
+            at = AppTest.from_file(str(UI_PY))
+            at.run(timeout=30)
+            at.selectbox(key="template_select").set_value("sunday-am").run()
+
+        assert list(at.exception) == []
+        warnings = [w.value for w in at.warning]
+        assert not any("Could not auto-fill" in w for w in warnings)
+
+    def test_exception_during_autofill_shows_a_warning_not_a_crash(self):
+        from unittest.mock import patch
+        with patch("worship.fetch_leaders", side_effect=RuntimeError("boom")):
+            at = AppTest.from_file(str(UI_PY))
+            at.run(timeout=30)
+            at.selectbox(key="template_select").set_value("sunday-am").run()
+
+        assert list(at.exception) == []
+        warnings = [w.value for w in at.warning]
+        assert any("Could not auto-fill from the church schedule" in w and "boom" in w for w in warnings)
