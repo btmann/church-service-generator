@@ -645,9 +645,52 @@ class TestSupperReading1Cor11_27to29Nasb95:
         eng_ref, _ = slides.get_supper_reading(51, 0)
         assert eng_ref.text == "1 Corinthians 11:27-32"
 
-    def test_index_104_still_out_of_range(self):
+    def test_index_105_still_out_of_range(self):
         with pytest.raises(ValueError, match="out of range"):
-            slides.get_supper_reading(104, 0)
+            slides.get_supper_reading(105, 0)
+
+
+class TestSupperReadingLuke23_27to31Nasb95:
+    """Regression for the added Lord's Supper reading at index 104: Luke
+    23:27-31 in the NASB95 wording (the deck otherwise mixes translations
+    slide by slide -- NASB95 was an explicit choice here, matching index
+    103's, not a house style)."""
+
+    def test_index_104_is_nasb95_luke_23_27_31(self):
+        eng_ref, eng_passage = slides.get_supper_reading(104, 0)
+        assert eng_ref.text == "Luke 23:27-31"
+        assert eng_passage.text == (
+            "And there followed Him a great multitude of the people, and of women "
+            "who also mourned and lamented Him. But Jesus, turning to them, said, "
+            "“Daughters of Jerusalem, do not weep for Me, but weep for yourselves "
+            "and for your children. For indeed the days are coming in which they "
+            "will say, ‘Blessed are the barren, wombs that never bore, and breasts "
+            "which never nursed!’ Then they will begin ‘to say to the mountains, "
+            "“Fall on us!” and to the hills, “Cover us!”’ For if they do these "
+            "things in the green wood, what will be done in the dry?”"
+        )
+
+    def test_index_104_spanish_is_rvr1960(self):
+        esp_ref, esp_passage = slides.get_supper_reading(104, 1)
+        assert esp_ref.text == "Lucas 23:27-31"
+        assert esp_passage.text == (
+            "Y le seguía gran multitud del pueblo, y de mujeres que lloraban y "
+            "hacían lamentación por él. Pero Jesús, vuelto hacia ellas, les dijo: "
+            "Hijas de Jerusalén, no lloréis por mí, sino llorad por vosotras mismas "
+            "y por vuestros hijos. Porque he aquí vendrán días en que dirán: "
+            "Bienaventuradas las estériles, y los vientres que no concibieron, y "
+            "los pechos que no criaron. Entonces comenzarán a decir a los montes: "
+            "Caed sobre nosotros; y a los collados: Cubridnos. Porque si en el "
+            "árbol verde hacen estas cosas, ¿en el seco, qué no se hará?"
+        )
+
+    def test_existing_index_103_still_intact(self):
+        eng_ref, _ = slides.get_supper_reading(103, 0)
+        assert eng_ref.text == "1 Corinthians 11:27-29"
+
+    def test_index_105_still_out_of_range(self):
+        with pytest.raises(ValueError, match="out of range"):
+            slides.get_supper_reading(105, 0)
 
 
 class TestAnnouncementsTitleItemType:

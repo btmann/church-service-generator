@@ -8,6 +8,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import json
 import os
+import re
 import base64
 from pathlib import Path
 from datetime import datetime
@@ -142,6 +143,8 @@ CUSTOM_TEMPLATE_LABEL = "Custom Template (Build Order)"
 CUSTOM_ITEM_TYPE_OPTIONS = [
     "welcome",
     "song",
+    "song-title",
+    "song-music",
     "reading",
     "prayer",
     "ls-am",
@@ -152,6 +155,17 @@ CUSTOM_ITEM_TYPE_OPTIONS = [
     "announcements-title",
     "invitation",
 ]
+CUSTOM_ITEM_TYPE_LABELS = {
+    # "song-title"/"song-music" are the same mechanism the AM template uses
+    # for the invitation song: a preview slide before the sermon (title
+    # only, no music) and a matching background-music slide after it (music
+    # only, no title) -- see make_custom_template_item's docstring for how
+    # the two get linked. Generic internal names, so give them a label a
+    # user planning a service actually recognizes.
+    "song-title": "Invitation Song (Preview)",
+    "song-music": "Invitation Song (Music)",
+    "announcements-title": "Announcements",
+}
 
 # Streamlit page config
 st.set_page_config(
@@ -204,6 +218,52 @@ def get_available_templates():
     return sorted(templates)
 
 
+def list_saved_services(limit=200):
+    """List past generated services under worship/<year>/<YYYYMMDD>-<HHMM>.json,
+    most recent first.
+
+    Every "Generate" click already writes one of these -- it's the full
+    merged worship JSON make_worship_deck() consumes to build the pptx, so
+    it already carries everything "Load Past Service" needs (item order,
+    types, ids, positions, and each item's own song/leader/reading values)
+    without any separate reverse-engineering of the .pptx itself.
+    """
+    root = Path(WORSHIP_ROOT)
+    if not root.is_dir():
+        return []
+    # Matches "20260830-1000.json" but not the alternate export variants
+    # ("...-web2.json", "...-command-line.json") sitting in the same folder.
+    pattern = re.compile(r"^(\d{8})-(\d{4})\.json$")
+    found = []
+    for year_dir in root.iterdir():
+        if not year_dir.is_dir():
+            continue
+        for path in year_dir.glob("*.json"):
+            m = pattern.match(path.name)
+            if not m:
+                continue
+            found.append((m.group(1) + m.group(2), path))
+    found.sort(key=lambda t: t[0], reverse=True)
+    results = []
+    for _, path in found[:limit]:
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (OSError, ValueError):
+            continue
+        if not isinstance(data.get("items"), list):
+            continue
+        results.append({
+            "path": path,
+            "isodate": data.get("isodate", ""),
+            "template": data.get("template", ""),
+            "service_type": data.get("type", ""),
+            "item_count": len(data["items"]),
+            "items": data["items"],
+        })
+    return results
+
+
 def load_template(template_name):
     """Load template and return the order items with encoding handling"""
     template_path = TEMPLATES_ROOT + template_name + ".json"
@@ -242,6 +302,29 @@ def make_custom_template_item(item_type, seq):
             "type": "song",
             "id": f"song-{seq}",
             "position": f"Song Leader {seq}",
+        }
+    if item_type == "song-title":
+        # A title-only preview slide, no music -- see make_worship_deck's
+        # dispatch (add_song(..., music=False)). Matches sunday-am.json's
+        # invitation-song preview: no "position" field, since the song
+        # itself has already been (or will be) led elsewhere -- this slide
+        # just previews it, it doesn't need its own leader.
+        return {
+            "type": "song-title",
+            "id": f"song-title-{seq}",
+            "bubble": "Invitation Song",
+        }
+    if item_type == "song-music":
+        # Music-only, no title slide (add_song(..., title=False)) -- the AM
+        # template plays this after the sermon as the invitation song,
+        # faded out at the end. Pairing its "id" with a song-title item's
+        # id (done in the Add Item handler, which has the sibling list this
+        # function doesn't) makes both slides share one song selection,
+        # just like sunday-am.json's matching "song-5" ids.
+        return {
+            "type": "song-music",
+            "id": f"song-music-{seq}",
+            "fade": "out",
         }
     if item_type == "reading":
         return {
@@ -664,6 +747,19 @@ def generate_presentation(date, time, template, songs_data, leaders_data, readin
         # never populated when generating through the app.
         if 'Song Leader' in leaders:
             spec['leader'] = leaders['Song Leader']
+        else:
+            # Custom templates give every song its own distinct position
+            # ("Song Leader 1", "Song Leader 2", ...) instead of sharing one
+            # "Song Leader" key (see make_custom_template_item), so there's
+            # never a literal "Song Leader" match to fall back on here --
+            # collect all of them instead, in the songs' own order.
+            song_leader_names = [
+                name.strip()
+                for pos, name in leaders.items()
+                if pos.startswith('Song Leader') and isinstance(name, str) and name.strip()
+            ]
+            if song_leader_names:
+                spec['leader'] = ', '.join(song_leader_names)
 
         # Load readings data with type checking
         readings_file_data = load_json_safe(specbase + "-readings.json")
@@ -731,6 +827,19 @@ def generate_presentation(date, time, template, songs_data, leaders_data, readin
 
 # Main UI layout
 
+# Applying a "Load Past Service" selection here, before any widget below
+# renders, is what lets it flip the template selector and pre-fill leader/
+# song/reading fields in the same click -- a widget's session_state value
+# can't be reassigned after that widget has already rendered in the same
+# script run (Streamlit raises StreamlitAPIException), so the Load button's
+# own handler (further down the page) can only stash the request; this is
+# the first point in the script where it's safe to actually apply it.
+if "load_past_service_pending" in st.session_state:
+    _pending_items = st.session_state.pop("load_past_service_pending")
+    st.session_state["custom_template_items"] = _pending_items
+    st.session_state["template_select"] = CUSTOM_TEMPLATE_LABEL
+    st.toast(f"Loaded {len(_pending_items)} items into the Custom Template Builder.", icon="📋")
+
 templates = get_available_templates()
 selected_template = None
 template_items = []
@@ -764,24 +873,52 @@ if selected_template == CUSTOM_TEMPLATE_KEY:
         st.session_state.custom_template_items = []
 
     st.markdown('<div class="section-heading">Custom Template Builder</div>', unsafe_allow_html=True)
-    builder_col1, builder_col2 = st.columns([2.2, 1])
+    builder_col1, builder_col_pos, builder_col2 = st.columns([2.2, 1, 1])
     with builder_col1:
         custom_item_type = st.selectbox(
             "Add service item",
             CUSTOM_ITEM_TYPE_OPTIONS,
             key="custom_item_type_select",
-            # "announcements-title" (distinct from the pre-existing plain
-            # "announcements" type) is an internal name, not something a
-            # user needs to see -- the generic hyphen-to-title transform
-            # would otherwise show the redundant-looking "Announcements Title".
-            format_func=lambda t: "Announcements" if t == "announcements-title" else t.replace("-", " ").title(),
+            # A few of these are internal type names, not something a user
+            # needs to see (e.g. "announcements-title", distinct from the
+            # pre-existing plain "announcements" type, would otherwise show
+            # as the redundant-looking "Announcements Title") -- see
+            # CUSTOM_ITEM_TYPE_LABELS.
+            format_func=lambda t: CUSTOM_ITEM_TYPE_LABELS.get(t, t.replace("-", " ").title()),
         )
+    with builder_col_pos:
+        st.write("")
+        # A checkbox that always means "prepend" needs no notion of "the
+        # current bottom" to stay correct as the list grows, unlike a plain
+        # position number -- which would need resetting after every Add, and
+        # a widget's stored value can't be reassigned after it has already
+        # rendered in the same run, so any such reset can only take effect
+        # on the *next* rerun and would clobber a legitimate edit the user
+        # made to it in the meantime.
+        add_to_top = st.checkbox("Add to top", key="custom_add_to_top")
     with builder_col2:
         st.write("")
         if st.button("Add Item", key="custom_add_item", use_container_width=True):
             current_items = list(st.session_state.custom_template_items)
             seq = 1 + sum(1 for item in current_items if isinstance(item, dict) and item.get("type") == custom_item_type)
-            current_items.append(make_custom_template_item(custom_item_type, seq))
+            new_item = make_custom_template_item(custom_item_type, seq)
+            if custom_item_type == "song-music":
+                # Reuse the most recent not-yet-paired song-title's id so
+                # this background-music slide shares its song selection with
+                # that preview slide, the same way sunday-am.json links its
+                # invitation song-title and song-music entries by giving
+                # them the same "id".
+                paired_title_ids = {
+                    it.get("id") for it in current_items if isinstance(it, dict) and it.get("type") == "song-music"
+                }
+                unpaired_titles = [
+                    it for it in current_items
+                    if isinstance(it, dict) and it.get("type") == "song-title" and it.get("id") not in paired_title_ids
+                ]
+                if unpaired_titles:
+                    new_item["id"] = unpaired_titles[-1]["id"]
+            insert_at = 0 if add_to_top else len(current_items)
+            current_items.insert(insert_at, new_item)
             st.session_state.custom_template_items = current_items
             # Deliberately no st.rerun() here: Streamlit already reruns this
             # whole script on every button click, and calling st.rerun() would
@@ -794,20 +931,72 @@ if selected_template == CUSTOM_TEMPLATE_KEY:
 
     custom_items = list(st.session_state.custom_template_items)
     if custom_items:
-        st.caption("Arrange the order using Up/Down, then fill details below in Service Flow.")
+        st.caption(
+            "Type a target position for any item you want to move, then click "
+            "“Apply Order.” Fill in details below in Service Flow."
+        )
+        # Position inputs are keyed by the item's own id (not its row index),
+        # so a value typed for a given item stays attached to that item even
+        # as Apply Order (or an Add/Remove elsewhere) shifts everyone's row.
+        # Up/Down arrows keyed by row index used to require re-locating and
+        # re-clicking a *different* button after every single-step move --
+        # clicking the same visual row twice in a row just swapped the same
+        # two items back and forth, which looked like items randomly
+        # changing identity and made far moves (e.g. "send this to the top")
+        # painful. Typing a position and applying once avoids that entirely.
+        n_items = len(custom_items)
+
+        def _pos_key(citem):
+            # id alone isn't unique: a song-title/song-music invitation-song
+            # pair is deliberately given the *same* id (see
+            # make_custom_template_item) so they share one song selection.
+            # Pairing id with type keeps this key unique for them while
+            # staying stable across reorders, unlike a row-index-based key.
+            return f"custom_pos_{citem.get('id')}_{citem.get('type')}"
+
         for ndx, citem in enumerate(custom_items):
-            ccols = st.columns([7, 1, 1, 1])
-            item_desc = f"{ndx + 1}. {citem.get('type', 'item')} ({citem.get('id', 'no-id')})"
-            ccols[0].markdown(item_desc)
-            if ccols[1].button("↑", key=f"custom_up_{ndx}", disabled=(ndx == 0)):
-                custom_items[ndx - 1], custom_items[ndx] = custom_items[ndx], custom_items[ndx - 1]
-                st.session_state.custom_template_items = custom_items
-            if ccols[2].button("↓", key=f"custom_down_{ndx}", disabled=(ndx == len(custom_items) - 1)):
-                custom_items[ndx + 1], custom_items[ndx] = custom_items[ndx], custom_items[ndx + 1]
-                st.session_state.custom_template_items = custom_items
-            if ccols[3].button("✕", key=f"custom_remove_{ndx}"):
+            ccols = st.columns([1, 6, 1])
+            pos_key = _pos_key(citem)
+            ccols[0].number_input(
+                "Pos",
+                min_value=1,
+                value=min(st.session_state.get(pos_key, ndx + 1), n_items),
+                key=pos_key,
+                label_visibility="collapsed",
+            )
+            item_desc = f"{ndx + 1}. {citem.get('type', 'item')} ({citem.get('id') or 'no-id'})"
+            ccols[1].markdown(item_desc)
+            if ccols[2].button("✕", key=f"custom_remove_{ndx}"):
                 del custom_items[ndx]
                 st.session_state.custom_template_items = custom_items
+
+        if st.button("Apply Order", key="custom_apply_order"):
+            # Only move items whose typed position actually differs from
+            # where they already are. Sorting everyone by their position
+            # box's raw value doesn't work: every untouched item's box still
+            # shows its own current position, so typing "1" for one item
+            # ties with whatever's already sitting in slot 1 -- and a
+            # stable sort on that tie keeps the untouched item first,
+            # silently ignoring the move the user asked for.
+            requested = []
+            for ndx, citem in enumerate(custom_items):
+                raw_pos = st.session_state.get(_pos_key(citem), ndx + 1)
+                try:
+                    raw_pos = int(raw_pos)
+                except (TypeError, ValueError):
+                    raw_pos = ndx + 1
+                if raw_pos != ndx + 1:
+                    requested.append((citem.get("id"), citem.get("type"), raw_pos))
+
+            for item_id, item_type_, target_pos in requested:
+                cur_idx = next(
+                    i for i, it in enumerate(custom_items)
+                    if it.get("id") == item_id and it.get("type") == item_type_
+                )
+                moved = custom_items.pop(cur_idx)
+                insert_at = max(0, min(target_pos - 1, len(custom_items)))
+                custom_items.insert(insert_at, moved)
+            st.session_state.custom_template_items = custom_items
     else:
         st.info("Add at least one item to start building a custom service flow.")
 
@@ -937,7 +1126,7 @@ for idx, item in enumerate(template_items):
             "idx": idx,
         })
 
-flow_tab, search_tab = st.tabs(["Service Flow", "Song Search"])
+flow_tab, search_tab, load_past_tab = st.tabs(["Service Flow", "Song Search", "Load Past Service"])
 
 with search_tab:
     if song_search_index:
@@ -1045,9 +1234,16 @@ with flow_tab:
         st.markdown(f'<div class="flow-item">{item_label}</div>', unsafe_allow_html=True)
 
         if position_name and "prayer for" not in position_name.lower() and "reading" not in position_name.lower() and item_type not in ['prayer', 'reading', 'welcome']:
+            leader_key = f"leader_{position_name}"
+            # Only takes effect on this key's very first render (Streamlit
+            # ignores `value=` once a keyed widget has session_state) --
+            # this is what lets "Load Past Service" restore leader names by
+            # seeding items with their own "leader" field before this loop.
+            if leader_key not in st.session_state:
+                st.session_state[leader_key] = item.get("leader", "") if isinstance(item, dict) else ""
             leaders_input[position_name] = st.text_input(
                 f"Leader: {position_name}",
-                key=f"leader_{position_name}"
+                key=leader_key,
             )
 
         if 'song' in item_type and item_id:
@@ -1156,11 +1352,18 @@ with flow_tab:
             with song_col4:
                 st.caption("Verses")
                 if available_verses:
+                    verses_key = f"verses_{item_id}"
+                    # See the leader_key seeding above: only takes effect
+                    # before this key's first-ever render, which is what
+                    # lets "Load Past Service" restore a prior deselection
+                    # instead of always defaulting back to "all verses".
+                    if verses_key not in st.session_state and isinstance(item.get("verses"), list):
+                        st.session_state[verses_key] = [v for v in item["verses"] if v in available_verses]
                     selected_verses = st.multiselect(
                         f"Verses ({item_id})",
                         options=available_verses,
                         default=available_verses,
-                        key=f"verses_{item_id}",
+                        key=verses_key,
                         label_visibility="collapsed"
                     )
                 else:
@@ -1168,11 +1371,14 @@ with flow_tab:
             with song_col5:
                 st.caption("Chorus")
                 if available_chorus:
+                    chorus_key = f"chorus_{item_id}"
+                    if chorus_key not in st.session_state and isinstance(item.get("chorus"), list):
+                        st.session_state[chorus_key] = [c for c in item["chorus"] if c in available_chorus]
                     selected_chorus = st.multiselect(
                         f"Chorus After Verse ({item_id})",
                         options=available_chorus,
                         default=available_chorus,
-                        key=f"chorus_{item_id}",
+                        key=chorus_key,
                         label_visibility="collapsed"
                     )
                 else:
@@ -1214,13 +1420,23 @@ with flow_tab:
                 last_song_label = f"{book.upper()}-{int(song_num):03d}"
 
         if item_type == 'reading' and item_id:
+            reading_number_key = f"reading_number_{item_id}"
+            if reading_number_key not in st.session_state and item.get("reading") is not None:
+                st.session_state[reading_number_key] = str(item["reading"])
             reading_number_str = st.text_input(
                 "Scripture reading number (optional)",
-                key=f"reading_number_{item_id}",
+                key=reading_number_key,
                 help="Optional manual override if you need to track or force a specific reading number."
             )
-            eng_passage = st.text_input("English passage", key=f"reading_eng_passage_{item_id}")
-            esp_passage = st.text_input("Spanish passage (optional)", key=f"reading_esp_passage_{item_id}")
+            eng_passage_key = f"reading_eng_passage_{item_id}"
+            esp_passage_key = f"reading_esp_passage_{item_id}"
+            item_lang = item.get("lang") if isinstance(item.get("lang"), list) else []
+            if eng_passage_key not in st.session_state and len(item_lang) > 0:
+                st.session_state[eng_passage_key] = item_lang[0].get("passage", "")
+            if esp_passage_key not in st.session_state and len(item_lang) > 1:
+                st.session_state[esp_passage_key] = item_lang[1].get("passage", "")
+            eng_passage = st.text_input("English passage", key=eng_passage_key)
+            esp_passage = st.text_input("Spanish passage (optional)", key=esp_passage_key)
             reading_payload = {
                 "lang": [
                     {"passage": eng_passage},
@@ -1231,13 +1447,22 @@ with flow_tab:
                 reading_payload["reading"] = int(reading_number_str.strip())
             readings_input[item_id] = reading_payload
         elif item_type in ['ls-am', 'collection'] and item_id:
+            reading_index_key = f"reading_index_{item_id}"
+            if reading_index_key not in st.session_state:
+                try:
+                    st.session_state[reading_index_key] = int(item.get("reading", 0))
+                except (TypeError, ValueError):
+                    st.session_state[reading_index_key] = 0
             reading_col, index_button_col = st.columns([4, 1])
             with reading_col:
+                # No `value=` here -- Streamlit warns (and it's ambiguous)
+                # about setting both a widget's default and its
+                # session_state; the seed above already covers every case,
+                # including a fresh item with no "reading" field yet.
                 reading_index = st.number_input(
                     "Reading slide index (0-based)",
                     min_value=0,
-                    value=0,
-                    key=f"reading_index_{item_id}"
+                    key=reading_index_key,
                 )
             with index_button_col:
                 st.write("")
@@ -1255,13 +1480,55 @@ with flow_tab:
             st.info("This slide just shows \"Announcements\", then fades to black.")
             readings_input[item_id] = {"title": "", "título": ""}
         elif item_type in ['lesson', 'report'] and item_id:
-            title_en = st.text_input("Title (English)", key=f"title_en_{item_id}")
-            title_es = st.text_input("Title (Spanish)", key=f"title_es_{item_id}")
+            title_en_key = f"title_en_{item_id}"
+            title_es_key = f"title_es_{item_id}"
+            if title_en_key not in st.session_state and item.get("title"):
+                st.session_state[title_en_key] = item["title"]
+            if title_es_key not in st.session_state and item.get("título"):
+                st.session_state[title_es_key] = item["título"]
+            title_en = st.text_input("Title (English)", key=title_en_key)
+            title_es = st.text_input("Title (Spanish)", key=title_es_key)
             readings_input[item_id] = {"title": title_en, "título": title_es}
         elif item_type in ['welcome', 'invitation'] and item_id:
-            desc = st.text_input("Display text (optional)", key=f"desc_{item_id}")
+            desc_key = f"desc_{item_id}"
+            if desc_key not in st.session_state and item.get("desc"):
+                st.session_state[desc_key] = item["desc"]
+            desc = st.text_input("Display text (optional)", key=desc_key)
             if desc:
                 readings_input[item_id] = {"desc": desc}
+
+# Rendered after flow_tab/search_tab's own content (not alongside them, up
+# at the st.tabs() call) so that if its button below triggers a rerun to
+# make the load feel instant, that rerun can't cut off flow_tab or
+# search_tab's widgets before they've rendered this pass -- an early
+# st.rerun() prunes session_state for anything not yet instantiated in the
+# current pass (see the Add Item handler's own comment on this above).
+with load_past_tab:
+    st.caption(
+        "Reuse a previously generated service as a starting point -- reloads its "
+        "full order (songs, leaders, readings) into the Custom Template Builder "
+        "above, ready to tweak before generating again."
+    )
+    saved_services = list_saved_services()
+    if not saved_services:
+        st.info("No previously generated services found yet under worship/.")
+    else:
+        def _saved_service_label(entry):
+            when = entry["isodate"].replace("T", " ") if entry["isodate"] else entry["path"].stem
+            return f"{when} — {entry['template'] or 'custom'} ({entry['item_count']} items)"
+
+        chosen = st.selectbox(
+            "Past service",
+            saved_services,
+            format_func=_saved_service_label,
+            key="load_past_service_choice",
+        )
+        if st.button("Load into Custom Builder", key="load_past_service_button"):
+            # A deep copy via json round-trip: these dicts must not alias the
+            # cached `saved_services` list still referenced elsewhere on this
+            # same page render.
+            st.session_state["load_past_service_pending"] = json.loads(json.dumps(chosen["items"]))
+            st.rerun()
 
 # Generate Button
 st.divider()

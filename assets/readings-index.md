@@ -110,6 +110,7 @@ Reference table for the `"reading"` index used on Lord's Supper (`ls-am`/`ls-pm`
 | 101 | 1 Peter 2:24 | 1 Pedro 2:24 |
 | 102 | Ephesians 2:7 | Efesios 2:7 |
 | 103 | 1 Corinthians 11:27-29 | 1 Corintios 11:27-29  |
+| 104 | Luke 23:27-31 (NASB95) | Lucas 23:27-31 |
 
 ## Collection Readings (`readings-collection.pptx`)
 
