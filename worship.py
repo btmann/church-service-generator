@@ -4,6 +4,8 @@
 #
 import pprint
 import inspect
+import csv
+import re
 from lxml import etree
 import io
 from io import StringIO, BytesIO
@@ -201,54 +203,116 @@ def fetch_leaders(wdate, wtime, service_type):
 	return result
 
 #
-# parse_reading() - parse API output and format into our JSON
+# Local scripture-reading schedule -- replaces the getScriptureReading API
+# (being retired). Reads every assets/Scripture Reading*.csv: each is a
+# year's worth of Sunday AM ("Morning Readings (Apostles)") and PM
+# ("Evening Readings (Prophets)") reading assignments by date.
 #
-def parse_reading(data):
-	lang = list()
-#	lang.append({ "passage": data['english']['book'] + ' ' + data['english']['reference'], "pew": data['english']['pew'] })
-	lang.append({ "passage": data['english']['book'] + ' ' + data['english']['reference'] })
-	lang.append({ "passage": data['spanish']['book'] + ' ' + data['spanish']['reference'] })
-	return { "lang" : lang }
+
+SPANISH_BOOK_NAMES = {
+	"1 Corinthians": "1 Corintios",
+	"1 John": "1 Juan",
+	"1 Peter": "1 Pedro",
+	"1 Thessalonians": "1 Tesalonicenses",
+	"1 Timothy": "1 Timoteo",
+	"2 Corinthians": "2 Corintios",
+	"2 Samuel": "2 Samuel",
+	"Colossians": "Colosenses",
+	"Daniel": "Daniel",
+	"Ephesians": "Efesios",
+	"Exodus": "Éxodo",
+	"Ezekial": "Ezequiel",		# typo in the source spreadsheet
+	"Ezekiel": "Ezequiel",
+	"Galatians": "Gálatas",
+	"Genesis": "Génesis",
+	"Haggai": "Hageo",
+	"Hebrews": "Hebreos",
+	"Isaiah": "Isaías",
+	"James": "Santiago",
+	"Jeremiah": "Jeremías",
+	"Joel": "Joel",
+	"John": "Juan",
+	"Jude": "Judas",
+	"Luke": "Lucas",
+	"Malachi": "Malaquías",
+	"Mark": "Marcos",
+	"Matthew": "Mateo",
+	"Micah": "Miqueas",
+	"Philippians": "Filipenses",
+	"Proverbs": "Proverbios",
+	"Psalm": "Salmo",
+	"Psalms": "Salmos",
+	"Revelation": "Apocalipsis",
+	"Romans": "Romanos",
+	"Titus": "Tito",
+	"Zechariah": "Zacarías",
+	"Zehariah": "Zacarías",		# typo in the source spreadsheet
+}
+
+
+def translate_reference_to_spanish(reference):
+	"""Split a book+chapter:verse reference into its parts and translate
+	just the book name. Falls back to the original English book name for
+	anything not in SPANISH_BOOK_NAMES, rather than failing the whole
+	autofill over one unrecognized book."""
+	match = re.match(r'^(.*?)\s+(\d.*)$', reference.strip())
+	if not match:
+		return reference
+	book, rest = match.group(1), match.group(2)
+	return SPANISH_BOOK_NAMES.get(book, book) + ' ' + rest
+
+
+def load_local_scripture_schedule(folder=None):
+	"""Read every "Scripture Reading*.csv" in folder (default: assetRoot,
+	next to the other bundled reference data) into one
+	{date: {"am": ref, "pm": ref}} dict, keyed by the "Date" column
+	(YYYY-MM-DD, matching wdate's format). Later files (sorted by name) win
+	on a date collision -- lets next year's file be dropped in alongside
+	this one without deleting the old file."""
+	if folder is None:
+		folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets')
+	schedule = dict()
+	for csv_path in sorted(glob.glob(os.path.join(folder, 'Scripture Reading*.csv'))):
+		with open(csv_path, 'r', encoding='utf-8-sig', newline='') as f:
+			for row in csv.DictReader(f):
+				date = (row.get('Date') or '').strip()
+				if not date:
+					continue
+				schedule[date] = {
+					'am': (row.get('Morning Readings (Apostles)') or '').strip(),
+					'pm': (row.get('Evening Readings (Prophets)') or '').strip(),
+				}
+	return schedule
 
 
 #
-# fetch_readings() - read leaders from the API
+# fetch_readings() - look up the reading for wdate in the local schedule
 #
 def fetch_readings(wdate, readings, service_type):
-	reading = dict()
-	error = None
-	warning = None
-	headers = {'Authorization': drwAuthKey }
-	url = 'https://api.embryhills.church/v1/getScriptureReading'
-#	payload = {'service': service_type.replace('- ', ''), 'date': wdate }
-	payload = {'service': service_type, 'date': wdate }
+	"""Sun - AM uses the Apostles/morning reading, Sun - PM the Prophets/
+	evening reading; other service types (Wed, Gospel Meeting) aren't
+	covered by this schedule, so they simply get no reading -- the same as
+	a date the schedule doesn't have."""
+	if service_type == 'Sun - AM':
+		column = 'am'
+	elif service_type == 'Sun - PM':
+		column = 'pm'
+	else:
+		column = None
 
-	try:
-		try:
-			r = requests.post(url, headers=headers, data=payload, timeout=20)
-		except requests.exceptions.SSLError:
-			r = requests.post(url, headers=headers, data=payload, timeout=20, verify=False)
-			warning = "SSL verification failed; using insecure HTTPS fallback for scripture API"
-		if r.status_code == 200:
-			response = json.loads(r.text)
-			if response['Success'] == True:
-				data = response['Response']
-				reading = parse_reading(data)
-				readings['reading-1'] = reading		# tbd: support multiple readings?
-				pprint.pprint(reading)
-			else:
-				error = response.get('ErrorMessage', 'Scripture API returned Success=False')
-		else:
-			error = f"Scripture API response {r.status_code}: {r.text[:300]}"
-	except Exception as e:
-		error = f"Scripture API exception: {e}"
+	if column:
+		schedule = load_local_scripture_schedule()
+		eng_reference = schedule.get(wdate, {}).get(column)
+		if eng_reference:
+			esp_reference = translate_reference_to_spanish(eng_reference)
+			readings['reading-1'] = {
+				"lang": [
+					{"passage": eng_reference},
+					{"passage": esp_reference},
+				]
+			}
 
-	result = { "readings" : readings }
-	if error:
-		result['_error'] = error
-	if warning:
-		result['_warning'] = warning
-	return result
+	return { "readings" : readings }
 
 
 ##
