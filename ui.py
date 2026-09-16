@@ -154,6 +154,7 @@ CUSTOM_ITEM_TYPE_OPTIONS = [
     "report",
     "announcements-title",
     "invitation",
+    "group-meeting",
 ]
 CUSTOM_ITEM_TYPE_LABELS = {
     # "song-title"/"song-music" are the same mechanism the AM template uses
@@ -372,6 +373,12 @@ def make_custom_template_item(item_type, seq):
         return {
             "type": "invitation",
             "id": f"invitation-{seq}",
+        }
+    if item_type == "group-meeting":
+        return {
+            "type": "group-meeting",
+            "id": f"group-meeting-{seq}",
+            "group": 1,
         }
     return {"type": item_type, "id": f"{item_type}-{seq}"}
 
@@ -1496,6 +1503,24 @@ with flow_tab:
             desc = st.text_input("Display text (optional)", key=desc_key)
             if desc:
                 readings_input[item_id] = {"desc": desc}
+        elif item_type == 'group-meeting' and item_id:
+            # Read fresh from the deck each render (via slides.py) rather
+            # than a hardcoded list, so adding/renaming a group there shows
+            # up here without a code change.
+            group_options = slides.get_group_meeting_options()
+            group_key = f"group_{item_id}"
+            if group_key not in st.session_state:
+                st.session_state[group_key] = item.get("group", group_options[0][0] if group_options else 1)
+            if group_options:
+                selected_group = st.selectbox(
+                    "Which group is meeting?",
+                    [g for g, _ in group_options],
+                    format_func=lambda g: dict(group_options).get(g, f"Group {g}"),
+                    key=group_key,
+                )
+                readings_input[item_id] = {"group": selected_group}
+            else:
+                st.warning("No groups found in assets/Group Meeting Slides.pptx.")
 
 # Rendered after flow_tab/search_tab's own content (not alongside them, up
 # at the st.tabs() call) so that if its button below triggers a rerun to

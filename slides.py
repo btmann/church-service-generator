@@ -26,6 +26,7 @@ from pptx.util import Pt
 from pptx.util import Inches
 from lxml import etree
 import io
+import copy
 import PIL
 from PIL import ImageOps
 from PIL import ImageEnhance
@@ -49,6 +50,7 @@ from statistics import mode
 from pptx.oxml import parse_from_template, parse_xml
 from pptx.oxml.dml.fill import CT_GradientFillProperties
 from pptx.oxml.ns import nsdecls
+from pptx.oxml.ns import qn
 
 import sqlite3
 import dateutil.parser as parser
@@ -2717,6 +2719,95 @@ def add_invitation(outp, language, item, navitems, ndi):
 
 
 
+def get_group_meeting_options():
+	"""Return [(1-based slide index, title text)] for each slide in
+	"Group Meeting Slides.pptx", read fresh each call so adding or renaming
+	a group there doesn't need a code change. Falls back to a generic
+	"Group N" label if a slide's title shape can't be found."""
+	options = []
+	prs = Presentation(assetRoot + "Group Meeting Slides.pptx")
+	for idx, slide in enumerate(prs.slides):
+		title = None
+		for shp in slide.shapes:
+			if shp.has_text_frame and shp.text_frame.text.strip().lower().startswith("group meeting"):
+				title = shp.text_frame.text.strip()
+				break
+		options.append((idx + 1, title or f"Group {idx + 1}"))
+	return options
+
+
+def copy_slide_from_deck(outp, filename, slide_index):
+	"""Copy slide_index (0-based) from assetRoot + filename -- a
+	self-contained deck built outside this app's own template/master -- into
+	outp as a new slide, preserving its own images. python-pptx has no
+	native cross-presentation slide copy: this deep-copies the source
+	slide's shape XML onto a new blank-master slide and re-embeds each
+	referenced image (recursively, including inside groups) so the result
+	isn't left pointing at relationship ids that only exist in the source
+	file.
+
+	SVG-only icons (no raster fallback) can't be copied -- this library's
+	image handling goes through PIL, which can't read SVG -- so a picture
+	shape whose only image reference is SVG is dropped rather than left
+	pointing at a broken relationship (verified against the source file:
+	a handful of small decorative icons like exit/restroom signage, not
+	the meeting information itself)."""
+	src_prs = Presentation(assetRoot + filename)
+	if slide_index < 0 or slide_index >= len(src_prs.slides):
+		raise ValueError(f"slide index {slide_index} out of range for {filename}")
+	src_slide = src_prs.slides[slide_index]
+	layout = outp.slide_masters[MASTER_STATIC].slide_layouts[0]
+	dest_slide = outp.slides.add_slide(layout)
+	for shp in list(dest_slide.shapes):
+		shp._element.getparent().remove(shp._element)
+
+	src_part = src_slide.part
+	dest_part = dest_slide.part
+	rid_map = {}
+
+	for shp in src_slide.shapes:
+		el = copy.deepcopy(shp._element)
+		broken_pics = []
+		for pic in list(el.iter(qn('p:pic'))):
+			blip = pic.find('.//' + qn('a:blip'))
+			if blip is None:
+				continue
+			any_ok = False
+			for node in blip.iter():
+				embed = node.get(qn('r:embed'))
+				if not embed:
+					continue
+				if embed not in rid_map:
+					try:
+						src_image = src_part.get_image(embed)
+						_, new_rid = dest_part.get_or_add_image_part(io.BytesIO(src_image.blob))
+						rid_map[embed] = new_rid
+					except Exception:
+						rid_map[embed] = None
+				if rid_map[embed]:
+					node.set(qn('r:embed'), rid_map[embed])
+					any_ok = True
+				else:
+					del node.attrib[qn('r:embed')]
+			if not any_ok:
+				broken_pics.append(pic)
+		for pic in broken_pics:
+			pic.getparent().remove(pic)
+		dest_slide.shapes._spTree.append(el)
+
+	return dest_slide
+
+
+def add_group_meeting(outp, item):
+	group = item.get('group', 1)
+	try:
+		group = int(group)
+	except (TypeError, ValueError):
+		group = 1
+	copy_slide_from_deck(outp, "Group Meeting Slides.pptx", group - 1)
+
+
+
 def add_announcements(outp, item):
 	layout = outp.slide_masters[MASTER_STATIC].slide_layouts[0]
 	slide = outp.slides.add_slide(layout)
@@ -2750,11 +2841,11 @@ def add_scripture_reading(outp, language, item, navitems, ndi):
 		eng[LAYOUT_TITLE_TITLE] = dict(text=r_eng['passage'].upper(), max_size=54, step_size=6, bold=False, size=[2.525, 3.5, 4.7, 1.2])
 		if 'tag' in item:
 			if item['tag'] == 'am':
-				eng[LAYOUT_TITLE_QUOTE] = dict(text=u"NOT ASHAMED OF", bold=True, max_size=16, step_size=2, size=[4.385, 3.85, 4.0, 0.4])
-				eng[LAYOUT_TITLE_REFERENCE] = dict(text=u"GOD\u2019S COMMANDS", bold=True, max_size=16, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
+				eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CREMEMBER\u2026THE COMMANDMENT OF THE LORD AND SAVIOR SPOKEN BY YOUR APOSTLES\u201D", bold=True, max_size=16, step_size=2, size=[3.55, 3.47, 4.78, 1.1])
+				eng[LAYOUT_TITLE_REFERENCE] = dict(text=u"2 PETER 3:2", bold=True, max_size=16, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
 			else:
-				eng[LAYOUT_TITLE_QUOTE] = dict(text=u"BOLD STATEMENTS OF", bold=True, max_size=16, step_size=2, size=[4.385, 3.85, 4.0, 0.4])
-				eng[LAYOUT_TITLE_REFERENCE] = dict(text=u"TRUST IN GOD", bold=True, max_size=16, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
+				eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CREMEMBER THE WORDS SPOKEN BEFOREHAND BY THE HOLY PROPHETS\u201D", bold=True, max_size=16, step_size=2, size=[3.55, 3.47, 4.78, 1.1])
+				eng[LAYOUT_TITLE_REFERENCE] = dict(text=u"2 PETER 3:2", bold=True, max_size=16, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
 		else:
 			eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CHAVE THIS LETTER READ TO ALL\u201D", max_size=16, step_size=2, size=[4.385, 3.85, 4.0, 0.4])
 			eng[LAYOUT_TITLE_REFERENCE] = dict(text=u"1 THESSALONIANS 5:27", max_size=16, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
@@ -2769,11 +2860,11 @@ def add_scripture_reading(outp, language, item, navitems, ndi):
 		esp[LAYOUT_TITLE_TITLE] = dict(text=r_esp['passage'].upper(), max_size=66, step_size=6, bold=False, size=[2.525, 3.5, 4.7, 1.2])
 		if 'tag' in item:
 			if item['tag'] == 'am':
-				esp[LAYOUT_TITLE_QUOTE] = dict(text=u"NO AVERGONZADOS DE LOS", bold=True, max_size=18, step_size=2, size=[4.385, 3.85, 4.0, 0.5])
-				esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"MANDAMIENTOS DE DIOS", bold=True, max_size=18, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
+				esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CRECUERDEN\u2026EL MANDAMIENTO DEL SE\u00d1OR Y SALVADOR DECLARADO POR LOS AP\u00d3STOLES DE USTEDES\u201D", bold=True, max_size=18, step_size=2, size=[3.5, 3.47, 4.78, 1.2])
+				esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"2 PEDRO 3:2", bold=True, max_size=18, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
 			else:
-				esp[LAYOUT_TITLE_QUOTE] = dict(text=u"AFIRMACIONES VALIENTES DE", bold=True, max_size=18, step_size=2, size=[4.385, 3.85, 4.0, 0.5])
-				esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"CONFIANZA EN DIOS", bold=True, max_size=18, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
+				esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CRECUERDEN LAS PALABRAS DICHAS DE ANTEMANO POR LOS SANTOS PROFETAS\u201D", bold=True, max_size=18, step_size=2, size=[3.5, 3.47, 4.78, 1.2])
+				esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"2 PEDRO 3:2", bold=True, max_size=18, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
 		else:
 			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CQUE ESTA CARTA SE LEA A TODOS\u201D", max_size=18, step_size=2, size=[4.385, 3.85, 4.0, 0.5])
 			esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"1 TESALONICENSES 5:27", max_size=18, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
@@ -2803,8 +2894,8 @@ def getDisplayNumber(item):
 	return item['song']
 
 
-tags_eng = dict(desc="desc", sermon="Sermon", lesson="Lesson", report="Report", title="title", reading="Scripture Reading", prayer="Prayer", announcements="Announcements", supper=u"Lord\u2019s Supper", collection="Collection from Members", invitation="Invitation", medley="Song Medley")
-tags_esp = dict(desc="esp", sermon="Serm\u00f3n", lesson="Lecci\u00f3n", report="Reporte", title="t\u00edtulo", reading="Lectura", prayer="Oraci\u00f3n", announcements="Anuncios", supper="La Cena del Se\u00f1or", collection="Ofrenda de los Miembros", invitation="Invitaci\u00f3n", medley="Popurr\u00ed de canciones")
+tags_eng = dict(desc="desc", sermon="Sermon", lesson="Lesson", report="Report", title="title", reading="Scripture Reading", prayer="Prayer", announcements="Announcements", supper=u"Lord\u2019s Supper", collection="Collection from Members", invitation="Invitation", medley="Song Medley", group_meeting="Group Meeting")
+tags_esp = dict(desc="esp", sermon="Serm\u00f3n", lesson="Lecci\u00f3n", report="Reporte", title="t\u00edtulo", reading="Lectura", prayer="Oraci\u00f3n", announcements="Anuncios", supper="La Cena del Se\u00f1or", collection="Ofrenda de los Miembros", invitation="Invitaci\u00f3n", medley="Popurr\u00ed de canciones", group_meeting="Reuni\u00f3n de Grupo")
 
 
 ##########################################################################
@@ -2951,6 +3042,12 @@ def parse_worship_item(order, item, language):
 			desc = item[tags['title']]
 		else:
 			desc = tags['invitation']
+		order.append([desc, 0, leader])
+	elif item['type'] == 'group-meeting':
+		if tags['title'] in item:
+			desc = item[tags['title']]
+		else:
+			desc = tags['group_meeting']
 		order.append([desc, 0, leader])
 	elif item['type'] == 'prayer':
 		desc = item[tags['desc']] if tags['desc'] in item else tags['prayer']
@@ -3160,6 +3257,9 @@ def get_navbar(worship, language):
 		elif item['type'] == 'invitation':
 			engitems.append([ndi, "invitation", "Invitation"])
 			espitems.append([ndi, "invitation", "Invitación", 11])
+		elif item['type'] == 'group-meeting':
+			engitems.append([ndi, "group-meeting", "Group Meeting"])
+			espitems.append([ndi, "group-meeting", "Reunión de Grupo", 9])
 		elif item['type'] == 'welcome':
 			engitems.append([ndi, "welcome", "Welcome"])
 			espitems.append([ndi, "welcome", "Bienvenida", 12])
@@ -3254,6 +3354,8 @@ def make_worship_deck(jsonfile):
 			add_sermon(outp, language, item, navitems, ndi)
 		elif item['type'] == 'invitation':
 			add_invitation(outp, language, item, navitems, ndi)
+		elif item['type'] == 'group-meeting':
+			add_group_meeting(outp, item)
 		elif item['type'] == 'welcome':
 #			add_welcome(outp, item, worship, language)
 			add_welcome(outp, language, worship, navitems, ndi)

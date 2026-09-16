@@ -106,23 +106,103 @@ class TestGenerateReadings:
         assert worship.generate_readings(items) == {"readings": {}}
 
 
-class TestParseReading:
-    def test_builds_lang_list(self):
-        data = {
-            "english": {"book": "Matthew", "reference": "26:27-29"},
-            "spanish": {"book": "Mateo", "reference": "26:27-29"},
-        }
-        result = worship.parse_reading(data)
+class TestTranslateReferenceToSpanish:
+    """The getScriptureReading API (which provided both languages) is being
+    retired in favor of a local CSV schedule that only has English
+    references -- this fills in the Spanish side by translating just the
+    book name."""
+
+    def test_translates_known_book(self):
+        assert worship.translate_reference_to_spanish("Romans 3:21-28") == "Romanos 3:21-28"
+
+    def test_translates_numbered_book(self):
+        assert worship.translate_reference_to_spanish("1 Corinthians 10:1-11") == "1 Corintios 10:1-11"
+
+    def test_tolerates_source_spreadsheet_typos(self):
+        # "Ezekial"/"Zehariah" are literal misspellings present in the
+        # source spreadsheet -- translation must not choke on them.
+        assert worship.translate_reference_to_spanish("Ezekial 34:11-16") == "Ezequiel 34:11-16"
+        assert worship.translate_reference_to_spanish("Zehariah 13:7-9") == "Zacarías 13:7-9"
+
+    def test_unknown_book_falls_back_to_english(self):
+        # Better to show the English book name than to fail the whole
+        # autofill over one book missing from SPANISH_BOOK_NAMES.
+        assert worship.translate_reference_to_spanish("Obadiah 1:1-4") == "Obadiah 1:1-4"
+
+
+class TestLoadLocalScriptureSchedule:
+    """Reads Bug_folder/*.csv -- the replacement for the retired
+    getScriptureReading API. See load_local_scripture_schedule's docstring
+    for the {date: {"am", "pm"}} shape and multi-file/collision handling.
+    """
+
+    def _write_csv(self, tmp_path, filename, rows):
+        path = tmp_path / filename
+        lines = ["Date,Morning Readings (Apostles),Evening Readings (Prophets),"]
+        for date, am, pm in rows:
+            lines.append(f"{date},{am},{pm},")
+        path.write_text("\n".join(lines), encoding="utf-8")
+        return path
+
+    def test_parses_dates_and_both_columns(self, tmp_path):
+        self._write_csv(tmp_path, "Scripture Reading 2026.csv", [("2026-09-13", "Romans 3:21-28", "Genesis 22:9-18")])
+        schedule = worship.load_local_scripture_schedule(str(tmp_path))
+        assert schedule["2026-09-13"] == {"am": "Romans 3:21-28", "pm": "Genesis 22:9-18"}
+
+    def test_ignores_unrelated_csv_files(self, tmp_path):
+        # The schedule only matches "Scripture Reading*.csv" -- assets/ can
+        # hold other, unrelated CSVs without them being misread as a
+        # reading schedule.
+        self._write_csv(tmp_path, "other-data.csv", [("2026-09-13", "Should Not Load", "Should Not Load")])
+        assert worship.load_local_scripture_schedule(str(tmp_path)) == {}
+
+    def test_later_file_wins_on_date_collision(self, tmp_path):
+        self._write_csv(tmp_path, "Scripture Reading 2026-a.csv", [("2026-09-13", "Old AM", "Old PM")])
+        self._write_csv(tmp_path, "Scripture Reading 2026-b.csv", [("2026-09-13", "New AM", "New PM")])
+        schedule = worship.load_local_scripture_schedule(str(tmp_path))
+        assert schedule["2026-09-13"] == {"am": "New AM", "pm": "New PM"}
+
+    def test_empty_folder_gives_empty_schedule(self, tmp_path):
+        assert worship.load_local_scripture_schedule(str(tmp_path)) == {}
+
+
+class TestFetchReadings:
+    """fetch_readings() now reads the local schedule instead of calling the
+    (retired) getScriptureReading API."""
+
+    def _patch_schedule(self, monkeypatch, schedule):
+        monkeypatch.setattr(worship, "load_local_scripture_schedule", lambda: schedule)
+
+    def test_sun_am_uses_morning_reading(self, monkeypatch):
+        self._patch_schedule(monkeypatch, {"2026-09-13": {"am": "Romans 3:21-28", "pm": "Genesis 22:9-18"}})
+        result = worship.fetch_readings("2026-09-13", {}, "Sun - AM")
         assert result == {
-            "lang": [
-                {"passage": "Matthew 26:27-29"},
-                {"passage": "Mateo 26:27-29"},
-            ]
+            "readings": {
+                "reading-1": {
+                    "lang": [
+                        {"passage": "Romans 3:21-28"},
+                        {"passage": "Romanos 3:21-28"},
+                    ]
+                }
+            }
         }
 
-    def test_missing_language_key_raises(self):
-        with pytest.raises(KeyError):
-            worship.parse_reading({"english": {"book": "Matthew", "reference": "1:1"}})
+    def test_sun_pm_uses_evening_reading(self, monkeypatch):
+        self._patch_schedule(monkeypatch, {"2026-09-13": {"am": "Romans 3:21-28", "pm": "Genesis 22:9-18"}})
+        result = worship.fetch_readings("2026-09-13", {}, "Sun - PM")
+        assert result["readings"]["reading-1"]["lang"][0]["passage"] == "Genesis 22:9-18"
+        assert result["readings"]["reading-1"]["lang"][1]["passage"] == "Génesis 22:9-18"
+
+    def test_date_not_in_schedule_gives_no_reading_not_an_error(self, monkeypatch):
+        self._patch_schedule(monkeypatch, {})
+        result = worship.fetch_readings("2026-09-13", {}, "Sun - AM")
+        assert result == {"readings": {}}
+        assert "_error" not in result
+
+    def test_service_type_not_covered_by_schedule_gives_no_reading(self, monkeypatch):
+        self._patch_schedule(monkeypatch, {"2026-09-13": {"am": "Romans 3:21-28", "pm": "Genesis 22:9-18"}})
+        assert worship.fetch_readings("2026-09-13", {}, "Wed") == {"readings": {}}
+        assert worship.fetch_readings("2026-09-13", {}, "Gospel Meeting") == {"readings": {}}
 
 
 class TestSampleFixture:

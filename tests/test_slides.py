@@ -811,3 +811,130 @@ class TestAnnouncementsTitleItemType:
         worship = {'items': [{'type': 'announcements'}]}
         engitems, _ = slides.get_navbar(worship, 'bil')
         assert engitems == [[0, "announcements", "Closing", 10]]
+
+
+class TestGroupMeetingItemType:
+    """New item type: inserts the pre-made "Group Meeting Slides.pptx" slide
+    for whichever small group is meeting, picked from a dropdown (Sunday PM
+    template and Custom Template Builder). That file is a self-contained
+    deck built outside this app's own master/layout, so it can't just be
+    rendered from LAYOUT_TITLE placeholders like every other item type --
+    copy_slide_from_deck() does a real cross-presentation slide copy
+    instead (see its docstring for why, and for the SVG-icon caveat)."""
+
+    def test_get_group_meeting_options_reads_titles_from_the_deck(self):
+        options = slides.get_group_meeting_options()
+        assert options == [
+            (1, "Group Meeting – Group 1"),
+            (2, "Group Meeting – Group 2"),
+            (3, "Group Meeting – Group 3"),
+        ]
+
+    def test_copy_slide_from_deck_out_of_range_raises(self):
+        with pytest.raises(ValueError, match="out of range"):
+            slides.copy_slide_from_deck(
+                slides.Presentation(slides.assetRoot + "template-2020.pptx"),
+                "Group Meeting Slides.pptx",
+                99,
+            )
+
+    def test_add_group_meeting_inserts_the_matching_slide(self):
+        outp = slides.Presentation(slides.assetRoot + "template-2020.pptx")
+        before = len(outp.slides)
+        slides.add_group_meeting(outp, {"group": 2})
+        assert len(outp.slides) == before + 1
+
+        new_slide = outp.slides[-1]
+        texts = [
+            shp.text_frame.text for shp in new_slide.shapes
+            if shp.has_text_frame and shp.text_frame.text.strip()
+        ]
+        assert any("Group 2" in t for t in texts)
+
+    def test_add_group_meeting_defaults_to_group_1_when_missing(self):
+        outp = slides.Presentation(slides.assetRoot + "template-2020.pptx")
+        slides.add_group_meeting(outp, {})
+        new_slide = outp.slides[-1]
+        texts = [
+            shp.text_frame.text for shp in new_slide.shapes
+            if shp.has_text_frame and shp.text_frame.text.strip()
+        ]
+        assert any("Group 1" in t for t in texts)
+
+    def test_parse_worship_item_uses_group_meeting_tag(self):
+        order = []
+        slides.parse_worship_item(order, {'type': 'group-meeting'}, 'eng')
+        assert order == [["Group Meeting", 0, " "]]
+
+        orden = []
+        slides.parse_worship_item(orden, {'type': 'group-meeting'}, 'esp')
+        assert orden == [["Reunión de Grupo", 0, " "]]
+
+    def test_get_navbar_lists_group_meeting(self):
+        worship = {'items': [{'type': 'group-meeting'}]}
+        engitems, espitems = slides.get_navbar(worship, 'bil')
+        assert engitems == [[0, "group-meeting", "Group Meeting"]]
+        assert espitems == [[0, "group-meeting", "Reunión de Grupo", 9]]
+
+    def test_dispatches_through_add_group_meeting_in_make_worship_deck(self):
+        import inspect
+        source = inspect.getsource(slides.make_worship_deck)
+        assert "'group-meeting'" in source
+        assert "add_group_meeting" in source
+
+
+class TestScriptureReadingQuoteByTag:
+    """The Reading slide's quote/reference now show 2 Peter 3:2, matching
+    "Scripture Reading Templates.pptx" -- the two clauses of that one verse
+    map onto the two reading tags: "am" (Apostles/morning reading in the
+    scripture schedule CSV) gets the "your apostles" clause, anything else
+    ("pm"/Prophets, or no tag at all for e.g. Wednesday) gets the "holy
+    prophets" clause. This replaced an older pair of unrelated slogans that
+    weren't tied to any specific verse.
+    """
+
+    def _make_reading_item(self, tag=None):
+        item = {'type': 'reading', 'lang': [{'passage': 'Romans 3:21-28'}, {'passage': 'Romanos 3:21-28'}]}
+        if tag is not None:
+            item['tag'] = tag
+        return item
+
+    def test_am_tag_quotes_the_apostles_clause(self):
+        from pptx import Presentation
+        outp = Presentation(slides.assetRoot + "template-2020.pptx")
+        slides.add_scripture_reading(outp, "bil", self._make_reading_item('am'), None, 0)
+        slide = outp.slides[-1]
+        eng_quote = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ENG_QUOTE)
+        eng_ref = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ENG_REFERENCE)
+        assert eng_quote.text_frame.text == "“REMEMBER…THE COMMANDMENT OF THE LORD AND SAVIOR SPOKEN BY YOUR APOSTLES”"
+        assert eng_ref.text_frame.text == "2 PETER 3:2"
+
+        esp_quote = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ESP_QUOTE)
+        esp_ref = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ESP_REFERENCE)
+        assert esp_quote.text_frame.text == "“RECUERDEN…EL MANDAMIENTO DEL SEÑOR Y SALVADOR DECLARADO POR LOS APÓSTOLES DE USTEDES”"
+        assert esp_ref.text_frame.text == "2 PEDRO 3:2"
+
+    def test_pm_tag_quotes_the_prophets_clause(self):
+        from pptx import Presentation
+        outp = Presentation(slides.assetRoot + "template-2020.pptx")
+        slides.add_scripture_reading(outp, "bil", self._make_reading_item('pm'), None, 0)
+        slide = outp.slides[-1]
+        eng_quote = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ENG_QUOTE)
+        eng_ref = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ENG_REFERENCE)
+        assert eng_quote.text_frame.text == "“REMEMBER THE WORDS SPOKEN BEFOREHAND BY THE HOLY PROPHETS”"
+        assert eng_ref.text_frame.text == "2 PETER 3:2"
+
+        esp_quote = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ESP_QUOTE)
+        assert esp_quote.text_frame.text == "“RECUERDEN LAS PALABRAS DICHAS DE ANTEMANO POR LOS SANTOS PROFETAS”"
+
+    def test_no_tag_falls_back_to_1_thessalonians(self):
+        # e.g. a plain Wednesday reading, not tied to the Sunday AM/PM
+        # apostles/prophets schedule -- must keep its own separate wording.
+        from pptx import Presentation
+        outp = Presentation(slides.assetRoot + "template-2020.pptx")
+        slides.add_scripture_reading(outp, "bil", self._make_reading_item(), None, 0)
+        slide = outp.slides[-1]
+        eng_quote = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ENG_QUOTE)
+        eng_ref = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ENG_REFERENCE)
+        assert eng_quote.text_frame.text == "“HAVE THIS LETTER READ TO ALL”"
+        assert eng_ref.text_frame.text == "1 THESSALONIANS 5:27"

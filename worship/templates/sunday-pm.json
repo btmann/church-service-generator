@@ -9,6 +9,7 @@
 	{ "type": "sermon", "id": "sermon-1", "position": "Preach" },
 	{ "type": "song-music", "id": "song-4" },
 	{ "type": "announcements", "position": "Announcements" },
+	{ "type": "group-meeting", "id": "group-meeting-1", "group": 1 },
 	{ "type": "ls-pm" },
 	{ "type": "prayer", "id": "prayer-2",  "position": "Last Prayer" }
 ]}

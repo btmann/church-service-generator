@@ -380,6 +380,62 @@ class TestCustomTemplateAnnouncementsTitleItem:
             _cleanup_generated_files(pptx_path)
 
 
+class TestGroupMeetingItem:
+    """New item type: a dropdown to pick which small group is meeting
+    (Sunday PM), inserting that group's pre-made slide from
+    assets/Group Meeting Slides.pptx. Available both on sunday-pm.json (by
+    default) and as a Custom Template Builder option.
+    """
+
+    def test_custom_builder_can_add_it_with_a_group_dropdown(self):
+        at = AppTest.from_file(str(UI_PY))
+        at.run(timeout=30)
+        at.selectbox(key="template_select").set_value("Custom Template (Build Order)").run()
+        at.selectbox(key="custom_item_type_select").set_value("group-meeting").run()
+        at.button(key="custom_add_item").click().run()
+        assert list(at.exception) == []
+
+        dropdown = at.selectbox(key="group_group-meeting-1")
+        assert dropdown.options == [
+            "Group Meeting – Group 1",
+            "Group Meeting – Group 2",
+            "Group Meeting – Group 3",
+        ]
+        assert dropdown.value == 1  # defaults to group 1
+
+    def test_sunday_pm_template_includes_the_group_dropdown_by_default(self):
+        at = AppTest.from_file(str(UI_PY))
+        at.run(timeout=30)
+        at.selectbox(key="template_select").set_value("sunday-pm").run()
+        assert list(at.exception) == []
+        assert at.selectbox(key="group_group-meeting-1").value == 1
+
+    def test_selecting_a_group_and_generating_produces_that_groups_slide(self):
+        at = AppTest.from_file(str(UI_PY))
+        at.run(timeout=30)
+        at.selectbox(key="template_select").set_value("Custom Template (Build Order)").run()
+        at.selectbox(key="custom_item_type_select").set_value("group-meeting").run()
+        at.button(key="custom_add_item").click().run()
+        at.selectbox(key="group_group-meeting-1").set_value(3).run()
+
+        generate = [b for b in at.button if "Generate" in (b.label or "")][0]
+        at.button(key=generate.key).click().run(timeout=60)
+        assert list(at.exception) == []
+
+        pptx_path = at.session_state["generated_files"]["pptx_path"]
+        try:
+            from pptx import Presentation
+            prs = Presentation(pptx_path)
+            assert len(prs.slides) == 1
+            texts = [
+                shp.text_frame.text for shp in prs.slides[0].shapes
+                if shp.has_text_frame and shp.text_frame.text.strip()
+            ]
+            assert any("Group 3" in t for t in texts)
+        finally:
+            _cleanup_generated_files(pptx_path)
+
+
 class TestCustomTemplateInvitationSongItems:
     """New Custom Template Builder options: "song-title" (a title-only
     preview slide) and "song-music" (a music-only slide, no title) -- the
