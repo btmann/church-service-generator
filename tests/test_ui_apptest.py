@@ -435,6 +435,72 @@ class TestGroupMeetingItem:
         finally:
             _cleanup_generated_files(pptx_path)
 
+    def test_sunday_pm_template_has_group_meeting_after_lords_supper(self):
+        template_path = ROOT / "worship" / "templates" / "sunday-pm.json"
+        items = json.loads(template_path.read_text())["order"]
+        types = [item["type"] for item in items]
+        assert types.index("group-meeting") == types.index("ls-pm") + 1
+
+
+class TestScriptureReadingTagFromServiceType:
+    """Regression: add_scripture_reading's quote/reference (2 Peter 3:2,
+    split into its apostles/prophets halves) is picked by a "tag" field on
+    the reading item -- but nothing ever set that field, on either
+    sunday-am.json/sunday-pm.json or a Custom Template Builder reading, so
+    every reading fell through to the generic "1 Thessalonians 5:27"
+    fallback regardless of service type. generate_presentation() now
+    derives "tag" from the selected Service Type at generation time (not
+    baked into the template JSON), so it's also correct for a custom
+    template reused across AM and PM services.
+    """
+
+    def _build_and_generate(self, service_type):
+        at = AppTest.from_file(str(UI_PY))
+        at.run(timeout=30)
+        service_type_widget = [sb for sb in at.selectbox if sb.label == "Service Type"][0]
+        at.selectbox(key=service_type_widget.key).set_value(service_type).run()
+        at.selectbox(key="template_select").set_value("Custom Template (Build Order)").run()
+        at.selectbox(key="custom_item_type_select").set_value("reading").run()
+        at.button(key="custom_add_item").click().run()
+
+        generate = [b for b in at.button if "Generate" in (b.label or "")][0]
+        at.button(key=generate.key).click().run(timeout=60)
+        assert list(at.exception) == []
+        return at
+
+    def _quote_text(self, pptx_path):
+        from pptx import Presentation
+        prs = Presentation(pptx_path)
+        for slide in prs.slides:
+            for shp in slide.shapes:
+                if shp.has_text_frame and ("REMEMBER" in shp.text_frame.text.upper() or "THESSALONIAN" in shp.text_frame.text.upper()):
+                    return shp.text_frame.text
+        return None
+
+    def test_sun_am_service_type_shows_the_apostles_clause(self):
+        at = self._build_and_generate("Sun - AM")
+        pptx_path = at.session_state["generated_files"]["pptx_path"]
+        try:
+            assert "APOSTLES" in self._quote_text(pptx_path).upper()
+        finally:
+            _cleanup_generated_files(pptx_path)
+
+    def test_sun_pm_service_type_shows_the_prophets_clause(self):
+        at = self._build_and_generate("Sun - PM")
+        pptx_path = at.session_state["generated_files"]["pptx_path"]
+        try:
+            assert "PROPHETS" in self._quote_text(pptx_path).upper()
+        finally:
+            _cleanup_generated_files(pptx_path)
+
+    def test_wed_service_type_keeps_the_generic_fallback(self):
+        at = self._build_and_generate("Wed")
+        pptx_path = at.session_state["generated_files"]["pptx_path"]
+        try:
+            assert "THESSALONIANS" in self._quote_text(pptx_path).upper()
+        finally:
+            _cleanup_generated_files(pptx_path)
+
 
 class TestCustomTemplateInvitationSongItems:
     """New Custom Template Builder options: "song-title" (a title-only

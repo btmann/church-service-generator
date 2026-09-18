@@ -789,7 +789,24 @@ def generate_presentation(date, time, template, songs_data, leaders_data, readin
         for idx, item in enumerate(template_items):
             if not isinstance(item, dict):
                 raise ValueError(f"Template item {idx} should be a dict, got {type(item).__name__}")
-            
+
+            # A "reading" item's quote/reference on the slide itself
+            # (add_scripture_reading in slides.py) picks the apostles vs
+            # prophets half of 2 Peter 3:2 by this "tag" -- neither
+            # sunday-am.json/sunday-pm.json nor the Custom Template Builder
+            # ever set it, so every reading fell through to the generic
+            # 1 Thessalonians 5:27 fallback regardless of service type.
+            # Deriving it here from the actual service_type, rather than
+            # hardcoding it into the template JSON, means it's also correct
+            # for a custom template reused across AM and PM services, and
+            # matches the same AM/PM split the scripture-reading-schedule
+            # CSV autofill already uses (worship.fetch_readings).
+            if item.get('type') == 'reading' and 'tag' not in item:
+                if service_type == 'Sun - AM':
+                    item['tag'] = 'am'
+                elif service_type == 'Sun - PM':
+                    item['tag'] = 'pm'
+
             # Merge position/leader data
             if 'position' in item:
                 pos_name = item['position']
