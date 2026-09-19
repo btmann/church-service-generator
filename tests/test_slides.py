@@ -851,6 +851,24 @@ class TestGroupMeetingItemType:
         ]
         assert any("Group 2" in t for t in texts)
 
+    def test_add_group_meeting_gives_the_new_slide_a_grey_gradient_background(self):
+        # Regression: MASTER_STATIC's own layout background is black (this
+        # app's usual style) and copy_slide_from_deck only copies the
+        # source slide's foreground shapes, not any background -- so the
+        # copied slide silently inherited black instead of the source
+        # deck's own light grey gradient.
+        from pptx.enum.dml import MSO_FILL_TYPE
+        outp = slides.Presentation(slides.assetRoot + "template-2020.pptx")
+        slides.add_group_meeting(outp, {"group": 1})
+        new_slide = outp.slides[-1]
+        fill = new_slide.background.fill
+        assert fill.type == MSO_FILL_TYPE.GRADIENT
+        stops = fill.gradient_stops
+        assert {stops[0].color.rgb, stops[-1].color.rgb} == {
+            slides.RGBColor(0xA6, 0xA6, 0xA6),
+            slides.RGBColor(0xB4, 0xB4, 0xB4),
+        }
+
     def test_add_group_meeting_defaults_to_group_1_when_missing(self):
         outp = slides.Presentation(slides.assetRoot + "template-2020.pptx")
         slides.add_group_meeting(outp, {})
@@ -959,3 +977,19 @@ class TestScriptureReadingQuoteByTag:
         eng_ref = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ENG_REFERENCE)
         assert eng_quote.text_frame.text == "“HAVE THIS LETTER READ TO ALL”"
         assert eng_ref.text_frame.text == "1 THESSALONIANS 5:27"
+
+    def test_quote_box_is_narrow_enough_to_stay_inside_the_circle(self):
+        # Regression: the original box (width 4.78in) let long wrapped
+        # lines of the full 2 Peter 3:2 clause spill past the circle's
+        # edge low in its curve, since the circle narrows well below its
+        # widest point. Pinned to a concrete upper bound rather than the
+        # exact tuned value, so a future re-tune doesn't have to match
+        # these numbers exactly -- just stay narrow/low enough to fit.
+        from pptx import Presentation
+        from pptx.util import Inches
+        outp = Presentation(slides.assetRoot + "template-2020.pptx")
+        slides.add_scripture_reading(outp, "bil", self._make_reading_item('am'), None, 0)
+        slide = outp.slides[-1]
+        eng_quote = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ENG_QUOTE)
+        assert eng_quote.width <= Inches(4.0)
+        assert eng_quote.top >= Inches(3.6)

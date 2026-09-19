@@ -2761,6 +2761,20 @@ def copy_slide_from_deck(outp, filename, slide_index):
 	for shp in list(dest_slide.shapes):
 		shp._element.getparent().remove(shp._element)
 
+	# MASTER_STATIC's own layout background is black (this app's usual
+	# style), but the source deck's own background doesn't carry over with
+	# the shapes above -- only an explicit override on the new slide does.
+	# The source's background resolves through a theme bgRef this library
+	# doesn't attempt to fully resolve across presentations, so this is
+	# hardcoded to match what it actually renders as (a light grey
+	# top-to-bottom gradient), rather than a general "copy the source
+	# background" solution -- fine while this function has one caller.
+	dest_slide.background.fill.gradient()
+	dest_slide.background.fill.gradient_angle = 90.0
+	grad_stops = dest_slide.background.fill.gradient_stops
+	grad_stops[0].color.rgb = RGBColor(0xB4, 0xB4, 0xB4)
+	grad_stops[-1].color.rgb = RGBColor(0xA6, 0xA6, 0xA6)
+
 	src_part = src_slide.part
 	dest_part = dest_slide.part
 	rid_map = {}
@@ -2849,11 +2863,11 @@ def add_scripture_reading(outp, language, item, navitems, ndi):
 		eng[LAYOUT_TITLE_TITLE] = dict(text=r_eng['passage'].upper(), max_size=54, step_size=6, bold=False, size=[2.525, 3.5, 4.7, 1.2])
 		if 'tag' in item:
 			if item['tag'] == 'am':
-				eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CREMEMBER\u2026THE COMMANDMENT OF THE LORD AND SAVIOR SPOKEN BY YOUR APOSTLES\u201D", bold=True, max_size=16, step_size=2, size=[3.55, 3.47, 4.78, 1.1])
-				eng[LAYOUT_TITLE_REFERENCE] = dict(text=u"2 PETER 3:2", bold=True, max_size=16, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
+				eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CREMEMBER\u2026THE COMMANDMENT OF THE LORD AND SAVIOR SPOKEN BY YOUR APOSTLES\u201D", bold=True, max_size=16, step_size=2, size=[3.75, 4.05, 3.6, 1.15])
+				eng[LAYOUT_TITLE_REFERENCE] = dict(text=u"2 PETER 3:2", bold=True, max_size=16, step_size=2, size=[5.0, 4.35, 3.00, 0.4])
 			else:
-				eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CREMEMBER THE WORDS SPOKEN BEFOREHAND BY THE HOLY PROPHETS\u201D", bold=True, max_size=16, step_size=2, size=[3.55, 3.47, 4.78, 1.1])
-				eng[LAYOUT_TITLE_REFERENCE] = dict(text=u"2 PETER 3:2", bold=True, max_size=16, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
+				eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CREMEMBER THE WORDS SPOKEN BEFOREHAND BY THE HOLY PROPHETS\u201D", bold=True, max_size=16, step_size=2, size=[3.75, 4.05, 3.6, 1.15])
+				eng[LAYOUT_TITLE_REFERENCE] = dict(text=u"2 PETER 3:2", bold=True, max_size=16, step_size=2, size=[5.0, 4.35, 3.00, 0.4])
 		else:
 			eng[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CHAVE THIS LETTER READ TO ALL\u201D", max_size=16, step_size=2, size=[4.385, 3.85, 4.0, 0.4])
 			eng[LAYOUT_TITLE_REFERENCE] = dict(text=u"1 THESSALONIANS 5:27", max_size=16, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
@@ -2868,11 +2882,11 @@ def add_scripture_reading(outp, language, item, navitems, ndi):
 		esp[LAYOUT_TITLE_TITLE] = dict(text=r_esp['passage'].upper(), max_size=66, step_size=6, bold=False, size=[2.525, 3.5, 4.7, 1.2])
 		if 'tag' in item:
 			if item['tag'] == 'am':
-				esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CRECUERDEN\u2026EL MANDAMIENTO DEL SE\u00d1OR Y SALVADOR DECLARADO POR LOS AP\u00d3STOLES DE USTEDES\u201D", bold=True, max_size=18, step_size=2, size=[3.5, 3.47, 4.78, 1.2])
-				esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"2 PEDRO 3:2", bold=True, max_size=18, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
+				esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CRECUERDEN\u2026EL MANDAMIENTO DEL SE\u00d1OR Y SALVADOR DECLARADO POR LOS AP\u00d3STOLES DE USTEDES\u201D", bold=True, max_size=16, step_size=2, size=[3.7, 4.05, 3.6, 1.25])
+				esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"2 PEDRO 3:2", bold=True, max_size=18, step_size=2, size=[5.0, 4.35, 3.00, 0.4])
 			else:
-				esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CRECUERDEN LAS PALABRAS DICHAS DE ANTEMANO POR LOS SANTOS PROFETAS\u201D", bold=True, max_size=18, step_size=2, size=[3.5, 3.47, 4.78, 1.2])
-				esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"2 PEDRO 3:2", bold=True, max_size=18, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
+				esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CRECUERDEN LAS PALABRAS DICHAS DE ANTEMANO POR LOS SANTOS PROFETAS\u201D", bold=True, max_size=16, step_size=2, size=[3.7, 4.05, 3.6, 1.25])
+				esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"2 PEDRO 3:2", bold=True, max_size=18, step_size=2, size=[5.0, 4.35, 3.00, 0.4])
 		else:
 			esp[LAYOUT_TITLE_QUOTE] = dict(text=u"\u201CQUE ESTA CARTA SE LEA A TODOS\u201D", max_size=18, step_size=2, size=[4.385, 3.85, 4.0, 0.5])
 			esp[LAYOUT_TITLE_REFERENCE] = dict(text=u"1 TESALONICENSES 5:27", max_size=18, step_size=2, size=[4.725, 4.35, 3.00, 0.5])
