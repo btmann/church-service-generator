@@ -400,6 +400,7 @@ class TestGroupMeetingItem:
             "Group Meeting – Group 1",
             "Group Meeting – Group 2",
             "Group Meeting – Group 3",
+            "No group meeting this week",
         ]
         assert dropdown.value == 1  # defaults to group 1
 
@@ -432,6 +433,29 @@ class TestGroupMeetingItem:
                 if shp.has_text_frame and shp.text_frame.text.strip()
             ]
             assert any("Group 3" in t for t in texts)
+        finally:
+            _cleanup_generated_files(pptx_path)
+
+    def test_no_group_meeting_this_week_adds_no_slide(self):
+        # Some weeks (holidays, etc.) simply don't have a group meeting --
+        # selecting the "skip it" option must not insert any slide at all,
+        # rather than falling back to group 1.
+        at = AppTest.from_file(str(UI_PY))
+        at.run(timeout=30)
+        at.selectbox(key="template_select").set_value("Custom Template (Build Order)").run()
+        at.selectbox(key="custom_item_type_select").set_value("group-meeting").run()
+        at.button(key="custom_add_item").click().run()
+        at.selectbox(key="group_group-meeting-1").set_value(0).run()
+
+        generate = [b for b in at.button if "Generate" in (b.label or "")][0]
+        at.button(key=generate.key).click().run(timeout=60)
+        assert list(at.exception) == []
+
+        pptx_path = at.session_state["generated_files"]["pptx_path"]
+        try:
+            from pptx import Presentation
+            prs = Presentation(pptx_path)
+            assert len(prs.slides) == 0
         finally:
             _cleanup_generated_files(pptx_path)
 

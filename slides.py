@@ -2799,12 +2799,20 @@ def copy_slide_from_deck(outp, filename, slide_index):
 
 
 def add_group_meeting(outp, item):
+	"""Insert the slide for item['group'] (1-based). Returns False and adds
+	nothing if group is 0 ("No group meeting this week" in the UI) -- some
+	weeks (holidays, etc.) simply don't have one. A missing "group" key
+	(e.g. an older spec) still defaults to group 1, same as before this
+	option existed."""
 	group = item.get('group', 1)
 	try:
 		group = int(group)
 	except (TypeError, ValueError):
 		group = 1
+	if group == 0:
+		return False
 	copy_slide_from_deck(outp, "Group Meeting Slides.pptx", group - 1)
+	return True
 
 
 
@@ -3044,11 +3052,12 @@ def parse_worship_item(order, item, language):
 			desc = tags['invitation']
 		order.append([desc, 0, leader])
 	elif item['type'] == 'group-meeting':
-		if tags['title'] in item:
-			desc = item[tags['title']]
-		else:
-			desc = tags['group_meeting']
-		order.append([desc, 0, leader])
+		if item.get('group', 1) != 0:
+			if tags['title'] in item:
+				desc = item[tags['title']]
+			else:
+				desc = tags['group_meeting']
+			order.append([desc, 0, leader])
 	elif item['type'] == 'prayer':
 		desc = item[tags['desc']] if tags['desc'] in item else tags['prayer']
 #		order.append([desc, 0])
@@ -3258,8 +3267,11 @@ def get_navbar(worship, language):
 			engitems.append([ndi, "invitation", "Invitation"])
 			espitems.append([ndi, "invitation", "Invitación", 11])
 		elif item['type'] == 'group-meeting':
-			engitems.append([ndi, "group-meeting", "Group Meeting"])
-			espitems.append([ndi, "group-meeting", "Reunión de Grupo", 9])
+			if item.get('group', 1) == 0:
+				ndi = ndi - 1
+			else:
+				engitems.append([ndi, "group-meeting", "Group Meeting"])
+				espitems.append([ndi, "group-meeting", "Reunión de Grupo", 9])
 		elif item['type'] == 'welcome':
 			engitems.append([ndi, "welcome", "Welcome"])
 			espitems.append([ndi, "welcome", "Bienvenida", 12])
@@ -3355,7 +3367,8 @@ def make_worship_deck(jsonfile):
 		elif item['type'] == 'invitation':
 			add_invitation(outp, language, item, navitems, ndi)
 		elif item['type'] == 'group-meeting':
-			add_group_meeting(outp, item)
+			if not add_group_meeting(outp, item):
+				ndi = ndi - 1
 		elif item['type'] == 'welcome':
 #			add_welcome(outp, item, worship, language)
 			add_welcome(outp, language, worship, navitems, ndi)

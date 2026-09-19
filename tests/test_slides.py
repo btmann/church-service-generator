@@ -861,6 +861,27 @@ class TestGroupMeetingItemType:
         ]
         assert any("Group 1" in t for t in texts)
 
+    def test_add_group_meeting_group_zero_adds_no_slide(self):
+        # "No group meeting this week" in the UI -- some weeks (holidays,
+        # etc.) simply don't have one.
+        outp = slides.Presentation(slides.assetRoot + "template-2020.pptx")
+        before = len(outp.slides)
+        added = slides.add_group_meeting(outp, {"group": 0})
+        assert added is False
+        assert len(outp.slides) == before
+
+    def test_parse_worship_item_skips_group_meeting_when_group_is_zero(self):
+        order = []
+        slides.parse_worship_item(order, {'type': 'group-meeting', 'group': 0}, 'eng')
+        assert order == []
+
+    def test_get_navbar_skips_group_meeting_when_group_is_zero(self):
+        worship = {'items': [{'type': 'group-meeting', 'group': 0}, {'type': 'prayer'}]}
+        engitems, _ = slides.get_navbar(worship, 'bil')
+        # The skipped group-meeting must not consume a nav index -- the
+        # following prayer should still land on index 0, not 1.
+        assert engitems == [[0, "prayer", "Prayer"]]
+
     def test_parse_worship_item_uses_group_meeting_tag(self):
         order = []
         slides.parse_worship_item(order, {'type': 'group-meeting'}, 'eng')

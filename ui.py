@@ -1529,10 +1529,21 @@ with flow_tab:
             if group_key not in st.session_state:
                 st.session_state[group_key] = item.get("group", group_options[0][0] if group_options else 1)
             if group_options:
+                # 0 is the "skip it" choice -- some weeks (holidays, etc.)
+                # don't have a group meeting at all. add_group_meeting in
+                # slides.py checks for this exact sentinel and adds no
+                # slide when it's selected. (Not None: Streamlit's
+                # selectbox reserves None for its own "nothing selected
+                # yet" placeholder mode, which doesn't reliably round-trip
+                # when None is also a literal value in the options list.)
+                no_meeting_label = "No group meeting this week"
+                choices = [g for g, _ in group_options] + [0]
+                group_labels = dict(group_options)
+                group_labels[0] = no_meeting_label
                 selected_group = st.selectbox(
                     "Which group is meeting?",
-                    [g for g, _ in group_options],
-                    format_func=lambda g: dict(group_options).get(g, f"Group {g}"),
+                    choices,
+                    format_func=lambda g: group_labels.get(g, f"Group {g}"),
                     key=group_key,
                 )
                 readings_input[item_id] = {"group": selected_group}
