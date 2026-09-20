@@ -1,3 +1,5 @@
+import json
+import os
 import sys
 from pathlib import Path
 
@@ -993,3 +995,81 @@ class TestScriptureReadingQuoteByTag:
         eng_quote = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ENG_QUOTE)
         assert eng_quote.width <= Inches(4.0)
         assert eng_quote.top >= Inches(3.6)
+
+
+class TestDetectVerseChorusGroups:
+    """Guesses verse/chorus structure from a song's own slide-by-slide
+    text: a chorus recurring later in the song shows up as an exact
+    repeat of several consecutive slides, so a repeated run is grouped as
+    the same chorus recurring, and whatever falls between/around chorus
+    occurrences becomes one verse."""
+
+    def test_one_chorus_repeated_twice(self):
+        texts = (
+            ["v1a", "v1b", "v1c", "v1d"]
+            + ["ca", "cb", "cc", "cd"]
+            + ["v2a", "v2b", "v2c", "v2d"]
+            + ["ca", "cb", "cc", "cd"]
+            + ["v3a", "v3b"]
+        )
+        verses, chorus = slides.detect_verse_chorus_groups(texts)
+        assert verses == {"1": [1, 2, 3, 4], "2": [9, 10, 11, 12], "3": [17, 18]}
+        assert chorus == {"1": [5, 6, 7, 8], "2": [13, 14, 15, 16]}
+
+    def test_no_repeats_is_all_one_verse(self):
+        texts = ["a", "b", "c", "d"]
+        verses, chorus = slides.detect_verse_chorus_groups(texts)
+        assert verses == {"1": [1, 2, 3, 4]}
+        assert chorus == {}
+
+    def test_chorus_at_the_very_start_and_end(self):
+        texts = ["ca", "cb", "v1a", "v1b", "v1c", "ca", "cb"]
+        verses, chorus = slides.detect_verse_chorus_groups(texts)
+        assert verses == {"1": [3, 4, 5]}
+        assert chorus == {"1": [1, 2], "2": [6, 7]}
+
+
+class TestMakeEngJsonFromBil:
+    """New CLI operation (`slides.py -b eh -s <n> --bil-to-eng`): for a
+    book like "eh" whose songs are built from scanned sheet-music images
+    (no extractable lyric text at all), builds the English JSON + sized
+    images from ONLY the bilingual translation deck -- for when there's
+    no separate plain-English source pptx to run through process_eh_song.
+    Each content slide's own embedded picture is the translator's
+    original English scan; the Spanish syllable text is in separate
+    shapes drawn on top of it, not baked into the picture.
+
+    Uses the real eh-146-bil.pptx fixture committed in the repo (its
+    permanent home: ehsf/esp/eh/bil/, alongside every other book's bil
+    files) -- deterministic and safe to regenerate.
+    """
+
+    def test_builds_the_real_song_correctly(self):
+        json_path = slides.make_eng_json_from_bil("eh", 146)
+        assert json_path == "ehsf/eh/146/eh-146.json"
+
+        with open(json_path, "r", encoding="utf-8") as f:
+            meta = json.load(f)
+
+        assert meta["number"] == "146"
+        assert meta["verses"] == {"1": [1, 2, 3, 4], "2": [9, 10, 11, 12], "3": [17, 18]}
+        assert meta["chorus"] == {"1": [5, 6, 7, 8], "2": [13, 14, 15, 16]}
+        assert meta["codas"] == {}
+        # Not extractable from a scanned image -- left for the user to fill in.
+        assert meta["title"] == ""
+        assert meta["credits"] == ""
+        assert meta["copyright"] == ""
+        # process_eh_song's own crop/sizing step ran and populated these.
+        assert "window" in meta
+        assert meta["window_orientation"] in ("wide", "tall")
+
+        for i in range(1, 19):
+            assert os.path.exists(f"ehsf/eh/146/eh-146-{i:02d}.png")
+
+    def test_missing_bil_file_raises_a_clear_error(self):
+        with pytest.raises(FileNotFoundError, match="No bilingual pptx found"):
+            slides.make_eng_json_from_bil("eh", 99999)
+
+    def test_explicit_bil_path_overrides_the_default_search(self):
+        with pytest.raises(FileNotFoundError, match="not-a-real-file.pptx"):
+            slides.make_eng_json_from_bil("eh", 146, bil_path="not-a-real-file.pptx")

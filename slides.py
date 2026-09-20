@@ -4223,6 +4223,160 @@ def process_eh_song(number):
 
 
 
+def _find_longest_repeat(texts, excluded):
+	"""Find the longest run of consecutive items in `texts` that exactly
+	matches another later, non-overlapping run of the same length, skipping
+	any index already in `excluded`. Returns (start1, start2, length) for
+	the longest such pair, or None if no run of length >= 2 repeats."""
+	n = len(texts)
+	for length in range(n, 1, -1):
+		for start1 in range(0, n - length + 1):
+			if any(i in excluded for i in range(start1, start1 + length)):
+				continue
+			block = texts[start1:start1 + length]
+			for start2 in range(start1 + length, n - length + 1):
+				if any(i in excluded for i in range(start2, start2 + length)):
+					continue
+				if texts[start2:start2 + length] == block:
+					return (start1, start2, length)
+	return None
+
+
+def detect_verse_chorus_groups(texts):
+	"""Guess verse/chorus grouping from a song's own slide-by-slide text,
+	by treating a repeated run of consecutive slides (identical text
+	appearing again later, non-overlapping) as the same chorus recurring,
+	and whatever falls between/around chorus occurrences as one verse.
+	Greedily takes the longest repeat first, then the longest remaining
+	one, and so on, which handles more than one distinct chorus reasonably
+	as long as neither is a sub-run of the other.
+
+	Returns (verses, chorus) dicts matching the eh-book JSON schema: each
+	maps a 1-based, in-song-order key ("1", "2", ...) to a list of
+	1-based slide/image indices. This is a structural guess to save
+	retyping the grouping by hand -- it doesn't know the actual words (see
+	make_eng_json_from_bil), so it's still worth checking against the
+	actual song."""
+	n = len(texts)
+	excluded = set()
+	chorus_by_start = {}
+	while True:
+		found = _find_longest_repeat(texts, excluded)
+		if not found:
+			break
+		start1, start2, length = found
+		chorus_by_start[start1] = length
+		chorus_by_start[start2] = length
+		excluded.update(range(start1, start1 + length))
+		excluded.update(range(start2, start2 + length))
+
+	groups = []
+	i = 0
+	while i < n:
+		if i in chorus_by_start:
+			length = chorus_by_start[i]
+			groups.append(("chorus", list(range(i, i + length))))
+			i += length
+		else:
+			j = i
+			while j < n and j not in chorus_by_start:
+				j += 1
+			groups.append(("verse", list(range(i, j))))
+			i = j
+
+	verses = {}
+	chorus = {}
+	v_ct = 0
+	c_ct = 0
+	for kind, idxs in groups:
+		one_based = [idx + 1 for idx in idxs]
+		if kind == "verse":
+			v_ct += 1
+			verses[str(v_ct)] = one_based
+		else:
+			c_ct += 1
+			chorus[str(c_ct)] = one_based
+	return verses, chorus
+
+
+def make_eng_json_from_bil(book, number, bil_path=None):
+	"""Build the English JSON (and sized/cropped images) for a song from
+	ONLY its bilingual translation deck -- for books like "eh" whose songs
+	are built from scanned sheet-music images rather than extractable
+	lyric text, when there's no separate plain-English source pptx to run
+	through process_eh_song directly.
+
+	Each bil-deck content slide's own embedded picture (the scanned
+	English sheet music the translator worked from) is exported as-is --
+	the Spanish syllable text boxes are drawn on top of it as separate
+	shapes, not baked into the picture itself, so extracting the picture
+	alone gives a clean English-only image. Verse/chorus grouping is
+	guessed from the deck's own Spanish text via detect_verse_chorus_groups
+	-- a best-effort structural guess, not the true English lyrics (which
+	aren't extractable here at all -- they're pixels in a scan), so
+	title/credits/copyright are left blank for the same reason. Check the
+	result against the actual song before relying on it."""
+	song, pathname, basename, rawname = get_song_paths(book, number)
+
+	if bil_path is None:
+		candidates = [
+			f"custom_song/{book}-{song}-bil.pptx",
+			ehsf_join('esp', book, 'bil', book + "-" + song + "-bil.pptx"),
+		]
+		bil_path = next((c for c in candidates if os.path.exists(c)), None)
+		if bil_path is None:
+			raise FileNotFoundError("No bilingual pptx found; checked: " + ", ".join(candidates))
+	elif not os.path.exists(bil_path):
+		raise FileNotFoundError(f"Bilingual pptx not found: {bil_path}")
+
+	prs = Presentation(bil_path)
+	content_slides = list(prs.slides)[1:]	# slide 0 is the title/metadata slide
+	if not content_slides:
+		raise ValueError(f"{bil_path} has no content slides (only a title slide)")
+
+	cooked_dir = pathname + "/cooked"
+	os.makedirs(cooked_dir, exist_ok=True)
+	texts = []
+	for ndx, slide in enumerate(content_slides):
+		pic = next((shp for shp in slide.shapes if shp.shape_type == MSO_SHAPE_TYPE.PICTURE), None)
+		if pic is None:
+			raise ValueError(f"Slide {ndx + 2} of {bil_path} has no picture shape to extract")
+		image = pic.image
+		out_path = f"{cooked_dir}/{book}-{song}-{ndx + 1:03d}.{image.ext}"
+		with open(out_path, 'wb') as imgfile:
+			imgfile.write(image.blob)
+
+		texts.append(" | ".join(
+			shp.text_frame.text.strip()
+			for shp in slide.shapes
+			if shp.has_text_frame and shp.text_frame.text.strip()
+		))
+
+	# Reuses the exact same crop/sizing pipeline a plain English deck for
+	# this book would go through -- it only touches "cooked", which is all
+	# we've populated here.
+	process_eh_song(number)
+
+	verses, chorus = detect_verse_chorus_groups(texts)
+
+	with open(basename + ".json", 'r', encoding='utf-8') as jsonfile:
+		meta = json.load(jsonfile)
+	meta['verses'] = verses
+	meta['chorus'] = chorus
+	meta.setdefault('codas', {})
+	meta['number'] = song
+	meta.setdefault('copyright', "")
+	meta.setdefault('title', "")
+	meta.setdefault('credits', "")
+	with open(basename + ".json", 'w', encoding='utf-8') as jsonfile:
+		json.dump(meta, jsonfile, ensure_ascii=False, indent=4)
+
+	print(f"Wrote {basename}.json from {bil_path}")
+	print("Guessed structure (double-check against the actual song):")
+	pprint.pprint({"verses": verses, "chorus": chorus})
+	return basename + ".json"
+
+
 def print_lyrics(book, number):
 	song, paths = get_song_paths_new(book, number)
 	with open(paths['engbase'] + ".json", 'r') as jsonfile:
@@ -4531,6 +4685,8 @@ def main():
 	parser.add_argument('--ppt', dest='ppt', help="Convert EHSF song to PowerPoint", action='store_true')
 	parser.add_argument('--esp-eng', dest='espblank', help="Generate English deck for translation", action='store_true')
 	parser.add_argument('--esp-bil', dest='esptrans', help="Process Bilingual deck into EHSF", action='store_true')
+	parser.add_argument('--bil-to-eng', dest='biltoeng', help="Build English JSON+images from a bilingual translation deck (for books with no plain-English source, e.g. eh)", action='store_true')
+	parser.add_argument('--bil-file', dest='bilfile', help="Path to the bilingual pptx for --bil-to-eng (default: custom_song/<book>-<song>-bil.pptx, else the usual ehsf/esp/<book>/bil/ location)", default=None)
 	parser.add_argument('--esp-list', dest='esplist', help="List available bilingual songs", action='store_true')
 	parser.add_argument('--brigham', dest='brigham', help="Only since Brigham reviewed", action='store_true')
 	parser.add_argument('--raw', dest='raw2png', help="Process raw files to png", action='store_true')
@@ -4549,6 +4705,8 @@ def main():
 		make_esp_blank(args.book, int(args.song), args.slide)
 	elif args.esptrans:
 		make_esp_trans(args.book, int(args.song))
+	elif args.biltoeng:
+		make_eng_json_from_bil(args.book, int(args.song), args.bilfile)
 	elif args.esplist:
 		print_esp_list(args.brigham)
 	elif args.raw2png:
