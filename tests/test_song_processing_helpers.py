@@ -2,6 +2,7 @@
 helpers, extracted the same way as test_ui_helpers.py (see that file's
 docstring): this page also calls st.* at module scope.
 """
+import ast
 import os
 import shutil
 import subprocess
@@ -15,6 +16,30 @@ from conftest import ROOT, extract_functions
 
 PAGE_PY = ROOT / "pages" / "2_Song_Processing.py"
 EHSF_ROOT_PATH = Path("/fake/ehsf")
+
+
+def _module_level_dict(name):
+    """Exec only the named top-level dict assignment(s) -- SONG_BOOK_LABELS
+    and TRANSLATION_BOOK_LABELS -- from the page in an isolated namespace,
+    without running the whole script (which calls st.* at module scope --
+    see extract_functions' docstring), and return `name`'s resulting
+    value. Execs rather than ast.literal_eval since TRANSLATION_BOOK_LABELS
+    references SONG_BOOK_LABELS via dict-unpacking, not a plain literal;
+    limited to these two by name so unrelated top-level assignments
+    earlier in the file (which depend on things not in this namespace,
+    e.g. a not-yet-defined helper function) are never exec'd."""
+    wanted = {"SONG_BOOK_LABELS", "TRANSLATION_BOOK_LABELS"}
+    tree = ast.parse(PAGE_PY.read_text(encoding="utf-8"))
+    namespace = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(
+            isinstance(t, ast.Name) and t.id in wanted for t in node.targets
+        ):
+            module = ast.Module(body=[node], type_ignores=[])
+            exec(compile(module, filename=str(PAGE_PY), mode="exec"), namespace)
+    if name not in namespace:
+        raise ValueError(f"No top-level assignment to {name!r} in {PAGE_PY}")
+    return namespace[name]
 
 
 def load(names, extra_globals=None):
@@ -210,3 +235,27 @@ class TestConvertLegacyPptToPptx:
         ok, message = fns["_convert_legacy_ppt_to_pptx"](tmp_path / "in.ppt", tmp_path / "out.pptx")
         assert ok is False
         assert "did not produce" in message
+
+
+class TestTranslationBookLabels:
+    """Regression: the "Add Spanish Translation" tab's book dropdowns
+    (s1_book, s2_book) only offered pftl/phss, even though the pipeline
+    functions they drive (make_esp_blank/export_bil_pngs/make_esp_trans in
+    slides.py) are fully book-agnostic -- eh just had nowhere to be
+    selected from. "Process New English Song" genuinely doesn't support eh
+    (it has no branch for it, see its else clause), so that tab's own
+    SONG_BOOK_LABELS deliberately stays pftl/phss-only.
+    """
+
+    def test_translation_tab_includes_eh(self):
+        labels = _module_level_dict("TRANSLATION_BOOK_LABELS")
+        assert "eh" in labels
+
+    def test_new_english_song_tab_still_excludes_eh(self):
+        labels = _module_level_dict("SONG_BOOK_LABELS")
+        assert "eh" not in labels
+
+    def test_translation_tab_still_includes_the_original_books(self):
+        labels = _module_level_dict("TRANSLATION_BOOK_LABELS")
+        assert "pftl" in labels
+        assert "phss" in labels

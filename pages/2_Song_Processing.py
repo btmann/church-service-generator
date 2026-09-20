@@ -77,6 +77,14 @@ SONG_BOOK_LABELS = {
     "pftl": "Praise for the Lord (PFTL)",
     "phss": "Psalms, Hymns, and Spiritual Songs (PHSS)",
 }
+# The Spanish translation tab (make_esp_blank/export_bil_pngs/make_esp_trans
+# in slides.py) is fully book-agnostic -- unlike "Process New English Song",
+# which only actually knows how to handle pftl/phss (see the else branch
+# below), so eh is offered here but not there.
+TRANSLATION_BOOK_LABELS = {
+    **SONG_BOOK_LABELS,
+    "eh": "Embry Hills (EH)",
+}
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -355,8 +363,8 @@ boxes, then come back to **Step 2** to process your completed translation.
         with col1:
             s1_book = st.selectbox(
                 "Song Book",
-                options=list(SONG_BOOK_LABELS.keys()),
-                format_func=lambda c: SONG_BOOK_LABELS[c],
+                options=list(TRANSLATION_BOOK_LABELS.keys()),
+                format_func=lambda c: TRANSLATION_BOOK_LABELS[c],
                 key="s1_book",
             )
         with col2:
@@ -429,8 +437,8 @@ Spanish version of the song. Requires LibreOffice to be installed (see the setup
         with col1:
             s2_book = st.selectbox(
                 "Song Book",
-                options=list(SONG_BOOK_LABELS.keys()),
-                format_func=lambda c: SONG_BOOK_LABELS[c],
+                options=list(TRANSLATION_BOOK_LABELS.keys()),
+                format_func=lambda c: TRANSLATION_BOOK_LABELS[c],
                 key="s2_book",
             )
         with col2:
