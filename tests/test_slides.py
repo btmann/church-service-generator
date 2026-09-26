@@ -647,9 +647,9 @@ class TestSupperReading1Cor11_27to29Nasb95:
         eng_ref, _ = slides.get_supper_reading(51, 0)
         assert eng_ref.text == "1 Corinthians 11:27-32"
 
-    def test_index_105_still_out_of_range(self):
+    def test_index_106_still_out_of_range(self):
         with pytest.raises(ValueError, match="out of range"):
-            slides.get_supper_reading(105, 0)
+            slides.get_supper_reading(106, 0)
 
 
 class TestSupperReadingLuke23_27to31Nasb95:
@@ -690,9 +690,56 @@ class TestSupperReadingLuke23_27to31Nasb95:
         eng_ref, _ = slides.get_supper_reading(103, 0)
         assert eng_ref.text == "1 Corinthians 11:27-29"
 
-    def test_index_105_still_out_of_range(self):
+    def test_index_106_still_out_of_range(self):
         with pytest.raises(ValueError, match="out of range"):
-            slides.get_supper_reading(105, 0)
+            slides.get_supper_reading(106, 0)
+
+
+class TestSupperReadingMatthew12_14to21Nasb95:
+    """Regression for the added Lord's Supper reading at index 105:
+    Matthew 12:14-21 in the NASB95 wording (the deck otherwise mixes
+    translations slide by slide -- NASB95 was an explicit choice here,
+    matching indexes 103 and 104, not a house style)."""
+
+    def test_index_105_is_nasb95_matthew_12_14_21(self):
+        eng_ref, eng_passage = slides.get_supper_reading(105, 0)
+        assert eng_ref.text == "Matthew 12:14-21"
+        assert eng_passage.text == (
+            "But the Pharisees went out and conspired against Him, as to how they "
+            "might destroy Him. But Jesus, aware of this, withdrew from there. Many "
+            "followed Him, and He healed them all, and warned them not to tell who "
+            "He was. This was to fulfill what was spoken through Isaiah the "
+            "prophet: “Behold, My Servant whom I have chosen; My Beloved in whom "
+            "My soul is well-pleased; I will put My Spirit upon Him, And He shall "
+            "proclaim justice to the Gentiles. He will not quarrel, nor cry out; "
+            "Nor will anyone hear His voice in the streets. A battered reed He "
+            "will not break off, And a smoldering wick He will not put out, Until "
+            "He leads justice to victory. And in His name the Gentiles will hope.”"
+        )
+
+    def test_index_105_spanish_is_rvr1960(self):
+        esp_ref, esp_passage = slides.get_supper_reading(105, 1)
+        assert esp_ref.text == "Mateo 12:14-21"
+        assert esp_passage.text == (
+            "Y salieron los fariseos, y tuvieron consejo contra él para "
+            "destruirle. Sabiendo esto Jesús, se apartó de allí; y le siguió mucha "
+            "gente, y sanaba a todos, y les encargaba rigurosamente que no le "
+            "descubriesen; para que se cumpliese lo dicho por el profeta Isaías, "
+            "cuando dijo: He aquí mi siervo, a quien he escogido; Mi Amado, en "
+            "quien se agrada mi alma; Pondré mi Espíritu sobre él, Y a los "
+            "gentiles anunciará juicio. No contenderá, ni voceará, Ni nadie oirá "
+            "en las calles su voz. La caña cascada no quebrará, Y el pábilo que "
+            "humea no apagará, Hasta que saque a victoria el juicio. Y en su "
+            "nombre esperarán los gentiles."
+        )
+
+    def test_existing_index_104_still_intact(self):
+        eng_ref, _ = slides.get_supper_reading(104, 0)
+        assert eng_ref.text == "Luke 23:27-31"
+
+    def test_index_106_still_out_of_range(self):
+        with pytest.raises(ValueError, match="out of range"):
+            slides.get_supper_reading(106, 0)
 
 
 class TestAnnouncementsTitleItemType:
