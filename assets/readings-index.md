@@ -121,9 +121,7 @@ Reference table for the `"reading"` index used on Lord's Supper (`ls-am`/`ls-pm`
 | 1 | Philippians 1:3-5 | Filipenses 1:3-5 |
 | 2 | Acts 20:35 | Hechos 20:35 |
 | 3 | Psalm 76:11 | Salmo 76:11 |
-| 4 | Romans 12:6, 8 | Romanos 12:6, 8 |
-| 5 | 1 Corinthians 16:1-2 | 1 Corintios 16:1-2 |
-| 6 | Luke 6:38 | Lucas 6:38 |
-| 7 | 2 Corinthians 8:9 | 2 Corintios 8:9 |
-| 8 | 2 Corinthians 8:1-3 | 2 Corintios 8:1-3 |
-| 9 | Philippians 4:15-17 | Filipenses 4:15-17 |
+| 4 | Luke 6:38 | Lucas 6:38 |
+| 5 | 2 Corinthians 8:9 | 2 Corintios 8:9 |
+| 6 | 2 Corinthians 8:1-3 | 2 Corintios 8:1-3 |
+| 7 | Philippians 4:15-17 | Filipenses 4:15-17 |

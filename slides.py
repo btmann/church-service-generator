@@ -2272,11 +2272,12 @@ def set_sidebar(slide, items, myitem, cycle, phi, language):
 	istart = 0
 	bdelta = 0
 	numitems = len(items)
+	window = numitems
 	if numitems >= 14:
 		if myitem > numitems - 14:
 			istart = numitems - 14
-		numitems = 14
-	bheight = numitems * (HIGHLIGHT_HEIGHT)
+		window = 14
+	bheight = window * (HIGHLIGHT_HEIGHT)
 	bzero = 0.08 + ((5.6 - 0.16) - bheight) / 2.0
 	v = get_placeholder(slide, phi[0])
 	v.text_frame.clear()
@@ -2285,15 +2286,19 @@ def set_sidebar(slide, items, myitem, cycle, phi, language):
 	sitems = items.copy()
 	sitems.sort()
 
-	for ndx in range(istart, numitems):
-		set_sidebar_item(slide, v, sitems[ndx], cycle, addp, bzero, ndx, language)
+	# ndx indexes the full sorted list; row is the 0-based position within
+	# the visible scrolled window, which is what vertical placement (the
+	# highlight bar and song-circle icons) must be measured from.
+	for ndx in range(istart, istart + window):
+		row = ndx - istart
+		set_sidebar_item(slide, v, sitems[ndx], cycle, addp, bzero, row, language)
 		addp = True
 		if myitem >= 0:
-			highlight = (items[myitem][0] == (ndx + istart))
+			highlight = (items[myitem][0] == ndx)
 			if highlight:
 				w = get_placeholder(slide, phi[1])
 				w.text = ' '
-				htop = bzero + (HIGHLIGHT_HEIGHT * ndx)
+				htop = bzero + (HIGHLIGHT_HEIGHT * row)
 				set_highlight_size(w, sitems[ndx], htop, language)
 
 #

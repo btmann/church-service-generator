@@ -1120,3 +1120,78 @@ class TestMakeEngJsonFromBil:
     def test_explicit_bil_path_overrides_the_default_search(self):
         with pytest.raises(FileNotFoundError, match="not-a-real-file.pptx"):
             slides.make_eng_json_from_bil("eh", 146, bil_path="not-a-real-file.pptx")
+
+
+class TestCollectionReadingIndex4And5Removed:
+    """Regression for removing the Romans 12:6,8 / 1 Corinthians 16:1-2
+    entries from the Collection reading list -- indexes 4 and 5 now point
+    at what used to be 6 and 7, and the list is two slides shorter."""
+
+    def test_index_0_is_still_luke_24_47(self):
+        eng_ref, _ = slides.get_collection_reading(0, 0)
+        assert eng_ref.text == "Luke 24:47"
+
+    def test_index_4_is_now_luke_6_38(self):
+        eng_ref, _ = slides.get_collection_reading(4, 0)
+        assert eng_ref.text == "Luke 6:38"
+
+    def test_index_7_is_now_philippians_4_15_17(self):
+        eng_ref, _ = slides.get_collection_reading(7, 0)
+        assert eng_ref.text == "Philippians 4:15-17"
+
+    def test_index_8_now_out_of_range(self):
+        with pytest.raises(ValueError, match="out of range"):
+            slides.get_collection_reading(8, 0)
+
+
+class TestSidebarHighlightWindowing:
+    """Regression: once a service has 14+ items, the sidebar only shows a
+    scrolled 14-item window, and set_sidebar conflated the absolute index
+    into the full sorted navbar list with the 0-based row inside that
+    visible window. That made the highlighted item's row use the wrong
+    item's text, dropped rows off the end of the window entirely, and
+    floated the highlight bar below the actual rendered text whenever the
+    highlighted item required scrolling (istart > 0)."""
+
+    def _navitems_for(self, n):
+        eng = [[i, "reading", f"Item{i}"] for i in range(n)]
+        esp = [[i, "reading", f"Item{i}"] for i in range(n)]
+        return [eng, esp]
+
+    def _render(self, myitem, n=20):
+        from pptx import Presentation
+        outp = Presentation(slides.assetRoot + "template-2020.pptx")
+        navitems = self._navitems_for(n)
+        slides.add_prayer(outp, "bil", {'type': 'prayer'}, navitems, myitem)
+        slide = outp.slides[-1]
+        navbar = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ENG_NAVBAR)
+        highlight = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ENG_HIGHLIGHT)
+        return navbar, highlight
+
+    def test_full_window_is_rendered_when_scrolled(self):
+        # Old code clobbered its own window-size variable and re-used it as
+        # the loop's upper bound without adding istart back in, so a
+        # scrolled window rendered only 8 of its 14 rows.
+        navbar, _ = self._render(myitem=19)
+        assert len(navbar.text_frame.paragraphs) == 14
+
+    def test_last_item_highlighted_lands_on_the_matching_text_row(self):
+        navbar, highlight = self._render(myitem=19)
+        paragraphs = navbar.text_frame.paragraphs
+        assert paragraphs[-1].runs[0].text == "Item19"
+        bheight = 14 * slides.HIGHLIGHT_HEIGHT
+        bzero = 0.08 + ((5.6 - 0.16) - bheight) / 2.0
+        # set_highlight_size nudges htop down by half its own trim margin
+        expected_top = bzero + slides.HIGHLIGHT_HEIGHT * (len(paragraphs) - 1) + 0.0375
+        assert highlight.top.inches == pytest.approx(expected_top, abs=0.001)
+
+    def test_mid_window_item_highlighted_lands_on_its_own_row_not_a_neighbor(self):
+        # myitem=10 with 20 items: istart = 20-14 = 6, so row 4 should hold
+        # "Item10" and the highlight must sit on that same row.
+        navbar, highlight = self._render(myitem=10)
+        paragraphs = navbar.text_frame.paragraphs
+        assert paragraphs[4].runs[0].text == "Item10"
+        bheight = 14 * slides.HIGHLIGHT_HEIGHT
+        bzero = 0.08 + ((5.6 - 0.16) - bheight) / 2.0
+        expected_top = bzero + slides.HIGHLIGHT_HEIGHT * 4 + 0.0375
+        assert highlight.top.inches == pytest.approx(expected_top, abs=0.001)
