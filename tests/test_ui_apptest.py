@@ -745,3 +745,45 @@ class TestLoadPastService:
                 fixture_dir.rmdir()
             except OSError:
                 pass
+
+
+class TestCollectionReadingIsOptional:
+    """Regression: the Collection/Offering item's "Reading slide index"
+    field always wrote a reading (defaulting to index 0, Luke 24:47) into
+    the generated spec, even for sunday-am.json, whose collection item has
+    no "reading" field at all -- the Scripture slide was meant to be
+    opt-in there. That silently brought the slide back on every
+    regenerate, even right after a user manually deleted it from a past
+    deck. A checkbox now gates whether a reading is added at all.
+    """
+
+    def test_sunday_am_collection_has_the_checkbox_unchecked_by_default(self):
+        # sunday-am.json's coll-1 item has no "reading" key.
+        at = AppTest.from_file(str(UI_PY))
+        at.run(timeout=30)
+        at.selectbox(key="template_select").set_value("sunday-am").run()
+        assert list(at.exception) == []
+        assert at.checkbox(key="collection_has_reading_coll-1").value is False
+        assert not any(ni.key == "reading_index_coll-1" for ni in at.number_input)
+
+    def test_checking_the_box_reveals_the_reading_index_field(self):
+        at = AppTest.from_file(str(UI_PY))
+        at.run(timeout=30)
+        at.selectbox(key="template_select").set_value("sunday-am").run()
+        at.checkbox(key="collection_has_reading_coll-1").set_value(True).run()
+        assert list(at.exception) == []
+        assert at.number_input(key="reading_index_coll-1").value == 0
+
+    def test_freshly_added_custom_collection_item_defaults_checked(self):
+        # make_custom_template_item() still seeds a brand-new collection
+        # item with reading=0, so adding one via the builder keeps the old
+        # "giving + reading" default -- only the template-sourced item
+        # (sunday-am.json) changed behavior.
+        at = AppTest.from_file(str(UI_PY))
+        at.run(timeout=30)
+        at.selectbox(key="template_select").set_value("Custom Template (Build Order)").run()
+        at.selectbox(key="custom_item_type_select").set_value("collection").run()
+        at.button(key="custom_add_item").click().run()
+        assert list(at.exception) == []
+        assert at.checkbox(key="collection_has_reading_coll-1").value is True
+        assert at.number_input(key="reading_index_coll-1").value == 0

@@ -1195,3 +1195,39 @@ class TestSidebarHighlightWindowing:
         bzero = 0.08 + ((5.6 - 0.16) - bheight) / 2.0
         expected_top = bzero + slides.HIGHLIGHT_HEIGHT * 4 + 0.0375
         assert highlight.top.inches == pytest.approx(expected_top, abs=0.001)
+
+
+class TestGroupMeetingSidebarFontSize:
+    """Regression: "Reunión de Grupo" in the Spanish sidebar consistently
+    rendered a touch too wide at the standard esp size (18pt), throwing off
+    the rest of that language's sidebar spacing. It now uses the smaller
+    eng size (16pt) instead; every other esp sidebar label is unaffected."""
+
+    def test_group_meeting_esp_label_uses_16pt(self):
+        from pptx import Presentation
+        from pptx.util import Pt
+        outp = Presentation(slides.assetRoot + "template-2020.pptx")
+        navitems = [
+            [[0, "prayer", "Prayer"]],
+            [[0, "group-meeting", "Reunión de Grupo", 9]],
+        ]
+        slides.add_prayer(outp, "bil", {'type': 'prayer'}, navitems, 0)
+        slide = outp.slides[-1]
+        esp_navbar = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ESP_NAVBAR)
+        run = esp_navbar.text_frame.paragraphs[0].runs[0]
+        assert run.text == "Reunión de Grupo"
+        assert run.font.size == Pt(16)
+
+    def test_other_esp_sidebar_labels_still_use_18pt(self):
+        from pptx import Presentation
+        from pptx.util import Pt
+        outp = Presentation(slides.assetRoot + "template-2020.pptx")
+        navitems = [
+            [[0, "prayer", "Prayer"]],
+            [[0, "prayer", "Oración"]],
+        ]
+        slides.add_prayer(outp, "bil", {'type': 'prayer'}, navitems, 0)
+        slide = outp.slides[-1]
+        esp_navbar = slides.get_placeholder(slide, slides.LAYOUT_TITLE_BIL_ESP_NAVBAR)
+        run = esp_navbar.text_frame.paragraphs[0].runs[0]
+        assert run.font.size == Pt(18)

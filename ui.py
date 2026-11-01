@@ -1470,7 +1470,7 @@ with flow_tab:
             if reading_number_str.strip().isdigit():
                 reading_payload["reading"] = int(reading_number_str.strip())
             readings_input[item_id] = reading_payload
-        elif item_type in ['ls-am', 'collection'] and item_id:
+        elif item_type == 'ls-am' and item_id:
             reading_index_key = f"reading_index_{item_id}"
             if reading_index_key not in st.session_state:
                 try:
@@ -1497,6 +1497,45 @@ with flow_tab:
                     else:
                         st.caption("Reading index reference not available.")
             readings_input[item_id] = {"reading": int(reading_index)}
+        elif item_type == 'collection' and item_id:
+            # Unlike Lord's Supper, the Collection/Offering slide's Scripture
+            # reading is optional -- sunday-am.json deliberately has no
+            # "reading" on its collection item, so the offering gets no
+            # extra verse slide by default. Forcing a default index here
+            # (as this used to) meant the Luke 24:47 slide silently came
+            # back on every regenerate even after a user removed it.
+            has_reading_key = f"collection_has_reading_{item_id}"
+            if has_reading_key not in st.session_state:
+                st.session_state[has_reading_key] = item.get("reading") is not None
+            add_reading = st.checkbox(
+                "Add a Scripture reading to the Collection slide",
+                key=has_reading_key,
+            )
+            if add_reading:
+                reading_index_key = f"reading_index_{item_id}"
+                if reading_index_key not in st.session_state:
+                    try:
+                        st.session_state[reading_index_key] = int(item.get("reading", 0))
+                    except (TypeError, ValueError):
+                        st.session_state[reading_index_key] = 0
+                reading_col, index_button_col = st.columns([4, 1])
+                with reading_col:
+                    reading_index = st.number_input(
+                        "Reading slide index (0-based)",
+                        min_value=0,
+                        key=reading_index_key,
+                    )
+                with index_button_col:
+                    st.write("")
+                    with st.popover("View Index"):
+                        section_md = get_readings_index_section(item_type)
+                        if section_md:
+                            st.markdown(section_md)
+                        else:
+                            st.caption("Reading index reference not available.")
+                readings_input[item_id] = {"reading": int(reading_index)}
+            else:
+                readings_input[item_id] = {}
         elif item_type == 'sermon' and item_id:
             st.info("Sermon details will be added later by another person.")
             readings_input[item_id] = {"title": "", "título": ""}

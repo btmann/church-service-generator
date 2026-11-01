@@ -2249,7 +2249,10 @@ def set_sidebar_item(slide, v, item, cycle, addp, bzero, ndx, language):
 
 		font = fonts[0]	# not bold
 		run.font.name = font[0]
-		run.font.size = Pt(16) if language == "eng" else Pt(18)
+		# "Reunión de Grupo" consistently renders a touch too wide for
+		# the sidebar at the standard esp size, throwing off the rest of
+		# that language's spacing -- give it the eng size instead.
+		run.font.size = Pt(16) if (language == "eng" or item[1] == 'group-meeting') else Pt(18)
 		run.font.bold = False
 #		if len(item) > 3:
 #			run.font.size = Pt(item[3])
