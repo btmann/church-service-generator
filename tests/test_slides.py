@@ -363,6 +363,9 @@ class TestFindSoffice:
 @pytest.mark.skipif(slides.find_soffice() is None, reason="requires LibreOffice (soffice) to be installed")
 class TestExportBilPngs:
     def _make_bil_pptx(self, tmp_path, book, number, notes):
+        return self._make_bil_pptx_multi(tmp_path, book, number, [notes])
+
+    def _make_bil_pptx_multi(self, tmp_path, book, number, notes_list):
         from pptx import Presentation
         from pptx.util import Inches
 
@@ -370,9 +373,10 @@ class TestExportBilPngs:
         prs = Presentation()
         blank = prs.slide_layouts[6]
         prs.slides.add_slide(blank)  # slide 1: metadata slide, must be skipped
-        song_slide = prs.slides.add_slide(blank)
-        song_slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1)).text_frame.text = "Hola"
-        song_slide.notes_slide.notes_text_frame.text = notes
+        for notes in notes_list:
+            song_slide = prs.slides.add_slide(blank)
+            song_slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1)).text_frame.text = "Hola"
+            song_slide.notes_slide.notes_text_frame.text = notes
 
         bildir = tmp_path / "esp" / book / "bil"
         bildir.mkdir(parents=True)
@@ -380,14 +384,27 @@ class TestExportBilPngs:
         prs.save(str(pptx_path))
         return pptx_path
 
+    def _make_raw_pngs(self, tmp_path, book, number, count):
+        # The authoritative "how many slides should this song have" source --
+        # the raw English images make_esp_blank originally built the
+        # translator's deck from.
+        song = f"{number:03d}"
+        rawdir = tmp_path / book / song / "raw"
+        rawdir.mkdir(parents=True, exist_ok=True)
+        for i in range(1, count + 1):
+            (rawdir / f"{book}-{song}-{i:02d}.png").write_bytes(b"fake-png-data")
+
     def test_exports_png_at_notes_specified_size_and_skips_metadata_slide(self, tmp_path):
-        self._make_bil_pptx(tmp_path, "test", 999, "400x300xtest/test-999-001.png")
+        self._make_bil_pptx(tmp_path, "test", 999, "400x300x999/test-999-001.png")
+        self._make_raw_pngs(tmp_path, "test", 999, 1)
         slides.set_ehsf_root(str(tmp_path))
 
-        exported = slides.export_bil_pngs("test", 999)
+        exported, expected_count, warnings = slides.export_bil_pngs("test", 999)
 
         assert exported == 1
-        out_path = tmp_path / "esp" / "test" / "bil" / "test" / "test-999-001.png"
+        assert expected_count == 1
+        assert warnings == []
+        out_path = tmp_path / "esp" / "test" / "bil" / "999" / "test-999-001.png"
         assert out_path.exists()
         from PIL import Image
         assert Image.open(out_path).size == (400, 300)
@@ -396,6 +413,68 @@ class TestExportBilPngs:
         slides.set_ehsf_root(str(tmp_path))
         with pytest.raises(FileNotFoundError):
             slides.export_bil_pngs("test", 999)
+
+    def test_duplicated_slide_with_stale_notes_still_exports_every_position(self, tmp_path):
+        # Regression: a translator duplicating a repeated chorus slide in
+        # PowerPoint (instead of retyping its subtitle) copies the source
+        # slide's notes verbatim. Slide 3 here keeps slide 1's stale notes,
+        # which used to make both slides 1 and 3 overwrite the same output
+        # file and leave slide 2's position never written at all.
+        self._make_bil_pptx_multi(tmp_path, "test", 999, [
+            "400x300x999/test-999-001.png",
+            "400x300x999/test-999-002.png",
+            "400x300x999/test-999-001.png",  # stale: copied from slide 1
+        ])
+        self._make_raw_pngs(tmp_path, "test", 999, 3)
+        slides.set_ehsf_root(str(tmp_path))
+
+        exported, expected_count, warnings = slides.export_bil_pngs("test", 999)
+
+        assert exported == 3
+        assert expected_count == 3
+        bildir = tmp_path / "esp" / "test" / "bil" / "999"
+        assert (bildir / "test-999-001.png").exists()
+        assert (bildir / "test-999-002.png").exists()
+        assert (bildir / "test-999-003.png").exists()  # derived from position, not the stale notes
+
+        assert len(warnings) == 1
+        assert "slide 4" in warnings[0].lower()
+        assert "test-999-001.png" in warnings[0]
+        assert "test-999-003.png" in warnings[0]
+
+    def test_matching_notes_produce_no_warnings(self, tmp_path):
+        self._make_bil_pptx_multi(tmp_path, "test", 999, [
+            "400x300x999/test-999-001.png",
+            "400x300x999/test-999-002.png",
+        ])
+        self._make_raw_pngs(tmp_path, "test", 999, 2)
+        slides.set_ehsf_root(str(tmp_path))
+
+        exported, expected_count, warnings = slides.export_bil_pngs("test", 999)
+
+        assert exported == 2
+        assert expected_count == 2
+        assert warnings == []
+
+    def test_fewer_slides_than_the_english_version_reports_a_count_mismatch(self, tmp_path):
+        # The bil.pptx only has 2 content slides, but the English version
+        # this song was built from has 3 raw images -- a slide went
+        # missing somewhere during translation (deleted instead of
+        # duplicated, etc). export_bil_pngs itself still succeeds (it has
+        # no way to know which slide is missing), but the caller can
+        # compare exported vs expected_count to flag it loudly.
+        self._make_bil_pptx_multi(tmp_path, "test", 999, [
+            "400x300x999/test-999-001.png",
+            "400x300x999/test-999-002.png",
+        ])
+        self._make_raw_pngs(tmp_path, "test", 999, 3)
+        slides.set_ehsf_root(str(tmp_path))
+
+        exported, expected_count, warnings = slides.export_bil_pngs("test", 999)
+
+        assert exported == 2
+        assert expected_count == 3
+        assert exported != expected_count
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="covers the darwin/linux home-dir install path")

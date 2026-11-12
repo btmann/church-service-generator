@@ -4022,6 +4022,13 @@ def convert_pptx_to_pdf(pptx_path, pdf_path):
 
 def export_bil_pngs(book, number):
 	song, pathname, basename, rawname = get_song_paths(book, number)
+	# The authoritative slide count for this song -- however many raw
+	# English images were fed into make_esp_blank to build the deck the
+	# translator worked from. The bil.pptx should have exactly this many
+	# content slides; fewer (or more) means slides went missing (or were
+	# added) somewhere during translation, independent of the per-slide
+	# stale-notes check below.
+	expected_count = len(glob.glob(rawname + "*.png"))
 	bil_pptx = ehsf_join('esp', book, 'bil', book + "-" + song + "-bil.pptx")
 	if not os.path.exists(bil_pptx):
 		raise FileNotFoundError(f"Bilingual PPTX not found: {bil_pptx}")
@@ -4043,13 +4050,30 @@ def export_bil_pngs(book, number):
 				)
 
 			exported = 0
+			warnings = []
 			for ndx, slide in enumerate(prs.slides):
 				if ndx == 0:
 					continue	# skip the metadata/title slide, same as the macro
 
 				notes = slide.notes_slide.notes_text_frame.text
-				fw_s, fh_s, fn = notes.split("x", 2)
+				fw_s, fh_s, notes_fn = notes.split("x", 2)
 				fw, fh = int(fw_s), int(fh_s)
+
+				# The output filename is derived from this slide's own position,
+				# not trusted from its notes -- PowerPoint's "duplicate slide"
+				# (e.g. reusing a repeated chorus slide instead of retyping its
+				# subtitle) copies the source slide's notes verbatim, which used
+				# to make two or more slides silently overwrite the same output
+				# file and leave the positions in between never written at all.
+				fn = song + "/" + book + "-" + song + "-" + f"{ndx:03d}" + ".png"
+				if notes_fn != fn:
+					warnings.append(
+						f"PowerPoint slide {ndx + 1}'s notes say {notes_fn!r}, but its "
+						f"position means it should be {fn!r} -- exporting it as {fn!r} "
+						f"instead. This usually means that slide was duplicated from "
+						f"another one (e.g. copy-pasting a repeated chorus) without "
+						f"updating its notes; double check this slide's own content."
+					)
 
 				page = doc[ndx]
 				zoom_x = fw / page.rect.width
@@ -4066,7 +4090,7 @@ def export_bil_pngs(book, number):
 		finally:
 			doc.close()
 
-	return exported
+	return exported, expected_count, warnings
 
 
 #

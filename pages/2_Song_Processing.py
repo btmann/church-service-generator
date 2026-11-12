@@ -471,7 +471,7 @@ Spanish version of the song. Requires LibreOffice to be installed (see the setup
             png_dir.mkdir(parents=True, exist_ok=True)
 
             with st.spinner(f"Exporting slide images for {s2_book.upper()}-{song}…"):
-                count, export_log, export_err = _capture(_slides.export_bil_pngs, s2_book, number)
+                export_result, export_log, export_err = _capture(_slides.export_bil_pngs, s2_book, number)
 
             if export_err:
                 st.error(
@@ -484,7 +484,19 @@ Spanish version of the song. Requires LibreOffice to be installed (see the setup
                         st.code(export_log)
                 st.stop()
 
+            count, expected_count, notes_warnings = export_result
             st.info(f"Exported {count} slide image(s) to {png_dir}.")
+            if count != expected_count:
+                st.error(
+                    f"⚠️ Exported {count} image(s), but the English version for "
+                    f"{s2_book.upper()}-{song} has {expected_count} slide(s) -- these "
+                    f"numbers should match. Some slides were likely added, deleted, or "
+                    f"not duplicated correctly while adding the Spanish translation. "
+                    f"Check the bilingual PPTX against the English version before "
+                    f"using this output."
+                )
+            for w in notes_warnings:
+                st.warning(w)
 
             with st.spinner(f"Processing Spanish translation for {s2_book.upper()}-{song}…"):
                 _, process_log, process_err = _capture(_slides.make_esp_trans, s2_book, number)
