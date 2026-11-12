@@ -1,0 +1,76 @@
+{
+    "lyrics": {
+        "1": [
+            "1.\nTake the name of Jesus with you,\nChild of sorrow and of woe;\nIt will joy and comfort give you:\nTake it then where’er you go."
+        ],
+        "1c": [
+            "Precious name,\nO how sweet!\nHope of earth and joy of heaven;\nPrecious name,\nO how sweet!\nHope of earth and joy of heaven."
+        ],
+        "2": [
+            "2.\nTake the name of Jesus ever,\nAs a shield from every snare;\nIf temptations round you gather\nBreathe that holy name in prayer."
+        ],
+        "2c": [
+            "Precious name,\nO how sweet!\nHope of earth and joy of heaven;\nPrecious name,\nO how sweet!\nHope of earth and joy of heaven."
+        ],
+        "3": [
+            "3.\nO the precious name of Jesus!\nHow it thrills our souls with joy,\nWhen His loving arms receive us,\nAnd His songs our tongues employ!"
+        ],
+        "3c": [
+            "Precious name,\nO how sweet!\nHope of earth and joy of heaven;\nPrecious name,\nO how sweet!\nHope of earth and joy of heaven."
+        ],
+        "4": [
+            "4.\nAt the name of Jesus bowing,\nFalling prostrate at His feet,\nKing of kings in heaven we'll crown Him,\nWhen our journey is complete."
+        ],
+        "4c": [
+            "Precious name,\nO how sweet!\nHope of earth and joy of heaven;\nPrecious name,\nO how sweet!\nHope of earth and joy of heaven."
+        ]
+    },
+    "verses": {
+        "1": [
+            1,
+            2
+        ],
+        "2": [
+            5,
+            6
+        ],
+        "3": [
+            9,
+            10
+        ],
+        "4": [
+            13,
+            14
+        ]
+    },
+    "chorus": {
+        "1": [
+            3,
+            4
+        ],
+        "2": [
+            7,
+            8
+        ],
+        "3": [
+            11,
+            12
+        ],
+        "4": [
+            15,
+            16
+        ]
+    },
+    "codas": {},
+    "title": "Take the Name of Jesus with You",
+    "copyright": "© 2003 The Paperless Hymnal™",
+    "number": "611",
+    "credits": "Words: Lydia Baxter\nMusic: William H. Doane",
+    "window_orientation": "wide",
+    "window": [
+        0.125,
+        0.9258526603001365,
+        8.748294679399727,
+        5.4
+    ]
+}
